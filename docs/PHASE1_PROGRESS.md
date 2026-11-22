@@ -24,7 +24,7 @@ Phase 1 implementation is being consolidated on `phase-1/research-reader-brain-i
 - Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
 - Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
 - JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
-- Application ID remains `com.somchai.ai`. The next build increments versionCode to 7 and versionName to 1.6.0. Owner signing configuration is unchanged.
+- Application ID remains `com.somchai.ai`. Current development build is versionCode 9 and versionName 1.8.0. Owner signing configuration is unchanged.
 
 ## Final acceptance gates — not yet passed
 
