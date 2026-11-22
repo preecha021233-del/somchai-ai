@@ -40,9 +40,11 @@ class PluginManager(
             PluginCandidate(manifest, sha256(raw), smokeTester.run(manifest))
         }.getOrNull() } ?: emptyList()
 
+    /** Only explicitly enabled manifests in the active directory grant runtime access. */
     fun activePlugins(): List<PluginManifest> = paths.active.listFiles()
         ?.filter { it.isFile && it.extension == "json" }
-        ?.mapNotNull { runCatching { validator.validate(it.readText()) }.getOrNull() }
+        ?.mapNotNull { file -> runCatching { validator.validate(file.readText()) }.getOrNull() }
+        ?.filter { it.enabled }
         ?: emptyList()
 
     fun disabledPlugins(): List<PluginManifest> = paths.backups.listFiles()
@@ -58,13 +60,15 @@ class PluginManager(
             ?.maxByOrNull { it.lastModified() } ?: return false
         val manifest = validator.validate(source.readText())
         require(manifest.id == id) { "Plugin identity mismatch" }
+        require(manifest.enabled) { "A disabled manifest cannot be reactivated" }
         val target = File(paths.active, "$id.json")
         check(!target.exists()) { "Plugin is already active" }
         val temp = File(paths.active, "$id.tmp")
         source.copyTo(temp, overwrite = false)
         try {
             check(temp.renameTo(target)) { "Atomic plugin reactivation failed" }
-            validator.validate(target.readText())
+            val activated = validator.validate(target.readText())
+            check(activated.enabled && activated.id == id) { "Reactivated plugin is not enabled" }
             check(source.delete()) { "Could not remove disabled backup" }
             logger.record("PLUGIN_ENABLED", "$id backup=${source.name}")
             return true
@@ -83,6 +87,7 @@ class PluginManager(
         val raw = source.readText()
         val manifest = validator.validate(raw)
         require(manifest.id == id && sha256(raw) == expectedHash) { "Candidate changed after review" }
+        require(manifest.enabled) { "A disabled candidate cannot be approved for activation" }
         val checks = smokeTester.run(manifest)
         check(checks.size >= 4) { "Plugin smoke test did not complete" }
         val target = File(paths.active, "$id.json")
@@ -93,9 +98,10 @@ class PluginManager(
             temp.writeText(raw)
             check(temp.renameTo(target)) { "Atomic plugin activation failed" }
             val activated = validator.validate(target.readText())
+            check(activated.enabled && activated.id == id) { "Activated plugin is not enabled" }
             smokeTester.run(activated)
             logger.record("PLUGIN_APPROVED", "$id hash=$expectedHash checks=${checks.size}")
-            source.delete()
+            check(source.delete()) { "Could not remove approved candidate" }
             true
         } catch (error: Exception) {
             target.delete()
