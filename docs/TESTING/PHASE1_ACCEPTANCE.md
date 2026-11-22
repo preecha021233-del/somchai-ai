@@ -69,6 +69,14 @@ Phase 1 passes only when all six capability groups pass their automated and devi
 - [ ] P35 ordinary chat makes no request to an external AI provider; /ai remains an explicit, owner-configured optional route only.
 - Pass threshold: 3/3. A Brain interface without an installed and benchmarked local model does not satisfy the model reasoning gate.
 
+## Additional local-model acceptance checks
+
+- [ ] P36 Download the pinned Qwen GGUF model; reject a wrong SHA-256, invalid GGUF header, truncated download and insufficient-storage condition.
+- [ ] P37 Load the verified model through the native llama.cpp runtime on the target ARM64 Android device without app crash or out-of-memory termination.
+- [ ] P38 Generate Thai answers for open-ended prompts and multi-turn history; record model hash, prompt, output, latency, peak memory, device temperature and battery impact.
+- [ ] P39 Verify normal chat uses `llama.cpp-android` when the model is ready, reports fallback when unavailable, and never calls the remote provider unless `/ai` is explicitly requested.
+- Pass threshold: all model integrity checks pass; native load/generation are stable on the target device; model quality is evaluated using the unchanged P01–P12 rubric. A successful native build alone does not pass these checks.
+
 ## Evidence required for each run
 
 Record test-set version, exact prompt, expected behavior, actual output, pass/fail, app version/versionCode, commit SHA, device/Android/ABI, model name/hash/quantization if used, test method (unit/CI/manual device), timestamp, and evidence link.
