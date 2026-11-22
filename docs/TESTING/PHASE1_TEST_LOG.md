@@ -159,6 +159,7 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 - Model stored in app-private storage; ordinary chat remains independent from the optional external provider.
 - Added GGUF file-validator and reasoning-policy JVM tests, plus a dedicated ARM64 native CI workflow.
 - Added a Thai reasoning policy for intent/context, assumption, contradiction, missing-information and source-integrity checks. The policy is prompt guidance; answer quality remains unverified.
+- Expanded online discovery to DuckDuckGo HTML Web Search and added HTTPS result-link parser tests; research attempts to open up to three real pages. Live on-device multi-source results remain untested.
 
 ### Results
 - Source changes: ADDED; not yet accepted.
