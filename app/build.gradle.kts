@@ -10,13 +10,25 @@ android {
         applicationId = "com.somchai.ai"
         minSdk = 26
         targetSdk = 35
+        // REQUIRED: increase versionCode for every published update; never reset it.
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        create("ownerRelease") {
+            // Never commit the keystore or passwords. Supply these environment variables
+            // from a protected local environment or GitHub Actions secrets.
+            storeFile = file(System.getenv("SOMCHAI_SIGNING_KEYSTORE") ?: "somchai-release.jks")
+            storePassword = System.getenv("SOMCHAI_SIGNING_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("SOMCHAI_SIGNING_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("SOMCHAI_SIGNING_KEY_PASSWORD") ?: ""
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("ownerRelease")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
