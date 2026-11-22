@@ -1,262 +1,165 @@
-# SOMCHAI AI — Phase 1 Test Log
+# Phase 1 — Baby SOMCHAI Progress
 
-This log is the evidence register for evaluating SOMCHAI AI capabilities phase by phase. Keep observed behavior separate from code-level tests and CI results. Never mark a capability passed solely because code was added.
+Updated: 2026-11-22
 
-## Round 1 — Installed app baseline (2026-11-22)
+## Implementation status
 
-**Purpose:** Compare the installed app's actual behavior with the Phase 1 goals before the next internal-processing upgrade.
+Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. Repository-level implementation is in progress. Latest CI run #45037203591 passed JVM tests, llama.cpp ARM64 native build, debug APK assembly and artifact upload. Real-device acceptance remains outstanding.
 
-**Environment / build:** Android app package `com.somchai.ai`; installed build reported in the project update as v1.6.0 / versionCode 7. The test was performed by the project owner on an Android device. Exact device OS/build and test APK checksum were not recorded.
+### Implemented
 
-### Results
+- Offline-first chat routing: ordinary messages use the internal processor; no external provider is called by default.
+- Optional external provider route remains explicit via `/ai` and requires an owner-configured key.
+- Deterministic internal intents cover greetings, capability description, help, task planning and local-memory commands. Unsupported requests are reported honestly.
+- Task Planner classifies exam, travel, research, development, troubleshooting, writing and general requests into distinct deterministic plans without claiming that the steps were executed.
+- TaskExecutionStore persists task plans and step states; chat can create a task and mark its first step in progress without claiming external execution.
+- Expanded research with DuckDuckGo HTML web-result parsing, HTTPS-only link filtering and up to three actual page-read attempts; added parser tests.
+- Added encrypted Learned Skills storage. The local model can extract a reusable procedure from an owner-provided successful experience; each candidate needs 2–10 test cases and explicit owner approval before it is injected into matching Brain prompts. Skills are declarative prompt data, not executable code.
+- Added a Thai reasoning policy that instructs the local model to check intent, context, assumptions, contradictions, missing information, calculations, unsupported claims and fabricated sources; this prompt policy is guidance, not proof of correct reasoning. Added a bounded prompt builder so the native 2,048-token context is not flooded by unbounded chat history or learned-skill text; the current request is prioritized.
+- Added an actual llama.cpp JNI inference adapter, pinned to upstream commit `8d60873dfb8619f2b5ed31adfbab07cccb40db5c`, and connected it to LocalFirstBrain. The app can download the official Qwen2.5-0.5B-Instruct Q4_K_M GGUF model, verify its SHA-256, store it privately, and load it on-device. The native integration passes ARM64 CI. Target-device model download, load and generation are not yet verified; until the model is installed and loaded, the deterministic InternalProcessor fallback remains active.
+- Local memory supports add, search, list, delete, backup and owner-confirmed restore, with a maximum of 500 records.
+- Production memory and backups use AES-256-GCM with a non-exportable Android Keystore key. Legacy plaintext memory/notes are migrated only after encrypted data is verified.
+- Added owner-controlled encrypted file export/import. The exported ciphertext is bound to the same installation's Keystore key; it is not a cross-device migration format.
+- Research now discovers URLs through DuckDuckGo Instant Answer, Wikipedia and DuckDuckGo HTML Web Search, parses public HTTPS result links, then attempts to open up to three linked pages with a bounded read-only WebPageReader. It extracts visible text, limits response size/time, validates redirects and rejects local/private destinations. If no page opens, it explicitly labels snippets as discovery hints rather than read evidence.
+- Plugin validation allowlists only the implemented `web.search` operation and enforces its exact permission. Candidate approval is hash-bound, smoke-checked and rollback-aware. The operational storage budget excludes the separately managed local model weights, preventing the 491 MB model from exhausting the 50 MB plugin/tool data budget.
+- Plugin rejection and approval now validate plugin IDs and candidate paths to prevent path traversal.
+- Memory UI reads real local records and supports backup/restore plus owner-selected encrypted file export/import.
+- Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
+- Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
+- JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
+- Application ID remains `com.somchai.ai`. Current development build is versionCode 10 and versionName 1.9.0. Owner signing configuration is unchanged.
 
-| Area | Test / observation | Result | Evidence / limitation |
-|---|---|---|---|
-| Greeting | Sent a Thai greeting | PASS (basic) | Returned a deterministic greeting. |
-| Help / command discovery | Used `/help` | PASS (basic) | Listed supported commands. |
-| Unknown Thai question | Asked an open-ended question outside known rules | FAIL | Returned the generic unsupported-rule response; no independent reasoning. |
-| Task Planner | Used `/plan` for several materially different tasks | PARTIAL / FAIL | Returned essentially the same six-step template; did not tailor a plan to the task or execute it. |
-| Local memory write | Used `/remember` | PASS | Saved a local entry and returned a short ID. |
-| Local memory read by text | Used `/recall` with a phrase | PARTIAL | Returned matching notes, but also unrelated feedback entries; filtering was too broad. |
-| Local memory read by ID | Used `/recall` with short and full IDs | FAIL | Reported no matching entry. |
-| Local memory delete | Used `/forget` with an ID | PASS | Deleted the selected entry; subsequent recall no longer showed it. |
-| Memory persistence | Closed and reopened the app, then recalled a saved note | PASS | Saved note remained available after restart. |
-| Web Search permission gate | Used `/search` before approving Web Search | PASS (safety gate) | Correctly refused to search until the plugin was approved. No live search was tested. |
-| Plugin inspection via natural language | Asked SOMCHAI to list/check installed plugins | FAIL / unsupported | Fell through to generic unsupported response or a generic plan; no actual plugin inventory was shown. |
-| Open-ended explanation / research | Asked why the sky is blue and requested research via `/plan` | FAIL | No explanation or research was performed; generic unsupported response / generic plan. |
-| Chat UI visual match | Compared installed UI with the supplied Figma target | FAIL (deferred) | Owner reported it was not close to the reference. Owner explicitly deferred this UI work; do not treat as passed. |
+## Local model integration added on `phase-1/local-brain-runtime`
 
-### Round 1 assessment
+- Native llama.cpp build integration through CMake FetchContent and JNI.
+- Model installer downloads the official Qwen model over HTTPS, checks the GGUF header and pinned SHA-256, and rejects incomplete or oversized downloads.
+- Settings page exposes an explicit model download/install action; the optional external provider remains separate.
+- Added JVM tests for valid/invalid GGUF headers.
+- GitHub Actions run #45036781218 passed JVM tests, native llama.cpp CMake/NDK ARM64 build and debug APK assembly for commit `2019246a51e5453edfdcc4b49b21ced930b57eac`. Debug artifact ID `14760117769`; ZIP SHA-256 `0a03f6b1a8d687c524d88394308aedf7f459053a986705eb1839233c4fca13de`.
+- Latest GitHub Actions run #45037203591 passed for commit `50e6a8be9c1d5f64218ae318ae85da31349889de`, including the learned-skill AES-GCM encryption/plaintext-exposure/tamper-rejection tests, ARM64 native build, debug APK assembly and artifact upload. [Run #45037203591](https://github.com/preecha021233-del/somchai-ai/actions/runs/45037203591).
+- Round 6 is recorded in `docs/TESTING/PHASE1_TEST_LOG.md`.
+- The successful CI proves compile/test/package integration only; it does not prove model download, native inference, Thai quality or performance on the owner's device.
+- The starter 0.5B model is intended to prove on-device inference feasibility. It is not evidence of advanced reasoning quality. Benchmarking and model-quality evaluation are still required.
 
-- **Working at a basic level:** deterministic greetings/help, local memory persistence/write/delete, and plugin permission gating.
-- **Partially working:** text recall and task planning.
-- **Not meeting the intended capability yet:** open-ended Thai intent/context understanding, task-specific planning, independent reasoning, autonomous research/fact checking, and natural-language plugin inspection.
-- **Important distinction:** command handlers and templates are not evidence of a general reasoning engine.
-- The installed baseline tests above were owner-observed manual tests, not automated unit tests. The detailed prompts and outputs are summarized from the test conversation; raw device logs/screenshots were not archived.
+## Final acceptance gates — not yet passed
 
-## Round 2 — Offline processing upgrade (PR #11; pending validation at log creation)
-
-**Change under evaluation:** bounded deterministic Thai intent classification, arithmetic expression evaluation, supported word-problem solvers, and stricter local-memory retrieval / ID lookup.
-
-**Code-level regression tests added:** greeting, capabilities, supported fact question, honest unknown response, task planning, local memory write/read, purchase-change calculation, arithmetic precedence/parentheses, Thai example classification, memory ID-prefix/full-ID lookup, and all-terms memory search.
-
-**Status at log creation:** PR #11 is open and GitHub Actions unit tests/build are still running. These code-level tests are NOT yet recorded as passed. No Round 2 APK has been installed or manually tested on the owner's device. Do not infer a device pass from a successful CI run.
-
-PR: https://github.com/preecha021233-del/somchai-ai/pull/11
-CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45025147721
-
-### Required Round 2 manual checks (after CI succeeds and the signed APK is available)
-
-1. Confirm package remains `com.somchai.ai`, update installs over the existing app, and prior local memory remains intact.
-2. Test Thai intent classification using a numbered set containing a question, command, and advice request; check both labels and explanations.
-3. Test arithmetic with parentheses and operator precedence.
-4. Test the purchase-change word problem and verify the arithmetic independently.
-5. Test memory recall by exact text, short ID, full ID, and a multi-term query; confirm unrelated entries are excluded.
-6. Re-run unknown-question and open-ended research prompts; ensure unsupported claims remain honest.
-7. Re-test offline behavior and verify no unapproved external AI/network call is made.
-8. Record exact prompt, exact output, build/version, result, and evidence for every check.
-
-## Ongoing recording rules
-
-For every subsequent round and every phase:
-- Add a dated round heading; do not overwrite earlier results.
-- Record app version/versionCode, commit SHA, device/OS when available, and test method (manual device, automated unit, instrumentation, CI).
-- Record exact prompt/input and observed output, expected behavior, actual behavior, PASS / PARTIAL / FAIL / BLOCKED, and evidence link or artifact.
-- Keep manual device tests separate from automated tests and CI.
-- A feature is phase-accepted only when its phase acceptance criteria are met with evidence; code merged or CI green alone is insufficient.
-- Record regressions as new entries and link the earlier passing round.
-- Never claim a test was run or passed without evidence.
-
-## Round 2 — 2026-11-22 — Arithmetic and Thai memory retrieval hardening
-
-- Phase: Phase 1
-- App version / versionCode: 1.7.0 / 8 (source branch; not yet installed on device)
-- Commit range: `4a0e08707ecc8c4ebb8cc1a77627966be20a3cce` through `c30127b97f8e08d05be898136ac88f012fd90993`
-- Test method: automated unit tests in GitHub Actions; no manual device test yet
-- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45026776652
-- CI status at log update: in progress; no pass/fail conclusion recorded yet
-
-### Changes under test
-- Arithmetic parser now checks that every character in the selected expression is tokenized; unsupported characters cannot be silently skipped.
-- Unary plus/minus are supported, including a sign before a parenthesized expression.
-- Regression cases added for precedence, nested parentheses, negative values, decimals, and malformed expressions.
-- Local memory search now compares a whitespace-compacted Thai query against whitespace-compacted content/category before its all-term fallback.
-- Memory ID prefix search trims surrounding whitespace.
-
-### Automated test cases added
-- 8 arithmetic expressions: `2 + 3 * 4`, `(2 + 3) * 4`, `10 - (2 + 3) * 2`, nested parentheses, nested multiplication, unary negative, negative parenthesized factor, and decimal unary plus.
-- 1 malformed arithmetic expression must be rejected rather than returning a partial result.
-- 1 Thai memory query without spaces and 1 whitespace-padded ID lookup.
-
-### Results
-- Unit tests: PENDING CI
-- Debug APK build: PENDING CI
-- Owner-signed APK and signing continuity: PENDING CI
-- Manual device tests: NOT RUN
-- Phase 1 acceptance: NOT ACCEPTED
-
-### Follow-up
-- Do not merge or distribute this revision until CI completes successfully.
-- After a successful build, install only as an in-place update and repeat device tests.
-- Continue with offline Brain/model benchmarking, task execution planning, plugin runtime, permission matrix, and backup/restore acceptance tests.
-
-
-
-## Round 3 — 2026-11-22 — Local Brain routing and safe web page reader
-
-- Phase: Phase 1
-- App version / versionCode: 1.8.0 / 9
-- Commit: 3d20e0be7aebd0b15b4792385f8724eab8b53f32
-- Pull request: https://github.com/preecha021233-del/somchai-ai/pull/13
-- Test method: GitHub Actions CI on Ubuntu / Java 17 / Android SDK 35
-- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45032186488
-
-### Automated results
-
-| Check | Result | Evidence |
+| Capability | Implementation status | Final evidence required |
 |---|---|---|
-| Gradle testDebugUnitTest | PASS | CI step completed successfully |
-| assembleDebug | PASS | CI step completed successfully |
-| assembleRelease | PASS | Owner-signed release artifact produced |
-| Package identity | PASS | Verified package ID com.somchai.ai |
-| Version increment | PASS | versionCode 9 exceeds the configured owner-signed baseline |
-| Signing certificate continuity | PASS | SHA-256 signing certificate matched the owner-signed baseline |
+| Chat UI / Figma parity | Updated in code | Build and inspect on Android device at the target viewport; verify keyboard collapse and scrolling |
+| Response actions | Wired in code | Tap every action on a real device; verify clipboard, feedback persistence, Thai TTS availability and Android share sheet |
+| Internal processing | Deterministic processor plus local-first Brain; native llama.cpp/Qwen runtime builds successfully on ARM64 CI | Device checks with model installed, network disabled and no API key; verify ordinary chat uses local inference and reports fallback honestly |
+| Task decomposition | Implemented with JVM tests | CI pass and device output check |
+| Research | DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search, Wikipedia and bounded HTTPS page reader; up to three page-read attempts | CI pass plus online device check; confirm at least two actual pages can be opened/read, source URLs/date labels, failures and untrusted-data handling |
+| Local memory | Encrypted CRUD, backup/restore and encrypted export/import | CI pass; device persistence, Keystore, file round-trip and tamper rejection |
+| Basic plugin development | Validation, approval, smoke checks, disable/enable and rollback | CI pass plus lifecycle, owner-approval, denial and rollback checks |
+| Protection and recovery | App-private storage, permission checks, audit log and rollback; encrypted learned-skill storage has AES-GCM tamper tests | CI pass plus fault-injection and negative security checks on device |
+| Learned Skills | Encrypted reusable prompt procedures, 2–10 test cases, explicit owner approval and deletion revocation | P40–P43; model-backed learning/evaluation and device workflow still required |
+| Update compatibility | Package ID retained; versionCode 10 / versionName 1.9.0 | Verify APK package, version and SHA-256 signing certificate against the owner-signed baseline; install over existing app without uninstalling or clearing data |
 
-New WebPageReader unit tests cover visible-text extraction, script/navigation removal, numeric HTML entities, output bounds, HTTPS URL acceptance, and rejection of HTTP, localhost, private IP, unsafe port, embedded credentials and private host suffixes.
+## Known limits — do not overclaim
 
-Artifacts:
-- Debug APK artifact ID: 14758471792; ZIP SHA-256: 922bf4856baa0b29e5ffd22adbefed46e657a1bf1f713f318867e134048ac1f5
-- Owner-signed release APK artifact ID: 14758451820; ZIP SHA-256: 4246ad1c9ad0ac48f1634ee1cfa4911452c81cfe544b3d81569049a3b6383e91
+- The deterministic processor remains the fallback. A starter local LLM runtime (llama.cpp + Qwen2.5-0.5B-Instruct Q4_K_M) now passes ARM64 CI, but target-device model loading, Thai quality and performance are not yet accepted.
+- Learned Skills are owner-proposed, model-drafted prompt procedures with smoke tests and explicit approval; they do not autonomously create new code, tools, or reasoning algorithms.
+- Research is still bounded to DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search and Wikipedia; it is not yet a full web-scale crawler or comprehensive source-verification system.
+- The Android app sandbox and in-process rule engine are not a hardened arbitrary-code sandbox.
+- Encrypted memory export is tied to the non-exportable Android Keystore key of the original installation. If that key is permanently lost or app data is cleared, exported ciphertext cannot be decrypted; there is no key-recovery or cross-device migration mechanism.
+- No claim of Phase 1 completion until the final CI, device, security, memory, plugin lifecycle and update-compatibility acceptance checks pass.
 
-### Not tested / not passed
+## Final verification sequence
 
-- Live search and actual page-reading success on the owner's Android device.
-- Whether two independent source pages are readable for a real query.
-- Local language model installation, Thai model quality, latency, RAM, heat and battery benchmark.
-- Manual UI, response actions, memory persistence/export/restore, plugin lifecycle and fault-recovery tests on the target device.
-- In-place installation of version 1.8.0 over the owner's current installed app. Do not uninstall or clear data to work around any failure.
+1. Run the complete JVM unit-test suite (latest run #45037203591 passed).
+2. Build the debug APK.
+3. Build the owner-signed release APK using the existing protected signing secrets.
+4. Verify `com.somchai.ai`, versionCode 10, and signing-certificate continuity against the previous owner-signed release artifact.
+5. Install the release APK over the existing v1.8.0 baseline app on a real Android device without uninstalling or clearing data.
+6. Verify Figma UI layout, top-right menu, keyboard collapse, chat scrolling, all response actions, memory export/import, plugin lifecycle, research and offline behavior.
+7. Fix any failures and repeat only the affected checks plus the full release gate.
+8. Close Phase 1 only when every acceptance gate has evidence.
 
-CI success is not a Phase 1 completion decision. The above device/model checks remain open.
+## Task lifecycle completion (2026-11-22)
+- Extended durable task-step states with FAILED and CANCELLED while preserving existing PENDING, IN_PROGRESS, and COMPLETED records.
+- Added explicit failure reasons, retry-to-pending, and cancellation transitions. Completed work cannot be cancelled; only active work can be marked complete or failed.
+- Added bounded task-store validation (record count, file size, step count, goal/title lengths, UUIDs, timestamps, duplicate IDs) and atomic temporary-file replacement.
+- Added a chat command adapter and routed `/task` commands from the chat UI:
+  - `/task list`, `/task show <id>`
+  - `/task start <id> <step>`, `/task complete <id> <step>`
+  - `/task fail <id> <step> | <reason>`, `/task retry <id> <step>`, `/task cancel <id> <step>`
+- Chat step numbers are 1-based. These commands track task state only; they do not claim to perform external work.
+- Added lifecycle and command-adapter regression tests. Execution/build verification remains a later completion gate after the implementation work is finished.
+
+- Added ranked retrieval of up to three relevant owner-saved memories using Thai-aware word boundaries; unrelated memory entries are not bulk-injected into chat.
+- Extended `BrainRequest` and the bounded prompt builder to include selected saved memories as contextual data, explicitly not as instructions.
+- Chat retrieves approved skills and relevant saved memories on an IO dispatcher before local inference, avoiding encrypted-store reads on the UI thread.
+- Added tests for memory relevance selection and prompt inclusion/budget.
+- Corrected prompt-budget accounting so memory, approved skills, and history are trimmed within a reserved budget; the current question and final response instruction can no longer be clipped by the final history section.
+
+## Research pipeline completion work
+- Split source discovery from page reading behind injectable provider/reader interfaces; the HTTP provider aggregates DuckDuckGo Instant Answer, DuckDuckGo Web Search, and Wikipedia candidates.
+- Added a research coordinator that distinguishes discovered links from pages whose content was actually opened and read.
+- Research output now marks PARTIAL unless at least two distinct pages were actually read; page/source failures are retained in the report and activity log.
+- Added an optional local-model synthesis step grounded only in the first two read pages, with explicit untrusted-web-data instructions and [S1]/[S2] references. If the local model is unavailable or synthesis fails, raw source evidence is still returned.
+- Moved Web Search approval enforcement into the BuiltinToolExecutor boundary and connected it to the active approved plugin manifest; UI checks alone are no longer the only guard.
+- Added mockable coordinator cases for success, empty results, timeout, provider error, and unreadable pages.
+
+- Added a JNI tokenizer-count operation and made local inference trim optional context according to the model's actual tokenization, rather than relying only on character counts.
+- The native generator now reserves context capacity for the requested output token budget plus a safety margin; it rejects prompts that cannot fit instead of decoding into an exhausted context.
+- Chat history no longer repeats the current user message in the prompt/provider request.
+- Added observable model lifecycle states (not installed, downloading, loading, ready, failed) so the chat and settings screens reflect asynchronous startup loading instead of remaining stuck on their initial status.
+
+## Deterministic Thai reasoning coverage
+- Added direct Thai answers for thunder formation and backup-data advantages/risks.
+- Extended change calculation to handle quantity × unit-price wording such as `3 ชิ้น ชิ้นละ 25 บาท จ่าย 100 บาท`.
+- Added explicit contradiction detection for conflicting weekdays and selected direct logical opposites; added missing-input prompts for speed and cash-change questions.
+- Source requests now state when no sources have actually been opened and direct the user to approved Web Search rather than inventing citations.
+- Added focused regression cases for these exact behaviors.
+- Chat header and settings now display truthful model states instead of a generic always-online/always-active label.
+- Tightened optional provider configuration: HTTPS only, no embedded credentials/query/fragment, standard HTTPS port, no local hostnames/private IP literals, and bounded model/API-key lengths. The stored endpoint is revalidated when loaded.
+
+## Implementation fixes — 2026-11-22 (continued)
+- Fixed learned-skill extraction prompt line breaks so the local model receives real separated prompt sections instead of literal backslash-n text.
+- Wrapped owner-supplied experience in explicit untrusted-data delimiters and instructed the model not to obey embedded instructions while extracting reusable steps.
+- Extended the learned-skill test to assert the delimiters, untrusted-data warning and real newline formatting.
+- Corrected WebPageReader redirect enforcement: the configured maximum is now exactly three redirects; a fourth redirect is rejected rather than accidentally being followed.
+- Bounded learned-skill extraction input and evaluation prompts so long owner-provided procedures/test cases cannot silently crowd out the test request; evaluation now compares expected text without depending on whitespace.
+- Added regression coverage for oversized skill procedures, prompt bounds and Thai output matching with whitespace variation.
 
 
-## Round 4 — 2026-11-22 — Native local Brain runtime implementation
+## Permission boundary hardening — 2026-11-22
+- Centralized the operation-to-capability matrix in PermissionManager; the core now rejects unknown operations and requires an exact permission set for each supported operation.
+- PluginValidator delegates operation/permission binding to that core policy instead of maintaining a separate operation allowlist, preventing a manifest from adding unrelated capabilities to an otherwise allowed operation.
+- External web text sanitization now removes control and bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before prompt use; payload remains bounded to 12,000 characters.
+- Added regression tests for operation escalation, duplicate capabilities, bidi/control characters and Thai prompt-injection phrasing. These are implementation changes; CI/device acceptance still must run before claiming the gate passed.
 
-- App version / versionCode: 1.9.0 / 10 (development branch; not installed on device)
 
-- Phase: Phase 1
+## Runtime permission, plugin activation and planner hardening — 2026-11-22
+- Moved the supported operation-to-permission mapping into PermissionManager. Every plugin operation now requires an exact core-defined capability set; unknown operations, duplicate permissions and permission escalation fail closed.
+- Plugin runtime enumeration now ignores manifests marked disabled. Approval and reactivation reject disabled manifests, and activation verifies the resulting manifest is enabled before reporting success.
+- External web text filtering now strips control/bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before local-model use.
+- TaskPlanner no longer silently truncates goals beyond 1,000 characters. It rejects oversized/control-character input and recognizes additional common Thai research requests (หาข้อมูล, สืบค้น, เปรียบเทียบข้อมูล).
+- Added regression tests for capability escalation, prompt-injection sanitization, Thai research intent and invalid task input. These changes are committed; the new workflow result and target-device checks are still pending.
+
+
+## Local Brain context isolation and fallback resilience — 2026-11-22
+- Saved-memory context is now explicitly marked as untrusted reference data, with XML-like delimiters and escaping for angle brackets so stored notes cannot close the data boundary and inject new system sections.
+- Kept the closing memory delimiter inside the fixed prompt budget even when several long memories are selected.
+- LocalFirstBrain now catches failures from model readiness checks and from the deterministic fallback itself; if both local inference and fallback fail, it returns a truthful safe fallback message rather than propagating the processor exception.
+- Added regression tests for delimiter injection, long-memory truncation and simultaneous model/fallback failure.
+- Automated CI for the latest code commit is running; no pass result is claimed yet.
+
+## External research prompt-injection hardening — 2026-11-22
+- Expanded the external-page sanitization denylist to cover additional English override patterns (developer/system instruction replacement, hidden system-prompt disclosure, and role reassignment) and Thai equivalents (requesting system/internal instructions and role reassignment).
+- Added regression cases for the additional English and Thai patterns.
+- These filters are defense in depth only: all external page content must still remain explicitly untrusted in the model prompt. CI execution for this commit is pending.
+
+
+## Round 8 — 2026-11-22 — Native Brain compile repair and strict model-load gate
+
 - Branch: `phase-1/local-brain-runtime`
-- Starting point: `phase-1/research-reader-brain-integration`
-- Test method: source review; native CI and real-device tests pending
-- Native engine: llama.cpp commit `8d60873dfb8619f2b5ed31adfbab07cccb40db5c`
-- Starter model: Qwen2.5-0.5B-Instruct-GGUF Q4_K_M
-- Model SHA-256: `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`
-
-### Changes added
-- JNI/CMake integration for real llama.cpp model loading and token generation.
-- Native inference adapter connected to LocalFirstBrain.
-- Explicit in-app download/install control for the 491 MB official Qwen GGUF model.
-- Model installer checks free storage, HTTPS response, bounded size, GGUF header and SHA-256 before installation.
-- Model stored in app-private storage; ordinary chat remains independent from the optional external provider.
-- Added GGUF file-validator and reasoning-policy JVM tests, plus a dedicated ARM64 native CI workflow.
-- Added a Thai reasoning policy for intent/context, assumption, contradiction, missing-information and source-integrity checks. The policy is prompt guidance; answer quality remains unverified.
-- Expanded online discovery to DuckDuckGo HTML Web Search and added HTTPS result-link parser tests; research attempts to open up to three real pages. Live on-device multi-source results remain untested.
-
-### Results
-- Source changes: ADDED; not yet accepted.
-- Initial CI snapshot at commit `7f44bf85134de0a346aaa703fe0502c51e0c003f`: PASS — run #45035557468; JVM tests, native CMake/NDK ARM64 build and debug APK completed successfully.
-- Initial debug artifact: ID `14758979984`; ZIP SHA-256 `16b0dc071d541c5c8807b874e6ee5672aa71ec334a67f2b8cb6257151bcf7a45`.
-- Later branch updates added the reasoning-policy tests and stronger installed-model integrity checks after that CI snapshot; those latest changes still require a fresh CI run.
-- Model download and checksum verification on Android: NOT RUN.
-- Native model load and Thai generation on target device: NOT RUN.
-- RAM, latency, heat and battery benchmark: NOT RUN.
+- Prior failing workflow: [#45043127526](https://github.com/preecha021233-del/somchai-ai/actions/runs/45043127526)
+- Prior failing commit: `f113e5c0c033800a819b606e39e46e384aef8219`
+- Failure evidence: `NativeLlamaInferenceEngine.kt` could not access private `BrainPromptBuilder.MAX_CURRENT_CHARS`.
+- Code changes: made the shared prompt limit accessible inside the internal Brain package; enforced valid GGUF + pinned size range + pinned SHA-256 before JNI model loading; centralized installer/runtime validation; added a test rejecting a small GGUF-shaped file.
+- Relevant commits: `297ede6b51daa14eb955908626f62216114c4d47`, `a8f1de1331d2d710af07d593a9f431d48c4e9f0b`, `d9e1225d0e07c6a0568c8945c6be7045092b3a3e`, `14551e2bfe006ac4c802b72b14a1bafaab4276b2`.
+- New CI result: PENDING.
+- Target-device load/generation and P01–P12 quality: NOT RUN.
 - Phase 1 acceptance: NOT ACCEPTED.
-
-### Follow-up
-- Fix all compile/native-link/runtime failures reported by CI.
-- Install the model on the target device and run P01–P12 plus P36–P39.
-- Do not claim that the starter 0.5B model has advanced reasoning ability without benchmark evidence.
-- Preserve the existing app ID, owner signing key and app data; do not ask the owner to uninstall or clear data.
-
-
-## Round 5 — 2026-11-22 — Native Brain and learned-skill integration CI
-
-- Branch: `phase-1/local-brain-runtime`
-- Commit tested: `2019246a51e5453edfdcc4b49b21ced930b57eac`
-- App version / versionCode: 1.9.0 / 10
-- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45036781218
-- Test method: GitHub Actions, Ubuntu, Java 17, Android SDK/NDK, ARM64 native CMake build
-
-### Automated results
-
-| Check | Result | Evidence |
-|---|---|---|
-| Gradle JVM unit tests | PASS | `testDebugUnitTest` completed |
-| Kotlin compile | PASS | `compileDebugKotlin` completed |
-| llama.cpp native ARM64 build/link | PASS | workflow step "Run JVM tests and build ARM64 APK with native llama.cpp" completed |
-| Android debug APK | PASS | `assembleDebug` and artifact upload completed |
-| Learned-skill tests | PASS | Draft from experience, no auto-approval, failed-test approval block, persistence, retrieval and deletion revocation included in JVM suite |
-| Model hash constant | PASS — source reviewed against official Hugging Face file metadata | Official model file page lists SHA-256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db` |
-
-- Debug artifact ID: `14760117769`
-- ZIP SHA-256: `0a03f6b1a8d687c524d88394308aedf7f459053a986705eb1839233c4fca13de`
-
-### Still not tested / not passed
-
-- Downloading the 491 MB model on the owner's Android device.
-- Native GGUF load and Thai generation on the target device.
-- P01–P12 model quality threshold (18/20 and reasoning 4/4).
-- Real-world RAM, latency, heat and battery measurements.
-- Live research verification that at least two distinct source pages can be opened and read on device.
-- Full owner-signed release APK certificate continuity and in-place update over the currently installed app.
-- Remaining Phase 1 device, plugin lifecycle, backup/recovery and security acceptance checks.
-
-### Decision
-
-- This commit passes the automated JVM + ARM64 native build gate.
-- Phase 1 remains IN PROGRESS and is NOT ACCEPTED until all fixed acceptance criteria, including target-device model and update checks, pass.
-
-
-## Round 6 — 2026-11-22 — Learned-skill AES-GCM encryption and tamper rejection
-
-- Phase: Phase 1
-- Branch: `phase-1/local-brain-runtime`
-- Commit: `50e6a8be9c1d5f64218ae318ae85da31349889de`
-- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45037203591
-- Test method: GitHub Actions JVM tests + Android ARM64 native build + debug APK assembly
-- CI result: **PASS**. The `android-local-brain` job completed successfully; its JVM test/native build/APK build step and debug APK upload step both passed.
-
-### Added automated security checks
-- Verify an encrypted learned-skill store does not expose the skill name or procedure as plaintext.
-- Verify the skill can be retrieved after encrypted persistence.
-- Modify the ciphertext and verify AES-GCM authentication rejects the tampered data.
-
-### Evidence boundary
-- This is automated code-level evidence only. It does not prove the model can reliably learn useful skills, that semantic test cases are strong, or that the feature works on the owner's device.
-- Device testing, full Phase 1 acceptance criteria P01–P35, and model-quality thresholds remain open.
-
-
-## Round 7 — 2026-11-22 — Permission, plugin, planner and Brain-context hardening
-
-- Phase: Phase 1
-- Branch: `phase-1/local-brain-runtime`
-- Code commit under test: `6d4569de1bb33f296ade3a2e5a2c5a94e7276942`
-- Documentation commit: `4c4a836949f30610df262b93e3437c7e19c4c53b`
-- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45042766846
-- Test method: GitHub Actions JVM unit tests + Kotlin compile + llama.cpp ARM64 native build + debug APK assembly
-- CI status at log update: IN PROGRESS; no pass/fail result claimed.
-
-### Implementation and regression coverage added
-- Exact operation-to-permission binding; reject unknown operations, duplicate capabilities and permission escalation.
-- Strip control/bidirectional formatting characters and neutralize common Thai/English prompt-injection phrases in external web text.
-- Ignore disabled plugin manifests at runtime and reject disabled manifests during approval/reactivation.
-- Reject oversized/control-character task goals rather than silently truncating them; recognize additional Thai research-intent phrases.
-- Escape saved-memory content inside an explicit untrusted-data prompt boundary and keep its closing delimiter within the prompt budget.
-- Return a safe fallback if both local inference and deterministic fallback fail.
-- Added JVM regression cases for each behavior.
-
-### Evidence boundary / remaining checks
-- New JVM and native CI result: PENDING at time of recording.
-- Target-device model download, native load, Thai answer quality, RAM/latency/thermal/battery measurements: NOT RUN.
-- Live research requiring at least two actually read pages: NOT RUN on device.
-- Owner signing-certificate continuity and in-place update: NOT RUN.
-- Phase 1: NOT ACCEPTED.
