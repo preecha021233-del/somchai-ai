@@ -104,3 +104,4 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added a JNI tokenizer-count operation and made local inference trim optional context according to the model's actual tokenization, rather than relying only on character counts.
 - The native generator now reserves context capacity for the requested output token budget plus a safety margin; it rejects prompts that cannot fit instead of decoding into an exhausted context.
 - Chat history no longer repeats the current user message in the prompt/provider request.
+- Added observable model lifecycle states (not installed, downloading, loading, ready, failed) so the chat and settings screens reflect asynchronous startup loading instead of remaining stuck on their initial status.
