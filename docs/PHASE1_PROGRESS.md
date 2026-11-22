@@ -24,7 +24,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
 - Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
 - JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
-- Application ID remains `com.somchai.ai`. Current development build is versionCode 9 and versionName 1.8.0. Owner signing configuration is unchanged.
+- Application ID remains `com.somchai.ai`. Current development build is versionCode 10 and versionName 1.9.0. Owner signing configuration is unchanged.
 
 ## Local model integration added on `phase-1/local-brain-runtime`
 
@@ -47,7 +47,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 | Local memory | Encrypted CRUD, backup/restore and encrypted export/import | CI pass; device persistence, Keystore, file round-trip and tamper rejection |
 | Basic plugin development | Validation, approval, smoke checks, disable/enable and rollback | CI pass plus lifecycle, owner-approval, denial and rollback checks |
 | Protection and recovery | App-private storage, permission checks, audit log and rollback | CI pass plus fault-injection and negative security checks |
-| Update compatibility | Package ID retained; versionCode 9 / versionName 1.8.0 | Verify APK package, version and SHA-256 signing certificate against the owner-signed baseline; install over existing app without uninstalling or clearing data |
+| Update compatibility | Package ID retained; versionCode 10 / versionName 1.9.0 | Verify APK package, version and SHA-256 signing certificate against the owner-signed baseline; install over existing app without uninstalling or clearing data |
 
 ## Known limits — do not overclaim
 
