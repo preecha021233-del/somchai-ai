@@ -100,3 +100,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added an optional local-model synthesis step grounded only in the first two read pages, with explicit untrusted-web-data instructions and [S1]/[S2] references. If the local model is unavailable or synthesis fails, raw source evidence is still returned.
 - Moved Web Search approval enforcement into the BuiltinToolExecutor boundary and connected it to the active approved plugin manifest; UI checks alone are no longer the only guard.
 - Added mockable coordinator cases for success, empty results, timeout, provider error, and unreadable pages.
+
+- Added a JNI tokenizer-count operation and made local inference trim optional context according to the model's actual tokenization, rather than relying only on character counts.
+- The native generator now reserves context capacity for the requested output token budget plus a safety margin; it rejects prompts that cannot fit instead of decoding into an exhausted context.
+- Chat history no longer repeats the current user message in the prompt/provider request.
