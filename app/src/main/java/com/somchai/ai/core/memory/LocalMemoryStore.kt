@@ -11,16 +11,20 @@ data class MemoryEntry(
     val createdAt: String
 )
 
-/** App-private, local-only memory. Nothing is uploaded or collected automatically. */
+/** App-private, encrypted in production, local-only memory. Nothing is uploaded automatically. */
 class LocalMemoryStore(
     memoryDirectory: File,
+    private val cipher: MemoryCipher = PlaintextMemoryCipher,
     private val log: (String, String) -> Unit = { _, _ -> }
 ) {
-    private val file = File(memoryDirectory, "memory.jsonl")
+    private val file = File(memoryDirectory, "memory.enc")
+    private val legacyFile = File(memoryDirectory, "memory.jsonl")
+    private val backupFile = File(memoryDirectory, "memory-backup.enc")
     private val lock = Any()
 
     init {
         migrateLegacyRecords()
+        migrateLegacyNotes()
     }
 
     fun add(content: String, category: String = "experience"): MemoryEntry {
@@ -31,8 +35,7 @@ class LocalMemoryStore(
         val entry = MemoryEntry(UUID.randomUUID().toString(), category, clean, java.time.Instant.now().toString())
         synchronized(lock) {
             file.parentFile?.mkdirs()
-            file.appendText(encode(entry) + "\n")
-            trimToLimit()
+            rewrite(readEntries() + entry)
         }
         log("MEMORY_ADDED", "id=${entry.id} category=${entry.category}")
         return entry
@@ -62,11 +65,10 @@ class LocalMemoryStore(
 
     fun backup(): Boolean = synchronized(lock) {
         if (!file.exists()) return@synchronized false
-        val backup = File(file.parentFile, "memory-backup.jsonl")
-        val temp = File(file.parentFile, "memory-backup.jsonl.tmp")
+        val temp = File(file.parentFile, "memory-backup.enc.tmp")
         file.copyTo(temp, overwrite = true)
-        if (!temp.renameTo(backup)) {
-            temp.copyTo(backup, overwrite = true)
+        if (!temp.renameTo(backupFile)) {
+            temp.copyTo(backupFile, overwrite = true)
             temp.delete()
         }
         log("MEMORY_BACKUP", "records=${readEntries().size}")
@@ -74,9 +76,8 @@ class LocalMemoryStore(
     }
 
     fun restoreBackup(): Int = synchronized(lock) {
-        val backup = File(file.parentFile, "memory-backup.jsonl")
-        require(backup.isFile) { "ไม่พบไฟล์สำรองความจำ" }
-        val restored = backup.readLines().filter { it.isNotBlank() }.map { decode(it) }
+        require(backupFile.isFile) { "ไม่พบไฟล์สำรองความจำ" }
+        val restored = decodeRecords(cipher.decrypt(backupFile.readBytes()))
         require(restored.size <= 500) { "ไฟล์สำรองมีจำนวนรายการเกินกำหนด" }
         require(restored.map { it.id }.distinct().size == restored.size) { "ไฟล์สำรองมีรหัสซ้ำ" }
         rewrite(restored)
@@ -91,41 +92,84 @@ class LocalMemoryStore(
         count
     }
 
-    private fun readEntries(): List<MemoryEntry> = runCatching {
-        if (!file.exists()) emptyList()
-        else file.readLines().mapNotNull { line -> runCatching { decode(line) }.getOrNull() }
-    }.getOrDefault(emptyList())
-
-    private fun trimToLimit() {
-        val entries = readEntries()
-        if (entries.size > 500) rewrite(entries.takeLast(500))
+    private fun readEntries(): List<MemoryEntry> {
+        if (!file.isFile) return emptyList()
+        return decodeRecords(cipher.decrypt(file.readBytes()))
     }
 
+    private fun decodeRecords(bytes: ByteArray): List<MemoryEntry> =
+        String(bytes, Charsets.UTF_8).lineSequence()
+            .filter { it.isNotBlank() }
+            .map { decode(it) }
+            .toList()
+
+    private fun trimToLimit(entries: List<MemoryEntry>): List<MemoryEntry> =
+        entries.takeLast(500)
+
     private fun rewrite(entries: List<MemoryEntry>) {
-        val temp = File(file.parentFile, "memory.jsonl.tmp")
-        temp.writeText(entries.joinToString(separator = "\n", postfix = if (entries.isEmpty()) "" else "\n") { encode(it) })
+        val content = trimToLimit(entries).joinToString(
+            separator = "\n",
+            postfix = if (entries.isEmpty()) "" else "\n"
+        ) { encode(it) }.toByteArray(Charsets.UTF_8)
+        val encrypted = cipher.encrypt(content)
+        val temp = File(file.parentFile, "memory.enc.tmp")
+        temp.writeBytes(encrypted)
         if (!temp.renameTo(file)) {
             temp.copyTo(file, overwrite = true)
             temp.delete()
         }
     }
 
+    private fun migrateLegacyRecords() = synchronized(lock) {
+        if (!legacyFile.isFile) return@synchronized
+        val legacyLines = runCatching { legacyFile.readLines().filter { it.isNotBlank() } }.getOrNull()
+            ?: return@synchronized
+        val legacyEntries = runCatching { legacyLines.map { decode(it) } }.getOrNull()
+            ?: return@synchronized
+        val current = runCatching { readEntries() }.getOrNull() ?: return@synchronized
+        val existingIds = current.map { it.id }.toSet()
+        val merged = current + legacyEntries.filterNot { it.id in existingIds }
+        rewrite(merged)
+        val verified = runCatching { readEntries().map { it.id }.toSet() }.getOrNull()
+            ?: return@synchronized
+        if (legacyEntries.all { it.id in verified }) {
+            check(legacyFile.delete()) { "Could not retire migrated plaintext memory file" }
+            log("MEMORY_ENCRYPTED_MIGRATION", "records=${legacyEntries.size}")
+        }
+    }
+
+    private fun migrateLegacyNotes() = synchronized(lock) {
+        val notesFile = File(file.parentFile, "notes.txt")
+        if (!notesFile.isFile) return@synchronized
+        val notes = runCatching { notesFile.readLines().map { it.trim() }.filter { it.isNotEmpty() } }
+            .getOrNull() ?: return@synchronized
+        if (notes.isEmpty()) return@synchronized
+
+        // If the Keystore key is unavailable, preserve legacy notes and avoid crashing startup.
+        val existing = runCatching { readEntries() }.getOrNull() ?: return@synchronized
+        val existingNotes = existing.filter { it.category == "owner-note" }.map { it.content }.toSet()
+        val missing = notes.distinct().filterNot { it in existingNotes }
+        val availableSlots = (500 - existing.size).coerceAtLeast(0)
+        val toImport = missing.takeLast(availableSlots)
+        if (toImport.isNotEmpty()) {
+            val imported = toImport.map { note ->
+                MemoryEntry(UUID.randomUUID().toString(), "owner-note", note.take(2000), java.time.Instant.now().toString())
+            }
+            rewrite(existing + imported)
+        }
+
+        val verified = runCatching {
+            readEntries().filter { it.category == "owner-note" }.map { it.content }.toSet()
+        }.getOrNull() ?: return@synchronized
+        if (notes.all { it in verified }) {
+            check(notesFile.delete()) { "Could not retire migrated plaintext notes file" }
+            log("MEMORY_LEGACY_NOTES_MIGRATED", "records=${notes.size}")
+        }
+    }
+
     private fun encode(entry: MemoryEntry): String = JSONObject()
         .put("schemaVersion", 1).put("id", entry.id).put("category", entry.category)
         .put("content", entry.content).put("createdAt", entry.createdAt).toString()
-
-    private fun migrateLegacyRecords() = synchronized(lock) {
-        if (!file.isFile) return@synchronized
-        val lines = runCatching { file.readLines().filter { it.isNotBlank() } }.getOrNull()
-            ?: return@synchronized
-        val entries = runCatching { lines.map { decode(it) } }.getOrNull()
-            ?: return@synchronized
-        val hasLegacyRecords = lines.any { line -> runCatching { JSONObject(line).optInt("schemaVersion", 0) < 1 }.getOrDefault(true) }
-        if (hasLegacyRecords) {
-            rewrite(entries)
-            log("MEMORY_MIGRATED", "schema=1 records=${entries.size}")
-        }
-    }
 
     private fun decode(line: String): MemoryEntry {
         val json = JSONObject(line)

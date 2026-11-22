@@ -8,6 +8,16 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class LocalMemoryStoreTest {
+    private class PrefixCipher : MemoryCipher {
+        override fun encrypt(plaintext: ByteArray): ByteArray =
+            "ENC:".toByteArray() + plaintext
+        override fun decrypt(ciphertext: ByteArray): ByteArray {
+            val prefix = "ENC:".toByteArray()
+            require(ciphertext.take(prefix.size).toByteArray().contentEquals(prefix))
+            return ciphertext.copyOfRange(prefix.size, ciphertext.size)
+        }
+    }
+
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test fun addsSearchesPersistsAndDeletesMemory() {
@@ -39,10 +49,43 @@ class LocalMemoryStoreTest {
             .put("content", "legacy memory").put("createdAt", timestamp)
         java.io.File(directory, "memory.jsonl").writeText(legacy.toString() + "\n")
 
-        val store = LocalMemoryStore(directory)
+        val store = LocalMemoryStore(directory, PrefixCipher())
         assertEquals("legacy memory", store.all().first().content)
-        val migrated = org.json.JSONObject(java.io.File(directory, "memory.jsonl").readLines().first())
+        assertFalse(java.io.File(directory, "memory.jsonl").exists())
+        val encrypted = java.io.File(directory, "memory.enc").readBytes()
+        assertTrue(String(encrypted, 0, 4) == "ENC:")
+        val migrated = org.json.JSONObject(
+            String(PrefixCipher().decrypt(encrypted), Charsets.UTF_8).lineSequence().first()
+        )
         assertEquals(1, migrated.getInt("schemaVersion"))
+    }
+
+    @Test fun importsLegacyOwnerNotesIntoEncryptedMemory() {
+        val directory = temporaryFolder.newFolder("legacy-notes")
+        val legacyFile = java.io.File(directory, "notes.txt")
+        legacyFile.writeText("เจ้าของต้องการคำตอบกระชับ\nวิธีสำรองข้อมูล\n")
+
+        val store = LocalMemoryStore(directory, PrefixCipher())
+        val notes = store.all(500).filter { it.category == "owner-note" }
+        assertTrue(String(java.io.File(directory, "memory.enc").readBytes(), 0, 4) == "ENC:")
+
+        assertEquals(2, notes.size)
+        assertTrue(notes.any { it.content == "เจ้าของต้องการคำตอบกระชับ" })
+        assertTrue(notes.any { it.content == "วิธีสำรองข้อมูล" })
+        assertFalse(legacyFile.exists())
+        assertFalse(java.io.File(directory, "notes.txt.migrated").exists())
+    }
+
+    @Test fun encryptsMemoryAndBackupThroughInjectedCipher() {
+        val directory = temporaryFolder.newFolder("encrypted")
+        val store = LocalMemoryStore(directory, PrefixCipher())
+        store.add("secret local note")
+        val data = java.io.File(directory, "memory.enc").readBytes()
+        assertTrue(String(data, 0, 4) == "ENC:")
+        assertTrue(store.backup())
+        store.clear()
+        assertEquals(1, store.restoreBackup())
+        assertEquals("secret local note", store.all().first().content)
     }
 
 }
