@@ -44,7 +44,7 @@ class SecretStore(context: Context) {
             !host.endsWith(".local") && !host.endsWith(".internal") && !host.endsWith(".lan")) {
             "Provider URL cannot target a local network hostname"
         }
-        if (host.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}""")) || host.contains(":")) {
+        if (host.matches(Regex("""\d{1,3}(\.\d{1,3}){3}""")) || host.contains(":")) {
             val address = InetAddress.getByName(host.removePrefix("[").removeSuffix("]"))
             require(!address.isAnyLocalAddress && !address.isLoopbackAddress &&
                 !address.isLinkLocalAddress && !address.isSiteLocalAddress && !address.isMulticastAddress) {
