@@ -219,7 +219,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeCountTokens(
                                         formatted.data(), static_cast<int32_t>(formatted.size()))
             : -1;
         if (formattedLength < 0) {
-            const std::string fallback = "### User:\\n" + prompt + "\\n### Assistant:\\n";
+            const std::string fallback = "### User:\n" + prompt + "\n### Assistant:\n";
             formatted.assign(fallback.begin(), fallback.end());
         } else if (static_cast<size_t>(formattedLength) > formatted.size()) {
             formatted.resize(static_cast<size_t>(formattedLength) + 1);
