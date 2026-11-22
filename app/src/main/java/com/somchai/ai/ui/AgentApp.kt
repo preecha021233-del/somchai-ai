@@ -161,7 +161,7 @@ private fun ChatPage(
                     if (!isUser) {
                         Box(
                             Modifier.padding(end = 7.dp).size(28.dp).clip(CircleShape)
-                                .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB))),
+                                .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("S", color = Color.White, style = MaterialTheme.typography.labelLarge)
@@ -246,7 +246,7 @@ private fun ChatPage(
                 )
                 Box(
                     Modifier.padding(bottom = 3.dp).size(52.dp).clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB))),
+                        .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))),
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
