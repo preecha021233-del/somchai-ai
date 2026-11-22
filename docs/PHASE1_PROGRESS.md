@@ -129,3 +129,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - PluginValidator delegates operation/permission binding to that core policy instead of maintaining a separate operation allowlist, preventing a manifest from adding unrelated capabilities to an otherwise allowed operation.
 - External web text sanitization now removes control and bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before prompt use; payload remains bounded to 12,000 characters.
 - Added regression tests for operation escalation, duplicate capabilities, bidi/control characters and Thai prompt-injection phrasing. These are implementation changes; CI/device acceptance still must run before claiming the gate passed.
+
+
+## Runtime permission, plugin activation and planner hardening — 2026-11-22
+- Moved the supported operation-to-permission mapping into PermissionManager. Every plugin operation now requires an exact core-defined capability set; unknown operations, duplicate permissions and permission escalation fail closed.
+- Plugin runtime enumeration now ignores manifests marked disabled. Approval and reactivation reject disabled manifests, and activation verifies the resulting manifest is enabled before reporting success.
+- External web text filtering now strips control/bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before local-model use.
+- TaskPlanner no longer silently truncates goals beyond 1,000 characters. It rejects oversized/control-character input and recognizes additional common Thai research requests (หาข้อมูล, สืบค้น, เปรียบเทียบข้อมูล).
+- Added regression tests for capability escalation, prompt-injection sanitization, Thai research intent and invalid task input. These changes are committed; the new workflow result and target-device checks are still pending.
