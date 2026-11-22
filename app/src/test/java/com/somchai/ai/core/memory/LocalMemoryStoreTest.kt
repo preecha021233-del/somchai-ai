@@ -130,4 +130,12 @@ class LocalMemoryStoreTest {
         assertEquals(1, store.search("SOMCHAI โครงการ").size)
     }
 
+
+    @Test fun searchesThaiTextWithoutDependingOnWhitespace() {
+        val store = LocalMemoryStore(temporaryFolder.newFolder("thai-search"))
+        val entry = store.add("สอบวันที่ 30 ต้องทบทวนบทเรียน")
+        assertEquals(entry.id, store.search("สอบวันที่30").single().id)
+        assertEquals(entry.id, store.search("  ${entry.id.take(8)}  ").single().id)
+    }
+
 }
