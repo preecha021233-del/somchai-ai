@@ -23,7 +23,7 @@ private enum class Tab(val label: String) { CHAT("แชต"), PLUGINS("ปล�
 fun AgentApp(runtime: CoreRuntime) {
     var tab by remember { mutableStateOf(Tab.CHAT) }
     var refresh by remember { mutableIntStateOf(0) }
-    var messages by remember { mutableStateOf(listOf("SOMCHAI: พร้อมทำงานครับ ตั้งค่า LLM API Key ในหน้า ตั้งค่า เพื่อเริ่มสนทนา")) }
+    var messages by remember { mutableStateOf(listOf("SOMCHAI: พร้อมทำงานครับ ระบบประมวลผลภายในพร้อมใช้งาน ไม่จำเป็นต้องตั้งค่า API Key")) }
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -73,7 +73,8 @@ fun AgentApp(runtime: CoreRuntime) {
                                         "ต้องอนุมัติปลั๊กอิน Web Search ในหน้า Plugins ก่อน"
                                     }
                                     runtime.tools.search(text.removePrefix("/search").trim())
-                                } else {
+                                } else if (text.startsWith("/ai ", true)) {
+                                    check(runtime.secrets.hasKey()) { "ยังไม่ได้ตั้งค่า LLM Provider ครับ ใช้คำสั่งภายในได้โดยไม่ต้องใช้ API" }
                                     val history = messages.takeLast(12).mapNotNull {
                                         when {
                                             it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
@@ -81,7 +82,11 @@ fun AgentApp(runtime: CoreRuntime) {
                                             else -> null
                                         }
                                     }
-                                    runtime.llm.ask(history, text)
+                                    runtime.llm.ask(history, text.removeRange(0, 4).trim())
+                                } else {
+                                    val result = runtime.processor.process(text)
+                                    runtime.logger.record("INTERNAL_PROCESS", "intent=${result.intent}")
+                                    result.answer
                                 }
                                 messages = messages + "SOMCHAI: $answer"
                             } catch (e: Exception) {
@@ -173,21 +178,46 @@ private fun CandidateCard(candidate: PluginCandidate, onApprove: () -> Unit, onR
 @Composable
 private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
     var note by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
-    val file = java.io.File(runtime.paths.memory, "notes.txt")
-    val notes = remember(refresh) { runCatching { file.readLines().reversed() }.getOrDefault(emptyList()) }
-    Column(modifier.fillMaxSize().padding(16.dp)) {
-        Text("บันทึกความจำ", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
-        OutlinedTextField(note, { note = it }, Modifier.fillMaxWidth(), label = { Text("เพิ่มบันทึก") })
+    val entries = remember(refresh, query) {
+        if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
+    }
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+        Text("ความจำภายใน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
+        Text("จัดเก็บในพื้นที่ส่วนตัวของแอป ไม่ส่งขึ้นอินเทอร์เน็ตโดยอัตโนมัติ", color = SomchaiTextSecondary)
+        OutlinedTextField(
+            value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(),
+            label = { Text("บันทึกความจำใหม่") }, maxLines = 3
+        )
         Button(onClick = {
-            if (note.isNotBlank()) {
-                file.appendText(note.trim().take(1000) + "\n")
-                runtime.logger.record("MEMORY_WRITE", "Owner note saved")
-                note = ""; refresh++
-            }
+            runCatching { runtime.memory.add(note) }
+                .onSuccess { note = ""; refresh++ }
+                .onFailure { runtime.logger.record("MEMORY_ERROR", it.message ?: "write failed") }
         }, enabled = note.isNotBlank()) { Text("บันทึก") }
         Spacer(Modifier.height(12.dp))
-        notes.forEach { Text("• $it", color = SomchaiTextSecondary, modifier = Modifier.padding(vertical = 4.dp)) }
+        OutlinedTextField(
+            value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
+            label = { Text("ค้นหาความจำ") }, singleLine = true
+        )
+        Text("รายการความจำ ${entries.size}", color = SomchaiTextSecondary, modifier = Modifier.padding(vertical = 8.dp))
+        if (entries.isEmpty()) Text("ยังไม่มีความจำที่ตรงกับคำค้น", color = SomchaiTextSecondary)
+        entries.forEach { entry ->
+            Card(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = SomchaiSurface)
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(entry.content, color = SomchaiTextPrimary)
+                    Text("${entry.category} • ${entry.createdAt.take(10)} • ID ${entry.id.take(8)}",
+                        color = SomchaiTextTertiary, style = MaterialTheme.typography.labelSmall)
+                    TextButton(onClick = {
+                        runtime.memory.delete(entry.id)
+                        refresh++
+                    }) { Text("ลบรายการนี้", color = SomchaiCritical) }
+                }
+            }
+        }
     }
 }
 
