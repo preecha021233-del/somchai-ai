@@ -42,7 +42,7 @@ class LlmConnector(
             val answer = JSONObject(response).getJSONArray("choices").getJSONObject(0)
                 .getJSONObject("message").optString("content")
             check(answer.isNotBlank()) { "LLM returned an empty response" }
-            logger.record("LLM_RESPONSE", "Response received (${answer.length()} chars)")
+            logger.record("LLM_RESPONSE", "Response received (${answer.length} chars)")
             answer
         } finally { connection.disconnect() }
     }
