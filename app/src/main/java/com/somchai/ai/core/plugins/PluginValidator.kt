@@ -16,7 +16,7 @@ class PluginValidator(private val permissions: PermissionManager) {
         require(manifest.permissions.distinct().size == manifest.permissions.size) { "Duplicate permissions" }
         manifest.permissions.forEach { permissions.require(it) }
         when (manifest.operation) {
-            "web.search" -> require("network.search" in manifest.permissions)
+            "web.search" -> require(manifest.permissions.toSet() == setOf("network.search")) { "Plugin requested permissions beyond its operation" }
         }
         return manifest
     }
