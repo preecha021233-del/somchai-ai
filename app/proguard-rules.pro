@@ -1,1 +1,2 @@
 -keep class org.json.** { *; }
+-keep class com.somchai.ai.core.brain.NativeLlamaBindings { *; }
