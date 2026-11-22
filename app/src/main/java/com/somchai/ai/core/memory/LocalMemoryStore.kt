@@ -50,8 +50,18 @@ class LocalMemoryStore(
         if (clean.isEmpty()) return all(limit)
         return synchronized(lock) {
             val entries = readEntries().asReversed()
-            val idMatches = entries.filter { it.id.lowercase().startsWith(clean) }
+            val idMatches = entries.filter { it.id.trim().lowercase().startsWith(clean) }
             if (idMatches.isNotEmpty()) return@synchronized idMatches.take(limit.coerceIn(1, 200))
+
+            // Thai queries are often typed without spaces. Compare a compact form first,
+            // then retain all-term matching for queries that contain deliberate word breaks.
+            val compactQuery = clean.filterNot { it.isWhitespace() }
+            val compactMatches = entries.filter { entry ->
+                entry.content.lowercase().filterNot { it.isWhitespace() }.contains(compactQuery) ||
+                    entry.category.lowercase().filterNot { it.isWhitespace() }.contains(compactQuery)
+            }
+            if (compactMatches.isNotEmpty()) return@synchronized compactMatches.take(limit.coerceIn(1, 200))
+
             val terms = clean.split(Regex("\\s+")).filter { it.isNotBlank() }
             entries.filter { entry ->
                 terms.all { term ->
