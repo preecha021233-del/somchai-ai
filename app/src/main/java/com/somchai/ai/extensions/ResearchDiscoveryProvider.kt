@@ -1,6 +1,7 @@
 package com.somchai.ai.extensions
 
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -114,8 +115,8 @@ class HttpResearchDiscoveryProvider(
             connection.setRequestProperty("Accept", "text/html")
             val code = connection.responseCode
             check(code in 200..299) { "DuckDuckGo Web returned HTTP $code" }
-            val html = connection.inputStream.bufferedReader().use { it.readText() }
-            check(html.length <= MAX_SEARCH_RESPONSE_CHARS) { "Search response exceeds size limit" }
+            val html = readBounded(connection.inputStream)
+
             return WebSearchResultParser.parse(html, pageReader, limit = 8).map {
                 ResearchCandidate("DuckDuckGo Web Search", it.title, it.url)
             }
@@ -134,12 +135,27 @@ class HttpResearchDiscoveryProvider(
             connection.setRequestProperty("Accept", "application/json")
             val code = connection.responseCode
             check(code in 200..299) { "Research source returned HTTP $code" }
-            val body = connection.inputStream.bufferedReader().use { it.readText() }
-            check(body.length <= MAX_SEARCH_RESPONSE_CHARS) { "Research response exceeds size limit" }
+            val body = readBounded(connection.inputStream)
             return JSONObject(body)
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun readBounded(input: java.io.InputStream): String {
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        input.use { stream ->
+            while (true) {
+                val count = stream.read(buffer)
+                if (count < 0) break
+                require(output.size() + count <= MAX_SEARCH_RESPONSE_CHARS) {
+                    "Research response exceeds size limit"
+                }
+                output.write(buffer, 0, count)
+            }
+        }
+        return output.toString(Charsets.UTF_8.name())
     }
 
     companion object {
