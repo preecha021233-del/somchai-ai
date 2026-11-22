@@ -26,10 +26,12 @@ class ResearchCoordinator(
         val result = discovery.discover(clean)
         val pages = mutableListOf<WebPageContent>()
         val errors = mutableListOf<String>()
-        result.candidates.distinctBy { it.url }.take(maxPages).forEach { candidate ->
+        val readUrls = mutableSetOf<String>()
+        for (candidate in result.candidates.distinctBy { it.url }) {
+            if (pages.size >= maxPages) break
             runCatching { pageReader.read(candidate.url) }
                 .onSuccess { page ->
-                    if (page.url !in pages.map { it.url }) pages.add(page)
+                    if (readUrls.add(page.url)) pages.add(page)
                 }
                 .onFailure { errors.add("${candidate.url}: ${it.javaClass.simpleName}") }
         }
