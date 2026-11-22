@@ -68,7 +68,7 @@ class TaskExecutionStoreTest {
     @Test fun canCancelPendingOrActiveStepButNotCompletedStep() {
         val store = TaskExecutionStore(temporaryFolder.newFolder("cancel"))
         val task = store.create(TaskPlanner().plan("งานทั่วไป"))
-        assertEquals(TaskStepStatus.CANCELLED, store.cancelStep(task.id, 1).steps[1].status)
+        assertEquals(TaskStepStatus.CANCELLED, store.cancelStep(task.id, 0).steps[0].status)
         store.startStep(task.id, 0)
         store.completeStep(task.id, 0)
         assertThrows(IllegalArgumentException::class.java) { store.cancelStep(task.id, 0) }
