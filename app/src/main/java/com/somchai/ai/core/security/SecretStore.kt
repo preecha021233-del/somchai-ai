@@ -5,6 +5,8 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.security.KeyStore
+import java.net.URI
+import java.net.InetAddress
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -16,18 +18,48 @@ class SecretStore(context: Context) {
     data class Provider(val baseUrl: String, val model: String, val apiKey: String)
 
     fun saveProvider(baseUrl: String, model: String, apiKey: String) {
-        require(baseUrl.startsWith("https://")) { "Provider URL must use HTTPS" }
-        require(model.isNotBlank() && apiKey.isNotBlank()) { "Model and API key are required" }
-        prefs.edit().putString("base_url", baseUrl.trim().trimEnd('/'))
-            .putString("model", model.trim())
-            .putString("key", Base64.encodeToString(encrypt(apiKey), Base64.NO_WRAP)).apply()
+        val safeBaseUrl = normalizeBaseUrl(baseUrl)
+        val safeModel = model.trim()
+        val safeKey = apiKey.trim()
+        require(safeModel.isNotEmpty() && safeModel.length <= 120 &&
+            safeModel.none { it.isWhitespace() || it.isISOControl() }) { "Model name is invalid" }
+        require(safeKey.isNotEmpty() && safeKey.length <= 4096) { "API key is invalid" }
+        prefs.edit().putString("base_url", safeBaseUrl)
+            .putString("model", safeModel)
+            .putString("key", Base64.encodeToString(encrypt(safeKey), Base64.NO_WRAP)).apply()
+    }
+
+    private fun normalizeBaseUrl(value: String): String {
+        val clean = value.trim()
+        require(clean.length in 9..500) { "Provider URL is invalid" }
+        val uri = URI(clean).normalize()
+        require(uri.scheme.equals("https", ignoreCase = true)) { "Provider URL must use HTTPS" }
+        require(uri.rawUserInfo == null && uri.rawQuery == null && uri.rawFragment == null) {
+            "Provider URL cannot contain credentials, query parameters or fragments"
+        }
+        require(uri.port == -1 || uri.port == 443) { "Provider URL must use the standard HTTPS port" }
+        val host = uri.host?.lowercase()?.trimEnd('.')
+            ?: throw IllegalArgumentException("Provider URL has no valid host")
+        require(host != "localhost" && !host.endsWith(".localhost") &&
+            !host.endsWith(".local") && !host.endsWith(".internal") && !host.endsWith(".lan")) {
+            "Provider URL cannot target a local network hostname"
+        }
+        if (host.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}""")) || host.contains(":")) {
+            val address = InetAddress.getByName(host.removePrefix("[").removeSuffix("]"))
+            require(!address.isAnyLocalAddress && !address.isLoopbackAddress &&
+                !address.isLinkLocalAddress && !address.isSiteLocalAddress && !address.isMulticastAddress) {
+                "Provider URL cannot target a private IP address"
+            }
+        }
+        require(!uri.path.orEmpty().contains("..")) { "Provider URL path is invalid" }
+        return uri.toASCIIString().trimEnd('/')
     }
 
     fun provider(): Provider? {
         val encoded = prefs.getString("key", null) ?: return null
         return runCatching {
             Provider(
-                prefs.getString("base_url", "https://api.openai.com/v1") ?: "https://api.openai.com/v1",
+                normalizeBaseUrl(prefs.getString("base_url", "https://api.openai.com/v1") ?: "https://api.openai.com/v1"),
                 prefs.getString("model", "gpt-4o-mini") ?: "gpt-4o-mini",
                 decrypt(Base64.decode(encoded, Base64.NO_WRAP))
             )
