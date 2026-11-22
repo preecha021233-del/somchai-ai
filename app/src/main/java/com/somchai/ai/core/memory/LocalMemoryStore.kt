@@ -3,6 +3,8 @@ package com.somchai.ai.core.memory
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
+import java.text.BreakIterator
+import java.util.Locale
 
 data class MemoryEntry(
     val id: String,
@@ -70,6 +72,41 @@ class LocalMemoryStore(
             }.take(limit.coerceIn(1, 200))
         }
     }
+    /**
+     * Retrieves a small, ranked set of explicitly stored memories for chat context.
+     * It never returns the entire store and never sends memory to a remote provider.
+     */
+    fun relevantFor(query: String, limit: Int = 3): List<MemoryEntry> {
+        val clean = query.trim().lowercase()
+        if (clean.isEmpty()) return emptyList()
+        val iterator = BreakIterator.getWordInstance(Locale("th", "TH"))
+        iterator.setText(clean)
+        val tokens = linkedSetOf<String>()
+        var start = iterator.first()
+        var end = iterator.next()
+        while (end != BreakIterator.DONE) {
+            val token = clean.substring(start, end).trim()
+            if (token.any { it.isLetterOrDigit() } && token.length >= 2) tokens.add(token)
+            start = end
+            end = iterator.next()
+        }
+        if (tokens.isEmpty()) {
+            val compact = clean.filterNot { it.isWhitespace() }
+            if (compact.length < 2) return emptyList()
+            tokens.add(compact.take(24))
+        }
+        return synchronized(lock) {
+            readEntries().asReversed().mapIndexedNotNull { index, entry ->
+                val searchable = (entry.content + " " + entry.category).lowercase()
+                val score = tokens.count { token -> searchable.contains(token) }
+                if (score == 0) null else Triple(index, score, entry)
+            }.sortedWith(compareByDescending<Triple<Int, Int, MemoryEntry>> { it.second }
+                .thenBy { it.first })
+                .take(limit.coerceIn(1, 5))
+                .map { it.third }
+        }
+    }
+
     fun delete(id: String): Boolean = synchronized(lock) {
         val entries = readEntries()
         if (entries.none { it.id == id }) return@synchronized false
