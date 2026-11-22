@@ -1,16 +1,29 @@
 package com.somchai.ai.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
@@ -33,9 +46,14 @@ fun AgentApp(runtime: CoreRuntime) {
         containerColor = SomchaiBackground,
         topBar = {
             TopAppBar(
-                title = { Column {
-                    Text("SOMCHAI AI", color = SomchaiTextPrimary)
-                    Text("Protected Core • Owner controlled", style = MaterialTheme.typography.labelSmall, color = SomchaiTextSecondary)
+                title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))), contentAlignment = Alignment.Center) {
+                        Text("S", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                    }
+                    Column {
+                        Text("SOMCHAI AI", color = SomchaiTextPrimary, style = MaterialTheme.typography.titleLarge)
+                        Text("● กำลังใช้งานอยู่", style = MaterialTheme.typography.labelMedium, color = Color(0xFF20A464))
+                    }
                 } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SomchaiSurface)
             )
@@ -110,20 +128,139 @@ private fun ChatPage(
     modifier: Modifier, messages: List<String>, input: String, onInput: (String) -> Unit,
     busy: Boolean, error: String?, onSend: () -> Unit
 ) {
-    Column(modifier.fillMaxSize().padding(16.dp)) {
-        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val listState = rememberLazyListState()
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(messages.size, busy) {
+        val lastIndex = messages.size + if (busy) 1 else 0
+        if (lastIndex > 0) listState.animateScrollToItem(lastIndex - 1)
+    }
+
+    Column(
+        modifier.fillMaxSize().background(Color(0xFFF7F7F9))
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
+            contentPadding = PaddingValues(top = 20.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             items(messages) { message ->
-                Card(colors = CardDefaults.cardColors(containerColor = SomchaiSurface)) {
-                    Text(message, Modifier.fillMaxWidth().padding(14.dp), color = SomchaiTextPrimary)
+                val isUser = message.startsWith("คุณ:")
+                val body = when {
+                    isUser -> message.removePrefix("คุณ:").trim()
+                    message.startsWith("SOMCHAI:") -> message.removePrefix("SOMCHAI:").trim()
+                    else -> message
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    if (!isUser) {
+                        Box(
+                            Modifier.padding(end = 7.dp).size(28.dp).clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("S", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                    if (isUser) {
+                        Box(
+                            Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(22.dp))
+                                .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF4267E8))))
+                                .padding(horizontal = 17.dp, vertical = 12.dp)
+                        ) {
+                            Text(body, color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    } else {
+                        Surface(
+                            modifier = Modifier.widthIn(max = 310.dp),
+                            color = Color(0xFFECECEF),
+                            shape = RoundedCornerShape(topStart = 7.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+                        ) {
+                            Text(
+                                body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
+                                color = Color(0xFF17171B), style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
                 }
             }
-            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = SomchaiPrimaryLight) }
+            if (busy) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier.size(28.dp).clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))),
+                            contentAlignment = Alignment.Center
+                        ) { Text("S", color = Color.White, style = MaterialTheme.typography.labelLarge) }
+                        Text("  กำลังพิมพ์...", color = SomchaiTextSecondary, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
         }
-        error?.let { Text(it, color = SomchaiCritical, style = MaterialTheme.typography.bodySmall) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = input, onValueChange = onInput, modifier = Modifier.weight(1f),
-                placeholder = { Text("พิมพ์คำสั่ง หรือ /search คำค้น") }, maxLines = 4, enabled = !busy)
-            Button(onClick = onSend, enabled = input.isNotBlank() && !busy) { Icon(Icons.Outlined.Send, "ส่ง") }
+
+        error?.let {
+            Text(it, color = SomchaiCritical, style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp))
+        }
+
+        Surface(
+            color = Color.White,
+            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    .imePadding().padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                TextField(
+                    value = input,
+                    onValueChange = onInput,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("พิมพ์ข้อความ...") },
+                    enabled = !busy,
+                    maxLines = 4,
+                    shape = RoundedCornerShape(28.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = {
+                        if (input.isNotBlank() && !busy) {
+                            keyboard?.hide()
+                            focusManager.clearFocus()
+                            onSend()
+                        }
+                    }),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF0F0F2),
+                        unfocusedContainerColor = Color(0xFFF0F0F2),
+                        disabledContainerColor = Color(0xFFF0F0F2),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    )
+                )
+                Box(
+                    Modifier.padding(bottom = 3.dp).size(52.dp).clip(CircleShape)
+                        .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    IconButton(
+                        onClick = {
+                            keyboard?.hide()
+                            focusManager.clearFocus()
+                            onSend()
+                        },
+                        enabled = input.isNotBlank() && !busy
+                    ) {
+                        Icon(Icons.Outlined.Send, contentDescription = "ส่งข้อความ", tint = Color.White)
+                    }
+                }
+            }
         }
     }
 }
