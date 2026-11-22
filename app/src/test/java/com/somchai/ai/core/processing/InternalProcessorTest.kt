@@ -60,4 +60,27 @@ class InternalProcessorTest {
         assertTrue(result.answer.contains("คำสั่ง"))
         assertTrue(result.answer.contains("คำขอคำแนะนำ"))
     }
+
+    @Test fun evaluatesArithmeticPrecedenceParenthesesAndUnarySigns() {
+        val cases = listOf(
+            "คำนวณ 2 + 3 * 4" to "14",
+            "คำนวณ (2 + 3) * 4" to "20",
+            "คำนวณ 10 - (2 + 3) * 2" to "0",
+            "คำนวณ ((2 + 3) * (4 - 1)) / 3" to "5",
+            "คำนวณ 2 * (3 + (4 * 2))" to "22",
+            "คำนวณ -2 + 3 * 4" to "10",
+            "คำนวณ 2 * -(3 + 4)" to "-14",
+            "คำนวณ +2.5 * 4" to "10"
+        )
+        cases.forEach { (input, expected) ->
+            val result = processor().process(input)
+            assertTrue("Expected $expected from $input, got: ${result.answer}", result.answer.contains("= $expected"))
+        }
+    }
+
+    @Test fun rejectsMalformedArithmeticInsteadOfReturningPartialResult() {
+        val result = processor().process("คำนวณ 2 + * 3")
+        assertTrue(result.intent == "unsupported")
+    }
+
 }
