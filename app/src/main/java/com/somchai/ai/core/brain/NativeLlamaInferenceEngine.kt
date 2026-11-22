@@ -10,16 +10,19 @@ import java.io.File
  */
 class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
     @Volatile private var handle: Long = 0L
+    @Volatile private var contextCapacity: Int = DEFAULT_CONTEXT_SIZE
     private val lock = Any()
 
     override val engineId: String = "llama.cpp-android"
 
-    fun loadModel(file: File, contextSize: Int = 2048, threads: Int = 4) {
+    fun loadModel(file: File, contextSize: Int = DEFAULT_CONTEXT_SIZE, threads: Int = 4) {
         require(file.isFile && file.length() > 10_000_000L) { "ไม่พบไฟล์โมเดล GGUF ที่สมบูรณ์" }
         synchronized(lock) {
             unloadLocked()
-            val loaded = NativeLlamaBindings.nativeLoadModel(file.absolutePath, contextSize, threads)
+            val capacity = contextSize.coerceIn(512, 4096)
+            val loaded = NativeLlamaBindings.nativeLoadModel(file.absolutePath, capacity, threads)
             check(loaded != 0L) { "โหลดโมเดลภายในไม่สำเร็จ" }
+            contextCapacity = capacity
             handle = loaded
         }
     }
@@ -30,8 +33,38 @@ class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
         synchronized(lock) {
             val current = handle
             check(current != 0L) { "ยังไม่ได้ติดตั้งโมเดล AI ภายใน" }
-            val prompt = BrainPromptBuilder.build(request)
-            NativeLlamaBindings.nativeGenerate(current, prompt, 384).trim()
+
+            var bounded = request.copy(prompt = request.prompt.trim().take(BrainPromptBuilder.MAX_CURRENT_CHARS))
+            var prompt = BrainPromptBuilder.build(bounded)
+            val maxInputTokens = (contextCapacity - MAX_GENERATION_TOKENS - CONTEXT_SAFETY_TOKENS)
+                .coerceAtLeast(1)
+            var tokenCount = NativeLlamaBindings.nativeCountTokens(current, prompt)
+            var attempts = 0
+
+            // Character counts do not predict Thai/BPE token counts. Ask the actual
+            // model tokenizer, then remove optional context before shortening the question.
+            while (tokenCount > maxInputTokens && attempts < MAX_BUDGET_RETRIES) {
+                bounded = when {
+                    bounded.history.size > 2 ->
+                        bounded.copy(history = bounded.history.takeLast((bounded.history.size / 2).coerceAtLeast(1)))
+                    bounded.history.isNotEmpty() -> bounded.copy(history = emptyList())
+                    bounded.memoryContext.size > 1 -> bounded.copy(memoryContext = bounded.memoryContext.take(1))
+                    bounded.memoryContext.isNotEmpty() -> bounded.copy(memoryContext = emptyList())
+                    bounded.approvedSkills.size > 1 -> bounded.copy(approvedSkills = bounded.approvedSkills.take(1))
+                    bounded.approvedSkills.isNotEmpty() -> bounded.copy(approvedSkills = emptyList())
+                    bounded.prompt.length > MIN_CURRENT_CHARS ->
+                        bounded.copy(prompt = bounded.prompt.takeLast((bounded.prompt.length * 3 / 4).coerceAtLeast(MIN_CURRENT_CHARS)))
+                    else -> error("คำถามยาวเกินขีดจำกัดของโมเดล แม้ตัดบริบทเสริมแล้ว")
+                }
+                prompt = BrainPromptBuilder.build(bounded)
+                tokenCount = NativeLlamaBindings.nativeCountTokens(current, prompt)
+                attempts++
+            }
+
+            check(tokenCount <= maxInputTokens) {
+                "คำถามยาวเกินขีดจำกัดโทเค็นของโมเดล กรุณาย่อคำถาม"
+            }
+            NativeLlamaBindings.nativeGenerate(current, prompt, MAX_GENERATION_TOKENS).trim()
         }
     }
 
@@ -43,5 +76,13 @@ class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
         val previous = handle
         handle = 0L
         if (previous != 0L) NativeLlamaBindings.nativeUnloadModel(previous)
+    }
+
+    companion object {
+        private const val DEFAULT_CONTEXT_SIZE = 2048
+        private const val MAX_GENERATION_TOKENS = 384
+        private const val CONTEXT_SAFETY_TOKENS = 16
+        private const val MIN_CURRENT_CHARS = 200
+        private const val MAX_BUDGET_RETRIES = 12
     }
 }
