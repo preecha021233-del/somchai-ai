@@ -12,10 +12,12 @@ class BuiltinToolExecutor(
     private val limiter: ResourceLimiter,
     private val pageReader: WebPageReader = WebPageReader(),
     private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(pageReader),
+    private val isWebSearchApproved: () -> Boolean = { false },
     private val summarizeLocally: (suspend (String) -> String)? = null
 ) {
     suspend fun search(query: String): String = withContext(Dispatchers.IO) {
         permissions.require("network.search")
+        check(isWebSearchApproved()) { "ต้องอนุมัติปลั๊กอิน Web Search ก่อนใช้งาน" }
         limiter.checkStorageBudget()
         require(query.isNotBlank() && query.length <= 300) { "Search query is invalid" }
 
