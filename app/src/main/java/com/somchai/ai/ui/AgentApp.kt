@@ -231,7 +231,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                     runtime.tools.search(text.removePrefix("/search").trim())
                                 } else if (text.startsWith("/ai ", true)) {
                                     check(runtime.secrets.hasKey()) { "ยังไม่ได้ตั้งค่า LLM Provider ครับ ใช้คำสั่งภายในได้โดยไม่ต้องใช้ API" }
-                                    val history = messages.takeLast(12).mapNotNull {
+                                    val history = messages.dropLast(1).takeLast(12).mapNotNull {
                                         when {
                                             it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
                                             it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
@@ -253,7 +253,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                     }
                                     result.answer
                                 } else {
-                                    val history = messages.takeLast(12).mapNotNull {
+                                    val history = messages.dropLast(1).takeLast(12).mapNotNull {
                                         when {
                                             it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
                                             it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
