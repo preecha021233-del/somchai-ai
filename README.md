@@ -13,7 +13,7 @@ SOMCHAI AI is an Android personal assistant being developed toward an independen
 - Core permission allowlist and untrusted external-data boundary.
 - Declarative plugin staging, validation, SHA-256-bound approval, activation and rollback.
 - Built-in web search operation using DuckDuckGo Instant Answer API, invoked with `/search` after approval.
-- Structured local memory with add, search, retrieval and deletion; stored in app-private files and not uploaded automatically.
+- Structured local memory with add, search, retrieval, deletion, backup and restore; production data is encrypted with AES-256-GCM using Android Keystore.
 - Deterministic task decomposition for research, development, troubleshooting and general tasks.
 - Append-oriented activity log for internal processing and memory events.
 - Daily API request and local storage budgets.
