@@ -103,6 +103,11 @@ class TaskExecutionStore(private val directory: File) {
         require(status == TaskStepStatus.PENDING || status == TaskStepStatus.IN_PROGRESS) {
             "Only pending or in-progress steps can be cancelled"
         }
+        if (status == TaskStepStatus.PENDING) {
+            require(current.steps.take(index).all { it.status == TaskStepStatus.COMPLETED }) {
+                "Complete earlier task steps before cancelling this step"
+            }
+        }
         current.copy(steps = current.steps.mapIndexed { i, step ->
             if (i == index) step.copy(status = TaskStepStatus.CANCELLED, failureReason = null) else step
         })
