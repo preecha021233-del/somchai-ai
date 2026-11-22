@@ -2,6 +2,8 @@ package com.somchai.ai.core
 
 import android.content.Context
 import com.somchai.ai.core.audit.ActivityLogger
+import com.somchai.ai.core.brain.LocalFirstBrain
+import com.somchai.ai.core.brain.UnavailableOnDeviceInferenceEngine
 import com.somchai.ai.core.llm.LlmConnector
 import com.somchai.ai.core.memory.AndroidMemoryCipher
 import com.somchai.ai.core.memory.LocalMemoryStore
@@ -23,6 +25,8 @@ class CoreRuntime(context: Context) {
     val planner = TaskPlanner()
     val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core)
     val processor = InternalProcessor(memory, planner)
+    // No remote provider is used here. Until a local model is installed, Brain reports its deterministic fallback.
+    val brain = LocalFirstBrain(UnavailableOnDeviceInferenceEngine) { request -> processor.process(request.prompt).answer }
     val plugins = PluginManager(paths, logger, permissions)
     val tools = BuiltinToolExecutor(permissions, logger, resources)
     val llm = LlmConnector(secrets, resources, logger)
