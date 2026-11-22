@@ -214,3 +214,22 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 
 - This commit passes the automated JVM + ARM64 native build gate.
 - Phase 1 remains IN PROGRESS and is NOT ACCEPTED until all fixed acceptance criteria, including target-device model and update checks, pass.
+
+
+## Round 6 — 2026-11-22 — Learned-skill AES-GCM encryption and tamper rejection
+
+- Phase: Phase 1
+- Branch: `phase-1/local-brain-runtime`
+- Commit: `50e6a8be9c1d5f64218ae318ae85da31349889de`
+- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45037203591
+- Test method: GitHub Actions JVM tests + Android ARM64 native build + debug APK assembly
+- CI result: **PASS**. The `android-local-brain` job completed successfully; its JVM test/native build/APK build step and debug APK upload step both passed.
+
+### Added automated security checks
+- Verify an encrypted learned-skill store does not expose the skill name or procedure as plaintext.
+- Verify the skill can be retrieved after encrypted persistence.
+- Modify the ciphertext and verify AES-GCM authentication rejects the tampered data.
+
+### Evidence boundary
+- This is automated code-level evidence only. It does not prove the model can reliably learn useful skills, that semantic test cases are strong, or that the feature works on the owner's device.
+- Device testing, full Phase 1 acceptance criteria P01–P35, and model-quality thresholds remain open.
