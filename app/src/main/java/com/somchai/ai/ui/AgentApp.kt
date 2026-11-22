@@ -180,6 +180,8 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
     var note by remember { mutableStateOf("") }
     var query by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
+    var showRestoreConfirm by remember { mutableStateOf(false) }
+    var memoryMessage by remember { mutableStateOf<String?>(null) }
     val entries = remember(refresh, query) {
         if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
     }
@@ -190,6 +192,33 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
             value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(),
             label = { Text("บันทึกความจำใหม่") }, maxLines = 3
         )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                runCatching { runtime.memory.backup() }
+                    .onSuccess { memoryMessage = if (it) "สำรองความจำแล้ว" else "ยังไม่มีข้อมูลให้สำรอง" }
+                    .onFailure { memoryMessage = it.message }
+            }) { Text("สำรองความจำ") }
+            OutlinedButton(onClick = { showRestoreConfirm = true }) { Text("กู้คืนข้อมูล") }
+        }
+        memoryMessage?.let { Text(it, color = SomchaiPrimaryLight) }
+        if (showRestoreConfirm) {
+            AlertDialog(
+                onDismissRequest = { showRestoreConfirm = false },
+                title = { Text("ยืนยันการกู้คืนความจำ") },
+                text = { Text("การกู้คืนจะแทนที่รายการความจำปัจจุบันด้วยข้อมูลจากไฟล์สำรอง ต้องการดำเนินการหรือไม่?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        runCatching { runtime.memory.restoreBackup() }
+                            .onSuccess { memoryMessage = "กู้คืนความจำ $it รายการแล้ว"; refresh++ }
+                            .onFailure { memoryMessage = it.message }
+                        showRestoreConfirm = false
+                    }) { Text("ยืนยันกู้คืน") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRestoreConfirm = false }) { Text("ยกเลิก") }
+                }
+            )
+        }
         Button(onClick = {
             runCatching { runtime.memory.add(note) }
                 .onSuccess { note = ""; refresh++ }
