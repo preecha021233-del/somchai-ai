@@ -83,6 +83,28 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun deletingApprovedSkillRemovesItFromRetrieval() {
+        val dir = createTempDir()
+        try {
+            val store = newStore(dir)
+            val skill = store.propose(
+                "ค้นคว้า",
+                listOf("ค้นคว้า"),
+                "ค้นหาหลายแหล่งและตรวจสอบข้อเท็จจริง",
+                listOf(SkillTestCase("หัวข้อ A", "หลักฐาน A"), SkillTestCase("หัวข้อ B", "หลักฐาน B"))
+            )
+            runBlocking {
+                store.evaluate(skill.id, FakeEngine { prompt ->
+                    if (prompt.contains("หัวข้อ A")) "หลักฐาน A" else "หลักฐาน B"
+                })
+            }
+            store.approve(skill.id)
+            assertEquals(1, store.relevantFor("ช่วยค้นคว้า").size)
+            assertTrue(store.delete(skill.id))
+            assertTrue(store.relevantFor("ช่วยค้นคว้า").isEmpty())
+        } finally { dir.deleteRecursively() }
+    }
+
     @Test fun approvedSkillPersistsAcrossStoreInstances() {
         val dir = createTempDir()
         try {
