@@ -59,7 +59,8 @@ Phase 1 passes only when all six capability groups pass their automated and devi
 - [ ] P29 export backup — produces authenticated encrypted file.
 - [ ] P30 clear and restore backup — exact record count, IDs, and contents recovered.
 - [ ] P31 tampered backup — rejected; existing memory remains unchanged.
-- Pass threshold: all deny cases denied, all approved cases limited to allowlisted capability, backup restore exact, tamper test safe.
+- [ ] P32 WebPageReader rejects HTTP, localhost, private IPs, unsafe ports, embedded credentials and unsafe redirects; extracts visible page text without executing scripts.
+- Pass threshold: all deny cases denied, all approved cases limited to allowlisted capability, backup restore exact, tamper test safe; P32 security unit cases pass.
 
 ## Brain boundary and provider independence
 
