@@ -51,7 +51,13 @@ fun AgentApp(runtime: CoreRuntime) {
     var tab by remember { mutableStateOf(Tab.CHAT) }
     var menuExpanded by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
-    var messages by remember { mutableStateOf(listOf(if (runtime.localInference.isModelLoaded()) "SOMCHAI: สมอง AI ภายในพร้อมทำงานครับ" else "SOMCHAI: ระบบพื้นฐานพร้อมทำงานครับ แต่ยังไม่ได้ติดตั้งโมเดลสมอง AI ภายใน ไปที่ ตั้งค่า เพื่อดาวน์โหลดโมเดลก่อนครับ")) }
+    var messages by remember { mutableStateOf(listOf(
+        when {
+            runtime.localInference.isModelLoaded() -> "SOMCHAI: สมอง AI ภายในพร้อมทำงานครับ"
+            runtime.modelStore.modelFile().isFile -> "SOMCHAI: พบโมเดลในเครื่อง กำลังเตรียมระบบสมองภายในครับ"
+            else -> "SOMCHAI: ระบบพื้นฐานพร้อมทำงานครับ แต่ยังไม่ได้ติดตั้งโมเดลสมอง AI ภายใน ไปที่ ตั้งค่า เพื่อดาวน์โหลดโมเดลก่อนครับ"
+        }
+    )) }
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
