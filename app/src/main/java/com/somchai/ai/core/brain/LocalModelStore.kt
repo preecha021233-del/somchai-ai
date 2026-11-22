@@ -19,8 +19,7 @@ class LocalModelStore(private val directory: File) {
     suspend fun downloadDefaultModel(onProgress: (Int) -> Unit = {}): File = withContext(Dispatchers.IO) {
         check(directory.exists() || directory.mkdirs()) { "สร้างโฟลเดอร์เก็บโมเดลไม่สำเร็จ" }
         val target = modelFile()
-        if (target.isFile && target.length() in MIN_MODEL_BYTES..MAX_MODEL_BYTES &&
-            GgufFileValidator.sha256(target) == EXPECTED_SHA256 && GgufFileValidator.isValid(target)) {
+        if (isVerifiedModel(target)) {
             onProgress(100)
             return@withContext target
         }
@@ -78,6 +77,15 @@ class LocalModelStore(private val directory: File) {
         }
     }
 
+
+    suspend fun hasVerifiedModel(): Boolean = withContext(Dispatchers.IO) {
+        isVerifiedModel(modelFile())
+    }
+
+    fun isVerifiedModel(file: File = modelFile()): Boolean =
+        file.isFile && file.length() in MIN_MODEL_BYTES..MAX_MODEL_BYTES &&
+            runCatching { GgufFileValidator.sha256(file) == EXPECTED_SHA256 && GgufFileValidator.isValid(file) }
+                .getOrDefault(false)
 
     companion object {
         const val MODEL_FILE_NAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
