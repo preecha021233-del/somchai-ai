@@ -6,7 +6,7 @@ import com.somchai.ai.core.security.PermissionManager
 import java.io.File
 import java.security.MessageDigest
 
-data class PluginCandidate(val manifest: PluginManifest, val hash: String)
+data class PluginCandidate(val manifest: PluginManifest, val hash: String, val smokeChecks: List<String>)
 
 class PluginManager(
     private val paths: CorePaths,
@@ -14,6 +14,7 @@ class PluginManager(
     permissions: PermissionManager
 ) {
     private val validator = PluginValidator(permissions)
+    private val smokeTester = PluginSmokeTester()
 
     fun ensureStarterCandidate() {
         val candidate = File(paths.staging, "web-search.json")
@@ -32,7 +33,8 @@ class PluginManager(
         ?.filter { it.isFile && it.extension == "json" }
         ?.mapNotNull { file -> runCatching {
             val raw = file.readText()
-            PluginCandidate(validator.validate(raw), sha256(raw))
+            val manifest = validator.validate(raw)
+            PluginCandidate(manifest, sha256(raw), smokeTester.run(manifest))
         }.getOrNull() } ?: emptyList()
 
     fun activePlugins(): List<PluginManifest> = paths.active.listFiles()
@@ -47,6 +49,8 @@ class PluginManager(
         val raw = source.readText()
         val manifest = validator.validate(raw)
         require(manifest.id == id && sha256(raw) == expectedHash) { "Candidate changed after review" }
+        val checks = smokeTester.run(manifest)
+        check(checks.size >= 4) { "Plugin smoke test did not complete" }
         val target = File(paths.active, "$id.json")
         val backup = File(paths.backups, "$id-${System.currentTimeMillis()}.json")
         if (target.exists()) target.copyTo(backup, overwrite = true)
@@ -54,8 +58,9 @@ class PluginManager(
             val temp = File(paths.active, "$id.tmp")
             temp.writeText(raw)
             check(temp.renameTo(target)) { "Atomic plugin activation failed" }
-            validator.validate(target.readText())
-            logger.record("PLUGIN_APPROVED", "$id hash=$expectedHash")
+            val activated = validator.validate(target.readText())
+            smokeTester.run(activated)
+            logger.record("PLUGIN_APPROVED", "$id hash=$expectedHash checks=${checks.size}")
             source.delete()
             true
         } catch (error: Exception) {
