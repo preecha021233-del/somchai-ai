@@ -38,8 +38,8 @@ class PermissionManager {
         val bounded = value
             .filter { character ->
                 character == '\n' || character == '\t' ||
-                    (!character.isISOControl() && character.code !in 0x202A..0x202E &&
-                        character.code !in 0x2066..0x2069)
+                    (!character.isISOControl() &&
+                        Character.getType(character) != Character.FORMAT)
             }
             .take(12_000)
 
