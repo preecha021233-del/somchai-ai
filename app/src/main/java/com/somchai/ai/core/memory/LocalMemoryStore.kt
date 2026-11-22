@@ -19,6 +19,10 @@ class LocalMemoryStore(
     private val file = File(memoryDirectory, "memory.jsonl")
     private val lock = Any()
 
+    init {
+        migrateLegacyRecords()
+    }
+
     fun add(content: String, category: String = "experience"): MemoryEntry {
         val clean = content.trim()
         require(clean.isNotEmpty()) { "Memory cannot be empty" }
@@ -107,11 +111,26 @@ class LocalMemoryStore(
     }
 
     private fun encode(entry: MemoryEntry): String = JSONObject()
-        .put("id", entry.id).put("category", entry.category)
+        .put("schemaVersion", 1).put("id", entry.id).put("category", entry.category)
         .put("content", entry.content).put("createdAt", entry.createdAt).toString()
+
+    private fun migrateLegacyRecords() = synchronized(lock) {
+        if (!file.isFile) return@synchronized
+        val lines = runCatching { file.readLines().filter { it.isNotBlank() } }.getOrNull()
+            ?: return@synchronized
+        val entries = runCatching { lines.map { decode(it) } }.getOrNull()
+            ?: return@synchronized
+        val hasLegacyRecords = lines.any { line -> runCatching { JSONObject(line).optInt("schemaVersion", 0) < 1 }.getOrDefault(true) }
+        if (hasLegacyRecords) {
+            rewrite(entries)
+            log("MEMORY_MIGRATED", "schema=1 records=${entries.size}")
+        }
+    }
 
     private fun decode(line: String): MemoryEntry {
         val json = JSONObject(line)
+        val schemaVersion = json.optInt("schemaVersion", 0)
+        require(schemaVersion in 0..1) { "Unsupported memory schema version" }
         val entry = MemoryEntry(json.getString("id"), json.getString("category"),
             json.getString("content"), json.getString("createdAt"))
         require(runCatching { UUID.fromString(entry.id) }.isSuccess) { "Invalid memory ID" }
