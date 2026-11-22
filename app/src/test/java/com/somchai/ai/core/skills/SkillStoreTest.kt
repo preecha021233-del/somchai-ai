@@ -45,6 +45,25 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun learnsDraftProcedureFromExperienceButDoesNotAutoApprove() {
+        val dir = createTempDir()
+        try {
+            val store = newStore(dir)
+            val draft = runBlocking {
+                store.learnFromExperience(
+                    "สรุปเอกสาร",
+                    listOf("สรุปเอกสาร"),
+                    "อ่านเอกสาร แยกหัวข้อหลัก ตรวจตัวเลข แล้วสรุปเป็นข้อ",
+                    listOf(SkillTestCase("สรุปเอกสารรายงาน", "หัวข้อ"), SkillTestCase("สรุปเอกสารบัญชี", "ตัวเลข")),
+                    FakeEngine { "1. อ่านเอกสาร 2. แยกหัวข้อ 3. ตรวจตัวเลข 4. สรุป" }
+                )
+            }
+            assertFalse(draft.approved)
+            assertTrue(draft.procedure.contains("แยกหัวข้อ"))
+            assertTrue(store.relevantFor("ช่วยสรุปเอกสาร").isEmpty())
+        } finally { dir.deleteRecursively() }
+    }
+
     @Test fun approvalIsBlockedWhenAnyTestFails() {
         val dir = createTempDir()
         try {
