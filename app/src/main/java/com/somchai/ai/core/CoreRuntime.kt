@@ -3,6 +3,7 @@ package com.somchai.ai.core
 import android.content.Context
 import com.somchai.ai.core.audit.ActivityLogger
 import com.somchai.ai.core.llm.LlmConnector
+import com.somchai.ai.core.memory.AndroidMemoryCipher
 import com.somchai.ai.core.memory.LocalMemoryStore
 import com.somchai.ai.core.plugins.PluginManager
 import com.somchai.ai.core.processing.InternalProcessor
