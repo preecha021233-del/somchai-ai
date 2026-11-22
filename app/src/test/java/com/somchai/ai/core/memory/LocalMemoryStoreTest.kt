@@ -8,6 +8,16 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class LocalMemoryStoreTest {
+    private class PrefixCipher : MemoryCipher {
+        override fun encrypt(plaintext: ByteArray): ByteArray =
+            "ENC:".toByteArray() + plaintext
+        override fun decrypt(ciphertext: ByteArray): ByteArray {
+            val prefix = "ENC:".toByteArray()
+            require(ciphertext.take(prefix.size).toByteArray().contentEquals(prefix))
+            return ciphertext.copyOfRange(prefix.size, ciphertext.size)
+        }
+    }
+
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test fun addsSearchesPersistsAndDeletesMemory() {
@@ -59,6 +69,18 @@ class LocalMemoryStoreTest {
         assertTrue(notes.any { it.content == "วิธีสำรองข้อมูล" })
         assertFalse(legacyFile.exists())
         assertFalse(java.io.File(directory, "notes.txt.migrated").exists())
+    }
+
+    @Test fun encryptsMemoryAndBackupThroughInjectedCipher() {
+        val directory = temporaryFolder.newFolder("encrypted")
+        val store = LocalMemoryStore(directory, PrefixCipher())
+        store.add("secret local note")
+        val data = java.io.File(directory, "memory.enc").readBytes()
+        assertTrue(String(data, 0, 4) == "ENC:")
+        assertTrue(store.backup())
+        store.clear()
+        assertEquals(1, store.restoreBackup())
+        assertEquals("secret local note", store.all().first().content)
     }
 
 }
