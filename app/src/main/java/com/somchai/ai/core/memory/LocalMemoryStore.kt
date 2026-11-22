@@ -46,15 +46,30 @@ class LocalMemoryStore(
     }
 
     fun search(query: String, limit: Int = 50): List<MemoryEntry> {
-        val terms = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
-        if (terms.isEmpty()) return all(limit)
+        val clean = query.trim().lowercase()
+        if (clean.isEmpty()) return all(limit)
         return synchronized(lock) {
-            readEntries().asReversed()
-                .filter { entry -> terms.any { term -> entry.content.lowercase().contains(term) || entry.category.lowercase().contains(term) } }
-                .take(limit.coerceIn(1, 200))
+            val entries = readEntries().asReversed()
+            val idMatches = entries.filter { it.id.trim().lowercase().startsWith(clean) }
+            if (idMatches.isNotEmpty()) return@synchronized idMatches.take(limit.coerceIn(1, 200))
+
+            // Thai queries are often typed without spaces. Compare a compact form first,
+            // then retain all-term matching for queries that contain deliberate word breaks.
+            val compactQuery = clean.filterNot { it.isWhitespace() }
+            val compactMatches = entries.filter { entry ->
+                entry.content.lowercase().filterNot { it.isWhitespace() }.contains(compactQuery) ||
+                    entry.category.lowercase().filterNot { it.isWhitespace() }.contains(compactQuery)
+            }
+            if (compactMatches.isNotEmpty()) return@synchronized compactMatches.take(limit.coerceIn(1, 200))
+
+            val terms = clean.split(Regex("\\s+")).filter { it.isNotBlank() }
+            entries.filter { entry ->
+                terms.all { term ->
+                    entry.content.lowercase().contains(term) || entry.category.lowercase().contains(term)
+                }
+            }.take(limit.coerceIn(1, 200))
         }
     }
-
     fun delete(id: String): Boolean = synchronized(lock) {
         val entries = readEntries()
         if (entries.none { it.id == id }) return@synchronized false
