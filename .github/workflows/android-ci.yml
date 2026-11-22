@@ -58,7 +58,7 @@ jobs:
           NEW_VERSION=$("$AAPT" dump badging "$APK" | sed -n "1s/.*versionCode='\\([0-9]*\\)'.*/\\1/p")
           test -n "$NEW_VERSION"
           mkdir -p "$RUNNER_TEMP/previous-release"
-          gh run download 45004339173 --repo "$GITHUB_REPOSITORY" --name somchai-owner-signed-release-apk --dir "$RUNNER_TEMP/previous-release"
+          gh run download 45017522494 --repo "$GITHUB_REPOSITORY" --name somchai-owner-signed-release-apk --dir "$RUNNER_TEMP/previous-release"
           OLD_APK=$(find "$RUNNER_TEMP/previous-release" -name '*.apk' -print -quit)
           test -n "$OLD_APK"
           "$AAPT" dump badging "$OLD_APK" | grep -F "package: name='com.somchai.ai'"

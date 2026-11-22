@@ -23,7 +23,9 @@ Observed limitation:
 
 ## Phase 1 — Baby SOMCHAI
 
-**Status: AUTHORIZED TO START by owner on 2026-11-22**
+**Status: IMPLEMENTATION IN PROGRESS — final validation intentionally deferred**
+
+Owner authorization to complete the remaining Phase 1 implementation was reaffirmed on 2026-11-22. The approved scope remains the five capabilities below, plus the approved Chat UI alignment to the existing Figma reference. No Phase 2 work is included. See `docs/PHASE1_PROGRESS.md` for implementation details and final acceptance gates.
 
 Scope is limited to the five capabilities defined in `docs/IMPLEMENTATION_PLAN.md` Part 11:
 1. Internal Processing

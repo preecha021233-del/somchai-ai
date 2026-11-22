@@ -6,10 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.DisposableEffect
 import java.util.Locale
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -95,7 +98,7 @@ fun AgentApp(runtime: CoreRuntime) {
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SomchaiSurface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { padding ->
@@ -160,7 +163,9 @@ private fun ChatPage(
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
-    val speech = remember(context) { TextToSpeech(context) {} }
+    var speechReady by remember { mutableStateOf(false) }
+    val speech = remember(context) { TextToSpeech(context) { status -> speechReady = status == TextToSpeech.SUCCESS } }
+    val feedbackState = remember { mutableStateMapOf<String, Boolean>() }
     DisposableEffect(speech) { onDispose { speech.stop(); speech.shutdown() } }
 
     LaunchedEffect(messages.size, busy) {
@@ -169,11 +174,11 @@ private fun ChatPage(
     }
 
     Column(
-        modifier.fillMaxSize().background(Color(0xFFF7F7F9))
+        modifier.fillMaxSize().background(Color.White)
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
             contentPadding = PaddingValues(top = 20.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -191,7 +196,7 @@ private fun ChatPage(
                 ) {
                     if (!isUser) {
                         Box(
-                            Modifier.padding(end = 7.dp).size(28.dp).clip(CircleShape)
+                            Modifier.padding(end = 8.dp).size(34.dp).clip(CircleShape)
                                 .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))),
                             contentAlignment = Alignment.Center
                         ) {
@@ -207,51 +212,98 @@ private fun ChatPage(
                             Text(body, color = Color.White, style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        Column(Modifier.widthIn(max = 310.dp)) {
+                        Column(Modifier.widthIn(max = 316.dp).fillMaxWidth()) {
                             Surface(
-                                color = Color(0xFFECECEF),
-                                shape = RoundedCornerShape(topStart = 7.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFFEEF0F4),
+                                shape = RoundedCornerShape(22.dp),
+                                shadowElevation = 5.dp
                             ) {
-                                Text(
-                                    body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
-                                    color = Color(0xFF17171B), style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 2.dp),
-                                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(onClick = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
-                                    Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
-                                }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.ContentCopy, "คัดลอก", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
-                                }
-                                IconButton(onClick = { onFeedback(body, true) }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.ThumbUp, "ถูกใจ", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
-                                }
-                                IconButton(onClick = { onFeedback(body, false) }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.ThumbDown, "ไม่ถูกใจ", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
-                                }
-                                IconButton(onClick = {
-                                    speech.language = Locale("th", "TH")
-                                    speech.speak(body, TextToSpeech.QUEUE_FLUSH, null, "somchai-${body.hashCode()}")
-                                }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.VolumeUp, "อ่านออกเสียง", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
-                                }
-                                IconButton(onClick = {
-                                    val intent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, body)
+                                Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
+                                    Text(
+                                        body,
+                                        color = Color(0xFF17171B),
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Spacer(Modifier.height(7.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                    clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
+                                                    Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ContentCopy, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("คัดลอก", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable { feedbackState[body] = true; onFeedback(body, true) }
+                                                .padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ThumbUp, contentDescription = null, tint = if (feedbackState[body] == true) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("ถูกใจ", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable { feedbackState[body] = false; onFeedback(body, false) }
+                                                .padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ThumbDown, contentDescription = null, tint = if (feedbackState[body] == false) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("ไม่ถูกใจ", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    if (speechReady) {
+                                                        val languageResult = speech.setLanguage(Locale("th", "TH"))
+                                                        if (languageResult >= TextToSpeech.LANG_AVAILABLE) {
+                                                            speech.speak(body, TextToSpeech.QUEUE_FLUSH, null, "somchai-${body.hashCode()}")
+                                                        } else {
+                                                            Toast.makeText(context, "อุปกรณ์ยังไม่มีเสียงภาษาไทย", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    } else {
+                                                        Toast.makeText(context, "กำลังเตรียมระบบอ่านออกเสียง", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.VolumeUp, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("อ่านเสียง", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, body)
+                                                    }
+                                                    context.startActivity(Intent.createChooser(intent, "แชร์คำตอบจาก SOMCHAI AI"))
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.Share, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("แชร์", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
                                     }
-                                    context.startActivity(Intent.createChooser(intent, "แชร์คำตอบจาก SOMCHAI AI"))
-                                }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.Share, "แชร์", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -281,7 +333,7 @@ private fun ChatPage(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-                    .imePadding().padding(horizontal = 12.dp, vertical = 10.dp),
+                    .imePadding().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
@@ -317,7 +369,7 @@ private fun ChatPage(
                     )
                 )
                 Box(
-                    Modifier.padding(bottom = 3.dp).size(52.dp).clip(CircleShape)
+                    Modifier.padding(bottom = 0.dp).size(58.dp).clip(CircleShape)
                         .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))),
                     contentAlignment = Alignment.Center
                 ) {
@@ -419,6 +471,42 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
     var refresh by remember { mutableIntStateOf(0) }
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var memoryMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri != null) runCatching {
+            val payload = runtime.memory.exportEncrypted()
+            val stream = requireNotNull(context.contentResolver.openOutputStream(uri)) { "เปิดไฟล์ปลายทางไม่ได้" }
+            stream.use { it.write(payload) }
+        }.onSuccess {
+            memoryMessage = "ส่งออกไฟล์ความจำที่เข้ารหัสแล้ว (ใช้ได้กับเครื่องและกุญแจเดิม)"
+        }.onFailure { memoryMessage = it.message ?: "ส่งออกไม่สำเร็จ" }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) runCatching {
+            val stream = requireNotNull(context.contentResolver.openInputStream(uri)) { "เปิดไฟล์นำเข้าไม่ได้" }
+            val bytes = stream.use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= 1_048_576) { "ไฟล์นำเข้ามีขนาดเกิน 1 MB" }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+            runtime.memory.importEncrypted(bytes)
+        }.onSuccess {
+            memoryMessage = "นำเข้าความจำ $it รายการแล้ว"
+            refresh++
+        }.onFailure { memoryMessage = it.message ?: "นำเข้าไม่สำเร็จ" }
+    }
     val memoryResult = remember(refresh, query) {
         runCatching {
             if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
@@ -438,9 +526,22 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
                 runCatching { runtime.memory.backup() }
                     .onSuccess { memoryMessage = if (it) "สำรองความจำแล้ว" else "ยังไม่มีข้อมูลให้สำรอง" }
                     .onFailure { memoryMessage = it.message }
-            }) { Text("สำรองความจำ") }
-            OutlinedButton(onClick = { showRestoreConfirm = true }) { Text("กู้คืนข้อมูล") }
+            }) { Text("สำรองในแอป") }
+            OutlinedButton(onClick = { showRestoreConfirm = true }) { Text("กู้คืนในแอป") }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { exportLauncher.launch("somchai-memory.enc") }) {
+                Text("ส่งออกไฟล์")
+            }
+            OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/octet-stream", "*/*")) }) {
+                Text("นำเข้าไฟล์")
+            }
+        }
+        Text(
+            "ไฟล์ส่งออกเข้ารหัสและผูกกับกุญแจ Android Keystore ของการติดตั้งนี้ จึงกู้คืนได้บนแอปติดตั้งเดิมที่ยังมีกุญแจอยู่เท่านั้น ไม่สามารถย้ายไปเครื่องใหม่ได้",
+            color = SomchaiTextTertiary,
+            style = MaterialTheme.typography.bodySmall
+        )
         memoryMessage?.let { Text(it, color = SomchaiPrimaryLight) }
         if (showRestoreConfirm) {
             AlertDialog(
