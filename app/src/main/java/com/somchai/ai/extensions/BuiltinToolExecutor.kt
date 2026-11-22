@@ -28,7 +28,10 @@ class BuiltinToolExecutor(
             .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "Wikipedia: ${it.javaClass.simpleName}") }
             .getOrNull()
 
-        val sections = listOfNotNull(duckDuckGo, wikipedia).filter { it.isNotBlank() }
+        val webResults = runCatching { searchDuckDuckGoWeb(query) }
+            .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "DuckDuckGo Web: " + it.javaClass.simpleName) }
+            .getOrNull()
+        val sections = listOfNotNull(duckDuckGo, wikipedia, webResults).filter { it.isNotBlank() }
         check(sections.isNotEmpty()) { "ค้นคว้าไม่สำเร็จ ทั้งสองแหล่งข้อมูลไม่สามารถเชื่อมต่อได้" }
 
         // Search snippets are discovery hints only. Open linked source pages and
@@ -37,7 +40,7 @@ class BuiltinToolExecutor(
             .findAll(sections.joinToString("\n"))
             .map { it.groupValues[1].trimEnd('.', ',', ')', ']') }
             .distinct()
-            .take(2)
+            .take(3)
             .toList()
         val readPages = urls.mapNotNull { address ->
             runCatching { pageReader.read(address) }
@@ -87,6 +90,30 @@ class BuiltinToolExecutor(
             "แหล่งที่ 1 — DuckDuckGo Instant Answer\nไม่พบคำตอบแบบ Instant Answer สำหรับคำค้นนี้"
         } else {
             "แหล่งที่ 1 — DuckDuckGo Instant Answer (ไม่ระบุวันที่เผยแพร่)\n" + lines.joinToString("\n")
+        }
+    }
+
+    private fun searchDuckDuckGoWeb(query: String): String {
+        val encoded = URLEncoder.encode(query, "UTF-8")
+        val connection = URL("https://html.duckduckgo.com/html/?q=$encoded").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 15_000
+            connection.instanceFollowRedirects = true
+            connection.setRequestProperty("User-Agent", "SOMCHAI-AI/1.9 (Android research client)")
+            connection.setRequestProperty("Accept", "text/html")
+            val code = connection.responseCode
+            check(code in 200..299) { "DuckDuckGo Web returned HTTP $code" }
+            val html = connection.inputStream.bufferedReader().use { it.readText() }
+            check(html.length <= 1_000_000) { "DuckDuckGo Web response exceeds size limit" }
+            val hits = WebSearchResultParser.parse(html, pageReader, limit = 5)
+            if (hits.isEmpty()) return "แหล่งที่ 3 — DuckDuckGo Web Search\nไม่พบผลลัพธ์เว็บที่เป็น HTTPS และผ่านการตรวจสอบ"
+            return "แหล่งที่ 3 — DuckDuckGo Web Search\n" + hits.mapIndexed { index, hit ->
+                "${index + 1}. ${hit.title}\nURL: ${hit.url}"
+            }.joinToString("\n\n")
+        } finally {
+            connection.disconnect()
         }
     }
 
