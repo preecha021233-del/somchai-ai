@@ -145,3 +145,8 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - LocalFirstBrain now catches failures from model readiness checks and from the deterministic fallback itself; if both local inference and fallback fail, it returns a truthful safe fallback message rather than propagating the processor exception.
 - Added regression tests for delimiter injection, long-memory truncation and simultaneous model/fallback failure.
 - Automated CI for the latest code commit is running; no pass result is claimed yet.
+
+## External research prompt-injection hardening — 2026-11-22
+- Expanded the external-page sanitization denylist to cover additional English override patterns (developer/system instruction replacement, hidden system-prompt disclosure, and role reassignment) and Thai equivalents (requesting system/internal instructions and role reassignment).
+- Added regression cases for the additional English and Thai patterns.
+- These filters are defense in depth only: all external page content must still remain explicitly untrusted in the model prompt. CI execution for this commit is pending.
