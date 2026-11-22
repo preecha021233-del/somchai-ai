@@ -32,7 +32,7 @@ class OfflineReasoningEngine {
     fun solveArithmetic(input: String): String? {
         solveChangeProblem(input)?.let { return it }
         solveBatteryProblem(input)?.let { return it }
-        val expression = Regex("""(?<![\p{L}])\d[\d,.]*(?:\s*[+\-×*/÷()]\s*\d[\d,.]*)+""")
+        val expression = Regex("""(?<![\p{L}\d])[\d(][\d,.()+\-×*/÷\s]*""")
             .find(input)?.value ?: return null
         val result = runCatching { ExpressionParser(expression).parse() }.getOrNull() ?: return null
         return "วิธีคำนวณ:\n${expression.replace("×", "*").replace("÷", "/")} = ${format(result)}"
