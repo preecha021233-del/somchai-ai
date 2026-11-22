@@ -53,7 +53,15 @@ class InternalProcessor(
             )
         }
         reasoning.classifyExamples(text)?.let { return ProcessingResult(it, "reasoning.intent_classification") }
+        reasoning.detectContradiction(text)?.let { return ProcessingResult(it, "reasoning.contradiction") }
         reasoning.solveArithmetic(text)?.let { return ProcessingResult(it, "reasoning.arithmetic") }
+        reasoning.missingInformation(text)?.let { return ProcessingResult(it, "reasoning.insufficient_information") }
+        if (containsAny(normalized, listOf("ขอแหล่งอ้างอิง", "ขอแหล่งที่มา", "มีแหล่งอ้างอิงไหม", "อ้างอิงจากไหน", "sources"))) {
+            return ProcessingResult(
+                "ผมยังไม่มีแหล่งข้อมูลที่เปิดอ่านและตรวจสอบสำหรับคำตอบนี้ จึงไม่สร้างรายการอ้างอิงขึ้นมาเองครับ หากต้องการค้นคว้าออนไลน์ ให้ใช้ /search ตามด้วยหัวข้อ และต้องอนุมัติปลั๊กอิน Web Search ก่อน",
+                "research.sources_required"
+            )
+        }
         if (containsAny(normalized, listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน"))) return planResult(text)
         knowledge.answer(text)?.let { return ProcessingResult(it, "knowledge.fact") }
         if (normalized.startsWith("จำไว้ว่า ") || normalized.startsWith("จำว่า ")) {
