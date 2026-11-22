@@ -19,7 +19,7 @@ SOMCHAI AI is an Android personal assistant being developed toward an independen
 - Daily API request and local storage budgets.
 - GitHub Actions build, unit tests and APK artifact upload.
 
-**Phase 1 implementation limitation:** the internal processor is a deterministic, bounded rule engine with explicit supported intents and a task-planning workflow. It is not a general-purpose language model, does not learn new reasoning rules autonomously, and does not claim human-level reasoning. Unsupported requests are reported honestly rather than silently sent to an external provider. Optional provider requests require the explicit `/ai` command and an owner-configured provider. Do not create accounts, API keys, subscriptions or charges without the owner's explicit approval.
+**Phase 1 implementation limitation:** the internal processor remains a deterministic, bounded rule engine. A native llama.cpp on-device inference runtime and an explicit installer for the official Qwen2.5-0.5B-Instruct GGUF model have been added on `phase-1/local-brain-runtime`; this integration is pending CI and real-device testing. It is not yet evidence of advanced or human-level reasoning, and unsupported requests must not be silently sent to an external provider. Optional provider requests require the explicit `/ai` command and an owner-configured provider. Do not create accounts, API keys, subscriptions or charges without the owner's explicit approval.
 
 The current JSON plugin system selects a finite set of operations already implemented by the app. It is not an arbitrary code execution runtime and is not yet the full self-extension system described in the Master Command.
 
@@ -59,7 +59,7 @@ For local Android Studio use, open the repository as a Gradle project and use a 
 
 The authoritative requirements, owner-approval rules, Protected Core/Evolution Zone architecture, phase gates, internal processing goals and self-evolution roadmap are in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
-Phase 0 is closed based on repository audit and owner device update testing. Phase 1 implementation is in progress. The current internal processor is deliberately bounded and is not a completed independent AI brain or a security-certified release. Remaining Phase 1 acceptance gates must be completed with automated and device evidence. Do not describe planned capabilities as implemented.
+Phase 0 is closed based on repository audit and owner device update testing. Phase 1 implementation is in progress. The local model runtime is under CI/device verification and is not yet accepted as a completed independent AI brain or a security-certified release. Remaining Phase 1 acceptance gates must be completed with automated and device evidence. Do not describe planned capabilities as implemented.
 
 ## Release limitations
 
