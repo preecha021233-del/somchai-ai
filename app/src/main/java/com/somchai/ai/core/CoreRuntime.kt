@@ -3,6 +3,7 @@ package com.somchai.ai.core
 import android.content.Context
 import com.somchai.ai.core.audit.ActivityLogger
 import com.somchai.ai.core.brain.LocalFirstBrain
+import com.somchai.ai.core.brain.BrainRequest
 import com.somchai.ai.core.brain.LocalModelStore
 import com.somchai.ai.core.brain.NativeLlamaInferenceEngine
 import com.somchai.ai.core.llm.LlmConnector
@@ -38,7 +39,9 @@ class CoreRuntime(context: Context) {
     // Otherwise it reports the deterministic internal fallback; it never silently calls a remote provider.
     val brain = LocalFirstBrain(localInference) { request -> processor.process(request.prompt).answer }
     val plugins = PluginManager(paths, logger, permissions)
-    val tools = BuiltinToolExecutor(permissions, logger, resources)
+    val tools = BuiltinToolExecutor(permissions, logger, resources, summarizeLocally = { prompt ->
+        if (localInference.isModelLoaded()) localInference.generate(BrainRequest(prompt)) else ""
+    })
     val llm = LlmConnector(secrets, resources, logger)
 
     private val modelLoader = Executors.newSingleThreadExecutor { task -> Thread(task, "somchai-model-loader").apply { isDaemon = true } }
