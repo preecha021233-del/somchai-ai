@@ -63,7 +63,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 1. Run the complete JVM unit-test suite.
 2. Build the debug APK.
 3. Build the owner-signed release APK using the existing protected signing secrets.
-4. Verify `com.somchai.ai`, versionCode 9, and signing-certificate continuity against the previous owner-signed release artifact.
+4. Verify `com.somchai.ai`, versionCode 10, and signing-certificate continuity against the previous owner-signed release artifact.
 5. Install the release APK over the existing v1.8.0 baseline app on a real Android device without uninstalling or clearing data.
 6. Verify Figma UI layout, top-right menu, keyboard collapse, chat scrolling, all response actions, memory export/import, plugin lifecycle, research and offline behavior.
 7. Fix any failures and repeat only the affected checks plus the full release gate.
