@@ -23,7 +23,7 @@ class AesGcmMemoryCipherTest {
 
     @Test fun rejectsModifiedCiphertext() {
         val encrypted = cipher.encrypt("integrity".toByteArray())
-        encrypted[encrypted.lastIndex] = (encrypted.last() xor 0x01)
+        encrypted[encrypted.lastIndex] = (encrypted.last().toInt() xor 0x01).toByte()
         assertThrows(Exception::class.java) { cipher.decrypt(encrypted) }
     }
 }
