@@ -15,6 +15,10 @@ on:
       - "app/**"
       - ".github/workflows/phase1-local-brain.yml"
 
+concurrency:
+  group: phase1-local-brain-${github.ref}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
