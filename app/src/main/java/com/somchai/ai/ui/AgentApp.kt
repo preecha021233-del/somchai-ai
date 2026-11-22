@@ -38,7 +38,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
 import com.somchai.ai.core.brain.BrainRequest
-import com.somchai.ai.core.processing.TaskPlan
+import com.somchai.ai.core.processing.TaskPlan\nimport com.somchai.ai.core.skills.SkillTestCase
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
 import kotlinx.coroutines.launch
@@ -139,7 +139,55 @@ fun AgentApp(runtime: CoreRuntime) {
                         pendingPlan = null
                         scope.launch {
                             try {
-                                val answer = if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
+                                val answer = if (text.startsWith("/skill", true)) {
+                                    val command = text.removePrefix("/skill").trim()
+                                    when {
+                                        command.equals("list", true) -> {
+                                            val skills = runtime.skills.all()
+                                            if (skills.isEmpty()) "ยังไม่มีทักษะที่บันทึกไว้" else skills.joinToString("\\n") { skill ->
+                                                val status = if (skill.approved) "อนุมัติแล้ว" else "รอทดสอบ/อนุมัติ"
+                                                "• " + skill.name + " [" + skill.id.take(8) + "] — " + status +
+                                                    " — ผ่าน " + skill.results.count { it.passed } + "/" + skill.tests.size
+                                            }
+                                        }
+                                        command.startsWith("propose ", true) -> {
+                                            val fields = command.removePrefix("propose").trim().split("|", limit = 4).map { it.trim() }
+                                            require(fields.size == 4) {
+                                                "รูปแบบ: /skill propose ชื่อ | คำกระตุ้น,คำกระตุ้น | ขั้นตอน | input1 => expected1 ;; input2 => expected2"
+                                            }
+                                            val tests = fields[3].split(";;").map { raw ->
+                                                val pair = raw.split("=>", limit = 2).map { it.trim() }
+                                                require(pair.size == 2) { "กรณีทดสอบต้องเขียน input => expected" }
+                                                SkillTestCase(pair[0], pair[1])
+                                            }
+                                            val skill = runtime.skills.propose(
+                                                fields[0], fields[1].split(",").map { it.trim() }, fields[2], tests
+                                            )
+                                            "บันทึกทักษะเป็นฉบับร่างแล้ว รหัส " + skill.id.take(8) +
+                                                "\\nต้องทดสอบด้วย /skill test " + skill.id +
+                                                " และเจ้าของต้องอนุมัติด้วย /skill approve " + skill.id
+                                        }
+                                        command.startsWith("test ", true) -> {
+                                            val id = command.removePrefix("test").trim()
+                                            val results = runtime.skills.evaluate(id, runtime.localInference)
+                                            "ผลทดสอบทักษะ: ผ่าน " + results.count { it.passed } + "/" + results.size +
+                                                "\\n" + results.mapIndexed { index, result ->
+                                                    (index + 1).toString() + ". " + if (result.passed) "ผ่าน" else "ไม่ผ่าน" +
+                                                        " — " + result.output.take(240)
+                                                }.joinToString("\\n")
+                                        }
+                                        command.startsWith("approve ", true) -> {
+                                            val id = command.removePrefix("approve").trim()
+                                            val skill = runtime.skills.approve(id)
+                                            "เจ้าของอนุมัติทักษะ " + skill.name + " แล้ว ระบบจะใช้เมื่อพบคำกระตุ้นที่ตรงกัน"
+                                        }
+                                        command.startsWith("delete ", true) -> {
+                                            val id = command.removePrefix("delete").trim()
+                                            if (runtime.skills.delete(id)) "ลบทักษะแล้ว" else "ไม่พบทักษะ"
+                                        }
+                                        else -> "คำสั่งทักษะ:\\n/skill list\\n/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected\\n/skill test รหัส\\n/skill approve รหัส\\n/skill delete รหัส"
+                                    }
+                                } else if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
                                     val active = runtime.plugins.activePlugins()
                                     val candidates = runtime.plugins.candidates()
                                     val disabled = runtime.plugins.disabledPlugins()
@@ -189,7 +237,9 @@ fun AgentApp(runtime: CoreRuntime) {
                                             else -> null
                                         }
                                     }
-                                    val reply = runtime.brain.respond(BrainRequest(text, history))
+                                    val reply = runtime.brain.respond(
+                                        BrainRequest(text, history, runtime.skills.relevantFor(text))
+                                    )
                                     runtime.logger.record("BRAIN_ROUTE", "engine=${reply.engineId} fallback=${reply.usedFallback}")
                                     reply.text
                                 }
