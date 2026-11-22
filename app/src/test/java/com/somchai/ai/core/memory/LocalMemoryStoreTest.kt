@@ -45,4 +45,19 @@ class LocalMemoryStoreTest {
         assertEquals(1, migrated.getInt("schemaVersion"))
     }
 
+    @Test fun importsLegacyOwnerNotesAndKeepsVerifiedArchive() {
+        val directory = temporaryFolder.newFolder("legacy-notes")
+        val legacyFile = java.io.File(directory, "notes.txt")
+        legacyFile.writeText("เจ้าของต้องการคำตอบกระชับ\\nวิธีสำรองข้อมูล\\n")
+
+        val store = LocalMemoryStore(directory)
+        val notes = store.all(500).filter { it.category == "owner-note" }
+
+        assertEquals(2, notes.size)
+        assertTrue(notes.any { it.content == "เจ้าของต้องการคำตอบกระชับ" })
+        assertTrue(notes.any { it.content == "วิธีสำรองข้อมูล" })
+        assertFalse(legacyFile.exists())
+        assertTrue(java.io.File(directory, "notes.txt.migrated").isFile)
+    }
+
 }
