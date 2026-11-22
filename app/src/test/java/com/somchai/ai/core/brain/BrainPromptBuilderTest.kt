@@ -44,6 +44,18 @@ class BrainPromptBuilderTest {
         assertTrue(prompt.length <= BrainPromptBuilder.MAX_PROMPT_CHARS)
     }
 
+    @Test fun longSavedMemoryKeepsItsClosingBoundaryWithinBudget() {
+        val prompt = BrainPromptBuilder.build(
+            BrainRequest(
+                prompt = "คำถาม",
+                memoryContext = listOf("ก".repeat(140), "ข".repeat(140), "ค".repeat(140))
+            )
+        )
+        assertTrue(prompt.contains("<saved_memory>"))
+        assertTrue(prompt.contains("</saved_memory>"))
+        assertTrue(prompt.length <= BrainPromptBuilder.MAX_PROMPT_CHARS)
+    }
+
     @Test fun savedMemoryCannotCloseItsUntrustedDataBoundary() {
         val prompt = BrainPromptBuilder.build(
             BrainRequest(
