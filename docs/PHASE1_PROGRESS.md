@@ -9,6 +9,9 @@ Updated: 2026-11-22
 - Deterministic internal intent handling for greetings, capability description, help, task planning, and local-memory commands.
 - Task planner decomposes research, development, troubleshooting and general requests into explicit steps. It describes a plan and does not claim to have executed it.
 - Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.
+- Research output now displays the DuckDuckGo Instant Answer source name and result URLs when supplied by the endpoint.
+- Active plugins can be disabled by the owner; the manifest is retained in the app-private backup area for recovery.
+- Plugin validation now accepts only the `web.search` operation actually implemented by Core; unimplemented memory operations are rejected.
 - Memory tab now reads and manages real local-memory records rather than displaying hard-coded sample memories.
 - Added JVM unit tests for processor intents, task planning, and memory CRUD/persistence.
 - Application ID remains `com.somchai.ai`; versionCode incremented from 1 to 2 and versionName from 1.0.0 to 1.1.0. Existing owner signing configuration was not changed.
@@ -19,9 +22,9 @@ Updated: 2026-11-22
 |---|---|---|
 | Internal processing | Implemented, automated tests pending CI | CI pass and device tests with network disabled and no API key |
 | Task decomposition | Implemented, automated tests pending CI | CI pass; verify plan output on device |
-| Research | Existing approved DuckDuckGo Instant Answer operation retained | Broader source comparison, source/date reporting and prompt-injection tests |
+| Research | Approved DuckDuckGo Instant Answer with source/URL display | Multi-source comparison, publication dates and prompt-injection tests |
 | Local memory | Add/search/list/delete implemented | CI pass; device persistence across app restart and update |
-| Basic plugin development | Existing declarative JSON manifest flow retained | Expand tests for lifecycle, tampering, denial, rollback and operation execution |
+| Basic plugin development | JSON validation, smoke checks, hash-bound approval, activation, disable and rollback | Lifecycle integration tests, tampering, denial and rollback tests |
 | Protection and recovery | Existing app-private storage, permissions, audit log and plugin rollback retained | Fault-injection and adversarial tests |
 | Update compatibility | Version increment and prior owner device update test recorded | Test this new v2 APK over installed v1 on device; verify certificate fingerprint |
 
