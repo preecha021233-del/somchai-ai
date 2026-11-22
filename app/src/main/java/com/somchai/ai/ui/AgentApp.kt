@@ -140,7 +140,7 @@ fun AgentApp(runtime: CoreRuntime) {
                         scope.launch {
                             try {
                                 val answer = if (text.startsWith("/skill", true)) {
-                                    val command = text.removePrefix("/skill").trim()
+                                    val command = text.substringAfter(" ", "").trim()
                                     when {
                                         command.equals("list", true) -> {
                                             val skills = runtime.skills.all()
