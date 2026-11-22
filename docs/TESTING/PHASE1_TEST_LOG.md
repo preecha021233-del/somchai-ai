@@ -233,3 +233,30 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 ### Evidence boundary
 - This is automated code-level evidence only. It does not prove the model can reliably learn useful skills, that semantic test cases are strong, or that the feature works on the owner's device.
 - Device testing, full Phase 1 acceptance criteria P01–P35, and model-quality thresholds remain open.
+
+
+## Round 7 — 2026-11-22 — Permission, plugin, planner and Brain-context hardening
+
+- Phase: Phase 1
+- Branch: `phase-1/local-brain-runtime`
+- Code commit under test: `6d4569de1bb33f296ade3a2e5a2c5a94e7276942`
+- Documentation commit: `4c4a836949f30610df262b93e3437c7e19c4c53b`
+- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45042766846
+- Test method: GitHub Actions JVM unit tests + Kotlin compile + llama.cpp ARM64 native build + debug APK assembly
+- CI status at log update: IN PROGRESS; no pass/fail result claimed.
+
+### Implementation and regression coverage added
+- Exact operation-to-permission binding; reject unknown operations, duplicate capabilities and permission escalation.
+- Strip control/bidirectional formatting characters and neutralize common Thai/English prompt-injection phrases in external web text.
+- Ignore disabled plugin manifests at runtime and reject disabled manifests during approval/reactivation.
+- Reject oversized/control-character task goals rather than silently truncating them; recognize additional Thai research-intent phrases.
+- Escape saved-memory content inside an explicit untrusted-data prompt boundary and keep its closing delimiter within the prompt budget.
+- Return a safe fallback if both local inference and deterministic fallback fail.
+- Added JVM regression cases for each behavior.
+
+### Evidence boundary / remaining checks
+- New JVM and native CI result: PENDING at time of recording.
+- Target-device model download, native load, Thai answer quality, RAM/latency/thermal/battery measurements: NOT RUN.
+- Live research requiring at least two actually read pages: NOT RUN on device.
+- Owner signing-certificate continuity and in-place update: NOT RUN.
+- Phase 1: NOT ACCEPTED.
