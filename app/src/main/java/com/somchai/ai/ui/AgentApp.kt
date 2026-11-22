@@ -161,6 +161,7 @@ private fun CandidateCard(candidate: PluginCandidate, onApprove: () -> Unit, onR
             Text("Operation: ${candidate.manifest.operation}", color = SomchaiTextSecondary)
             Text("Permissions: ${candidate.manifest.permissions.joinToString()}", color = SomchaiWarning)
             Text("SHA-256: ${candidate.hash.take(24)}…", color = SomchaiTextTertiary, style = MaterialTheme.typography.labelSmall)
+            Text("Smoke tests: ${candidate.smokeChecks.joinToString()}", color = SomchaiSuccess, style = MaterialTheme.typography.labelSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onApprove) { Text("อนุมัติ") }
                 OutlinedButton(onClick = onReject) { Text("ปฏิเสธ") }
