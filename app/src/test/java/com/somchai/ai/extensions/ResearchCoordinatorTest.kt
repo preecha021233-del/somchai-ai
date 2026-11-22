@@ -51,6 +51,23 @@ class ResearchCoordinatorTest {
         assertFalse(report.meetsTwoSourceMinimum)
     }
 
+    @Test fun continuesPastUnreadableCandidatesUntilSuccessfulPageLimitIsReached() {
+        val candidates = (1..7).map { index ->
+            ResearchCandidate("source-$index", "Page $index", "https://page$index.example/article")
+        }
+        val failures = candidates.take(5).map { it.url }.toSet()
+        val report = ResearchCoordinator(
+            FakeDiscovery(ResearchDiscoveryResult(candidates, emptyList())),
+            FakeReader(failures),
+            maxPages = 2
+        ).research("fallback sources")
+
+        assertEquals(listOf("https://page6.example/article", "https://page7.example/article"),
+            report.pagesRead.map { it.url })
+        assertTrue(report.meetsTwoSourceMinimum)
+        assertEquals(5, report.pageErrors.size)
+    }
+
     @Test fun providerTimeoutIsPropagatedForExplicitErrorHandling() {
         assertThrows(SocketTimeoutException::class.java) {
             ResearchCoordinator(
