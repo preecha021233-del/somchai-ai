@@ -11,8 +11,8 @@ import java.nio.charset.StandardCharsets
 data class WebPageContent(val url: String, val title: String, val text: String)
 
 /** Read-only HTTPS page reader with redirect, size, timeout, and private-network guards. */
-class WebPageReader {
-    fun read(address: String): WebPageContent {
+class WebPageReader : ResearchPageReader {
+    override fun read(address: String): WebPageContent {
         var current = validateUrl(address)
         repeat(MAX_REDIRECTS + 1) {
             val target = URL(current)
