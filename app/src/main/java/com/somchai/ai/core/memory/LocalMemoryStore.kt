@@ -1,6 +1,5 @@
 package com.somchai.ai.core.memory
 
-import com.somchai.ai.core.audit.ActivityLogger
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
@@ -113,7 +112,12 @@ class LocalMemoryStore(
 
     private fun decode(line: String): MemoryEntry {
         val json = JSONObject(line)
-        return MemoryEntry(json.getString("id"), json.getString("category"),
+        val entry = MemoryEntry(json.getString("id"), json.getString("category"),
             json.getString("content"), json.getString("createdAt"))
+        require(runCatching { UUID.fromString(entry.id) }.isSuccess) { "Invalid memory ID" }
+        require(entry.category.matches(Regex("[a-z][a-z0-9_-]{1,23}"))) { "Invalid memory category" }
+        require(entry.content.isNotBlank() && entry.content.length <= 2000) { "Invalid memory content" }
+        require(runCatching { java.time.Instant.parse(entry.createdAt) }.isSuccess) { "Invalid memory timestamp" }
+        return entry
     }
 }
