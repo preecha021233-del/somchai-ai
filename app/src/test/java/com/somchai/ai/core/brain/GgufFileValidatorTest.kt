@@ -30,7 +30,16 @@ class GgufFileValidatorTest {
         } finally { file.delete() }
     }
 
+    @Test fun rejectsSmallGgufFileAsDefaultModel() {
+        val file = File.createTempFile("somchai-untrusted-model", ".gguf")
+        try {
+            file.writeBytes(byteArrayOf(0x47, 0x47, 0x55, 0x46, 0x01))
+            assertFalse(GgufFileValidator.isVerifiedDefaultModel(file))
+        } finally { file.delete() }
+    }
+
     @Test fun rejectsMissingFile() {
         assertFalse(GgufFileValidator.isValid(File("missing-somchai-model.gguf")))
+        assertFalse(GgufFileValidator.isVerifiedDefaultModel(File("missing-somchai-model.gguf")))
     }
 }
