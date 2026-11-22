@@ -32,7 +32,7 @@ class OfflineReasoningEngine {
     fun solveArithmetic(input: String): String? {
         solveChangeProblem(input)?.let { return it }
         solveBatteryProblem(input)?.let { return it }
-        val expression = Regex("""(?<![\p{L}\d])[\d(][\d,.()+\-×*/÷\s]*""")
+        val expression = Regex("""(?<![\p{L}\d])[+-]?(?:\d|\()[\d,.()+\-×*/÷\s]*""")
             .find(input)?.value ?: return null
         val result = runCatching { ExpressionParser(expression).parse() }.getOrNull() ?: return null
         return "วิธีคำนวณ:\n${expression.replace("×", "*").replace("÷", "/")} = ${format(result)}"
@@ -72,8 +72,17 @@ class OfflineReasoningEngine {
     private val numberRegex = Regex("""\d[\d,]*(?:\.\d+)?""")
 
     private class ExpressionParser(source: String) {
-        private val tokens = Regex("""\d+(?:\.\d+)?|[+\-×*/÷()]""")
-            .findAll(source.replace(",", "").replace(" ", "")).map { it.value }.toList()
+        private val normalizedSource = source.replace(",", "").filterNot { it.isWhitespace() }
+        private val tokens = run {
+            val matches = Regex("""\d+(?:\.\d+)?|[+\-×*/÷()]""").findAll(normalizedSource).toList()
+            var consumed = 0
+            matches.forEach { match ->
+                require(match.range.first == consumed) { "Invalid character in expression" }
+                consumed = match.range.last + 1
+            }
+            require(consumed == normalizedSource.length) { "Invalid trailing input" }
+            matches.map { it.value }
+        }
         private var index = 0
         fun parse(): BigDecimal {
             require(tokens.isNotEmpty())
@@ -102,6 +111,7 @@ class OfflineReasoningEngine {
         }
         private fun factor(): BigDecimal {
             if (peek("-")) { index++; return factor().negate() }
+            if (peek("+")) { index++; return factor() }
             if (peek("(")) {
                 index++
                 val value = expression()
