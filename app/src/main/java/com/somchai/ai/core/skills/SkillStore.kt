@@ -68,6 +68,28 @@ class SkillStore(
         return skill
     }
 
+    suspend fun learnFromExperience(
+        name: String,
+        triggers: List<String>,
+        successfulExperience: String,
+        tests: List<SkillTestCase>,
+        engine: OnDeviceInferenceEngine
+    ): LearnedSkill {
+        require(engine.isModelLoaded()) { "ต้องติดตั้งและโหลดโมเดล AI ภายในก่อนเรียนรู้ทักษะ" }
+        require(successfulExperience.isNotBlank() && successfulExperience.length <= 4000) {
+            "ประสบการณ์ต้นแบบต้องมีความยาวไม่เกิน 4,000 ตัวอักษร"
+        }
+        val prompt = buildString {
+            append("จากประสบการณ์ที่สำเร็จต่อไปนี้ สกัดเป็นขั้นตอนทักษะที่นำกลับมาใช้ซ้ำได้\\n")
+            append(successfulExperience).append("\\n")
+            append("เขียนเฉพาะขั้นตอนที่ทำซ้ำได้ เป็นลำดับชัดเจน ไม่แต่งเครื่องมือหรือผลลัพธ์ที่ไม่มีในประสบการณ์")
+            append(" และระบุเงื่อนไขที่ต้องถามผู้ใช้เพิ่มเมื่อข้อมูลไม่พอ")
+        }
+        val procedure = engine.generate(BrainRequest(prompt)).trim()
+        require(procedure.isNotBlank() && procedure.length <= 4000) { "โมเดลสร้างขั้นตอนทักษะไม่สำเร็จ" }
+        return propose(name, triggers, procedure, tests)
+    }
+
     suspend fun evaluate(id: String, engine: OnDeviceInferenceEngine): List<SkillTestResult> {
         require(engine.isModelLoaded()) { "ต้องติดตั้งและโหลดโมเดล AI ภายในก่อนทดสอบทักษะ" }
         val skill = get(id) ?: error("ไม่พบทักษะ")
