@@ -46,15 +46,20 @@ class LocalMemoryStore(
     }
 
     fun search(query: String, limit: Int = 50): List<MemoryEntry> {
-        val terms = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
-        if (terms.isEmpty()) return all(limit)
+        val clean = query.trim().lowercase()
+        if (clean.isEmpty()) return all(limit)
         return synchronized(lock) {
-            readEntries().asReversed()
-                .filter { entry -> terms.any { term -> entry.content.lowercase().contains(term) || entry.category.lowercase().contains(term) } }
-                .take(limit.coerceIn(1, 200))
+            val entries = readEntries().asReversed()
+            val idMatches = entries.filter { it.id.lowercase().startsWith(clean) }
+            if (idMatches.isNotEmpty()) return@synchronized idMatches.take(limit.coerceIn(1, 200))
+            val terms = clean.split(Regex("\\s+")).filter { it.isNotBlank() }
+            entries.filter { entry ->
+                terms.all { term ->
+                    entry.content.lowercase().contains(term) || entry.category.lowercase().contains(term)
+                }
+            }.take(limit.coerceIn(1, 200))
         }
     }
-
     fun delete(id: String): Boolean = synchronized(lock) {
         val entries = readEntries()
         if (entries.none { it.id == id }) return@synchronized false
