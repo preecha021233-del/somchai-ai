@@ -151,7 +151,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                             }
                                         }
                                         command.startsWith("propose ", true) -> {
-                                            val fields = command.removePrefix("propose").trim().split("|", limit = 4).map { it.trim() }
+                                            val fields = command.substringAfter(" ").trim().split("|", limit = 4).map { it.trim() }
                                             require(fields.size == 4) {
                                                 "รูปแบบ: /skill propose ชื่อ | คำกระตุ้น,คำกระตุ้น | ขั้นตอน | input1 => expected1 ;; input2 => expected2"
                                             }
@@ -168,21 +168,21 @@ fun AgentApp(runtime: CoreRuntime) {
                                                 " และเจ้าของต้องอนุมัติด้วย /skill approve " + skill.id
                                         }
                                         command.startsWith("test ", true) -> {
-                                            val id = command.removePrefix("test").trim()
+                                            val id = command.substringAfter(" ").trim()
                                             val results = runtime.skills.evaluate(id, runtime.localInference)
                                             "ผลทดสอบทักษะ: ผ่าน " + results.count { it.passed } + "/" + results.size +
                                                 "\\n" + results.mapIndexed { index, result ->
-                                                    (index + 1).toString() + ". " + if (result.passed) "ผ่าน" else "ไม่ผ่าน" +
+                                                    (index + 1).toString() + ". " + (if (result.passed) "ผ่าน" else "ไม่ผ่าน") +
                                                         " — " + result.output.take(240)
                                                 }.joinToString("\\n")
                                         }
                                         command.startsWith("approve ", true) -> {
-                                            val id = command.removePrefix("approve").trim()
+                                            val id = command.substringAfter(" ").trim()
                                             val skill = runtime.skills.approve(id)
                                             "เจ้าของอนุมัติทักษะ " + skill.name + " แล้ว ระบบจะใช้เมื่อพบคำกระตุ้นที่ตรงกัน"
                                         }
                                         command.startsWith("delete ", true) -> {
-                                            val id = command.removePrefix("delete").trim()
+                                            val id = command.substringAfter(" ").trim()
                                             if (runtime.skills.delete(id)) "ลบทักษะแล้ว" else "ไม่พบทักษะ"
                                         }
                                         else -> "คำสั่งทักษะ:\\n/skill list\\n/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected\\n/skill test รหัส\\n/skill approve รหัส\\n/skill delete รหัส"
