@@ -132,6 +132,7 @@ private fun ChatPage(
 private fun PluginsPage(runtime: CoreRuntime, modifier: Modifier, refresh: Int, onRefresh: () -> Unit) {
     val candidates = remember(refresh) { runtime.plugins.candidates() }
     val active = remember(refresh) { runtime.plugins.activePlugins() }
+    val disabled = remember(refresh) { runtime.plugins.disabledPlugins() }
     var message by remember { mutableStateOf<String?>(null) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("รออนุมัติ", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
@@ -141,7 +142,7 @@ private fun PluginsPage(runtime: CoreRuntime, modifier: Modifier, refresh: Int, 
         candidates.forEach { candidate ->
             CandidateCard(candidate, onApprove = {
                 runCatching { runtime.plugins.approve(candidate.manifest.id, candidate.hash) }
-                    .onSuccess { message = "เปิดใช้งาน ${candidate.manifest.name} แล้ว" }
+                    .onSuccess { message = "อนุมัติและเปิดใช้งาน ${candidate.manifest.name} แล้ว" }
                     .onFailure { message = it.message }
                 onRefresh()
             }, onReject = {
@@ -161,6 +162,22 @@ private fun PluginsPage(runtime: CoreRuntime, modifier: Modifier, refresh: Int, 
                         .onFailure { message = it.message }
                     onRefresh()
                 }) { Text("ปิดใช้งาน") }
+            }
+        }
+        if (disabled.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Text("ปลั๊กอินที่ปิดใช้งาน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
+            disabled.forEach { plugin ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("• ${plugin.name} v${plugin.version} — ปิดใช้งาน",
+                        color = SomchaiTextSecondary, modifier = Modifier.weight(1f).padding(8.dp))
+                    TextButton(onClick = {
+                        runCatching { runtime.plugins.enable(plugin.id) }
+                            .onSuccess { message = if (it) "เปิดใช้งาน ${plugin.name} แล้ว" else "ไม่พบปลั๊กอินที่ปิดใช้งาน" }
+                            .onFailure { message = it.message }
+                        onRefresh()
+                    }) { Text("เปิดใช้งาน") }
+                }
             }
         }
         Spacer(Modifier.height(20.dp))
