@@ -141,6 +141,8 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 
 ## Round 4 — 2026-11-22 — Native local Brain runtime implementation
 
+- App version / versionCode: 1.9.0 / 10 (development branch; not installed on device)
+
 - Phase: Phase 1
 - Branch: `phase-1/local-brain-runtime`
 - Starting point: `phase-1/research-reader-brain-integration`
