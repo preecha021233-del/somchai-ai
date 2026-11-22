@@ -194,6 +194,71 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
     }
 }
 
+extern "C" JNIEXPORT jint JNICALL
+Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeCountTokens(
+    JNIEnv * env, jobject, jlong handle, jstring promptValue) {
+    auto * engine = reinterpret_cast<Engine *>(handle);
+    if (!engine || !engine->model || !engine->context || !engine->vocab) {
+        throwJava(env, "โมเดลภายในยังไม่พร้อมใช้งาน");
+        return -1;
+    }
+
+    try {
+        std::lock_guard<std::mutex> guard(engine->mutex);
+        const std::string prompt = fromJava(env, promptValue);
+        if (prompt.empty()) {
+            throwJava(env, "คำถามว่างเปล่า");
+            return -1;
+        }
+
+        const char * chatTemplate = llama_model_chat_template(engine->model, nullptr);
+        llama_chat_message message = {"user", prompt.c_str()};
+        std::vector<char> formatted(32768);
+        int32_t formattedLength = chatTemplate
+            ? llama_chat_apply_template(chatTemplate, &message, 1, true,
+                                        formatted.data(), static_cast<int32_t>(formatted.size()))
+            : -1;
+        if (formattedLength < 0) {
+            const std::string fallback = "### User:\\n" + prompt + "\\n### Assistant:\\n";
+            formatted.assign(fallback.begin(), fallback.end());
+        } else if (static_cast<size_t>(formattedLength) > formatted.size()) {
+            formatted.resize(static_cast<size_t>(formattedLength) + 1);
+            formattedLength = llama_chat_apply_template(chatTemplate, &message, 1, true,
+                formatted.data(), static_cast<int32_t>(formatted.size()));
+            if (formattedLength < 0) {
+                throwJava(env, "จัดรูปแบบคำถามตามโมเดลไม่สำเร็จ");
+                return -1;
+            }
+            formatted.resize(static_cast<size_t>(formattedLength));
+        } else {
+            formatted.resize(static_cast<size_t>(formattedLength));
+        }
+
+        const std::string input(formatted.begin(), formatted.end());
+        std::vector<llama_token> tokens(input.size() + 256);
+        int32_t tokenCount = llama_tokenize(engine->vocab, input.c_str(),
+            static_cast<int32_t>(input.size()), tokens.data(),
+            static_cast<int32_t>(tokens.size()), true, true);
+        if (tokenCount < 0) {
+            tokens.resize(static_cast<size_t>(-tokenCount));
+            tokenCount = llama_tokenize(engine->vocab, input.c_str(),
+                static_cast<int32_t>(input.size()), tokens.data(),
+                static_cast<int32_t>(tokens.size()), true, true);
+        }
+        if (tokenCount <= 0) {
+            throwJava(env, "นับโทเค็นของคำถามไม่สำเร็จ");
+            return -1;
+        }
+        return tokenCount;
+    } catch (const std::exception & error) {
+        throwJava(env, error.what());
+        return -1;
+    } catch (...) {
+        throwJava(env, "เกิดข้อผิดพลาดระหว่างนับโทเค็น");
+        return -1;
+    }
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeUnloadModel(
     JNIEnv *, jobject, jlong handle) {
