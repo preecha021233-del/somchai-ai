@@ -1,6 +1,5 @@
 package com.somchai.ai.core.memory
 
-import com.somchai.ai.core.CorePaths
 import com.somchai.ai.core.audit.ActivityLogger
 import org.json.JSONObject
 import java.io.File
@@ -15,10 +14,10 @@ data class MemoryEntry(
 
 /** App-private, local-only memory. Nothing is uploaded or collected automatically. */
 class LocalMemoryStore(
-    paths: CorePaths,
-    private val logger: ActivityLogger
+    memoryDirectory: File,
+    private val log: (String, String) -> Unit = { _, _ -> }
 ) {
-    private val file = File(paths.memory, "memory.jsonl")
+    private val file = File(memoryDirectory, "memory.jsonl")
     private val lock = Any()
 
     fun add(content: String, category: String = "experience"): MemoryEntry {
@@ -32,7 +31,7 @@ class LocalMemoryStore(
             file.appendText(encode(entry) + "\n")
             trimToLimit()
         }
-        logger.record("MEMORY_ADDED", "id=${entry.id} category=${entry.category}")
+        log("MEMORY_ADDED", "id=${entry.id} category=${entry.category}")
         return entry
     }
 
@@ -54,14 +53,14 @@ class LocalMemoryStore(
         val entries = readEntries()
         if (entries.none { it.id == id }) return@synchronized false
         rewrite(entries.filterNot { it.id == id })
-        logger.record("MEMORY_DELETED", "id=$id")
+        log("MEMORY_DELETED", "id=$id")
         true
     }
 
     fun clear(): Int = synchronized(lock) {
         val count = readEntries().size
         rewrite(emptyList())
-        logger.record("MEMORY_CLEARED", "count=$count")
+        log("MEMORY_CLEARED", "count=$count")
         count
     }
 
