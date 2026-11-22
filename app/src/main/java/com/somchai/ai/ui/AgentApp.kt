@@ -688,9 +688,13 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
                     modelProgress = 0
                     modelMessage = "กำลังดาวน์โหลดโมเดลจาก Hugging Face..."
                     try {
-                        runtime.downloadAndLoadLocalModel { modelProgress = it }
+                        if (runtime.modelStore.modelFile().isFile) {
+                            runtime.loadInstalledLocalModel()
+                        } else {
+                            runtime.downloadAndLoadLocalModel { modelProgress = it }
+                        }
                         modelReady = true
-                        modelMessage = "ติดตั้งและโหลดโมเดลภายในสำเร็จ"
+                        modelMessage = "โหลดโมเดลภายในสำเร็จ"
                     } catch (failure: Exception) {
                         modelMessage = failure.message ?: "ติดตั้งโมเดลไม่สำเร็จ"
                     } finally {
@@ -700,7 +704,12 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
             },
             enabled = !modelDownloading && !modelReady
         ) {
-            Text(if (modelDownloading) "กำลังติดตั้งโมเดล..." else if (modelReady) "โมเดลพร้อมใช้งาน" else "ดาวน์โหลดและติดตั้งสมอง AI")
+            Text(
+                if (modelDownloading) "กำลังติดตั้งโมเดล..."
+                else if (modelReady) "โมเดลพร้อมใช้งาน"
+                else if (runtime.modelStore.modelFile().isFile) "โหลดโมเดลที่ติดตั้งไว้"
+                else "ดาวน์โหลดและติดตั้งสมอง AI"
+            )
         }
         if (modelDownloading) {
             LinearProgressIndicator(progress = modelProgress / 100f, modifier = Modifier.fillMaxWidth())
