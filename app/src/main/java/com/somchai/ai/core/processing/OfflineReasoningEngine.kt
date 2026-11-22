@@ -61,6 +61,8 @@ class OfflineReasoningEngine {
     }
 
     fun solveArithmetic(input: String): String? {
+        val asksForChange = listOf("เงินทอน", "ได้ทอน", "ทอนเท่าไร", "ทอนเท่าไหร่").any(input::contains)
+        if (asksForChange && !input.contains("จ่าย") && !input.contains("ชำระ")) return null
         solveChangeProblem(input)?.let { return it }
         solveBatteryProblem(input)?.let { return it }
         val expression = Regex("""(?<![\p{L}\d])[+-]?(?:\d|\()[\d,.()+\-×*/÷\s]*""")
