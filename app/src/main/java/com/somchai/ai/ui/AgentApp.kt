@@ -694,7 +694,7 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
                     modelProgress = 0
                     modelMessage = "กำลังดาวน์โหลดโมเดลจาก Hugging Face..."
                     try {
-                        if (runtime.modelStore.modelFile().isFile) {
+                        if (runtime.modelStore.hasVerifiedModel()) {
                             runtime.loadInstalledLocalModel()
                         } else {
                             runtime.downloadAndLoadLocalModel { modelProgress = it }
@@ -713,7 +713,7 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
             Text(
                 if (modelDownloading) "กำลังติดตั้งโมเดล..."
                 else if (modelReady) "โมเดลพร้อมใช้งาน"
-                else if (runtime.modelStore.modelFile().isFile) "โหลดโมเดลที่ติดตั้งไว้"
+                else if (runtime.modelStore.modelFile().isFile) "ตรวจสอบ/โหลดโมเดลที่ติดตั้งไว้"
                 else "ดาวน์โหลดและติดตั้งสมอง AI"
             )
         }
