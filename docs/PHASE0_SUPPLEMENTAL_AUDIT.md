@@ -5,8 +5,9 @@
 Revalidate the current repository against the clarified project goal before continuing Phase 1. This supplements the original Phase 0 audit; it does not erase or rewrite earlier device-test records.
 
 Repository: preecha021233-del/somchai-ai
-Branch reviewed: main
-Starting commit: 37ed92bf7953fba37e7e54bd4c2d0726db0d4555
+Baseline branch reviewed: main
+Baseline commit: 37ed92bf7953fba37e7e54bd4c2d0726db0d4555
+Phase 1 implementation extension: phase-1/research-reader-brain-integration (PR #13)
 
 ## Findings
 
