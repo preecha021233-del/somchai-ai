@@ -3,7 +3,7 @@ name: Phase 1 Local Brain
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: [main, phase-1/research-reader-brain-integration]
     paths:
       - "app/**"
       - "docs/LOCAL_BRAIN_RUNTIME.md"
