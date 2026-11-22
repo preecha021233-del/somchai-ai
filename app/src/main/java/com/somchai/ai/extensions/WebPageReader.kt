@@ -28,6 +28,7 @@ class WebPageReader : ResearchPageReader {
                 connection.setRequestProperty("Accept-Encoding", "identity")
                 val status = connection.responseCode
                 if (status in 300..399) {
+                    check(it < MAX_REDIRECTS) { "หน้าเว็บเปลี่ยนเส้นทางเกินจำนวนที่อนุญาต" }
                     val location = connection.getHeaderField("Location") ?: error("Redirect ไม่มี Location")
                     current = validateUrl(URL(target, location).toString())
                     return@repeat
