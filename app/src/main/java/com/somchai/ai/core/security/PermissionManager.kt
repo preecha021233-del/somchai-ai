@@ -51,11 +51,11 @@ class PermissionManager {
             Regex("(?i)disregard\\s+(all\\s+)?(prior|previous)\\s+instructions"),
             Regex("(?i)override\\s+(the\\s+)?system\\s+prompt"),
             Regex("(?i)(reveal|print|show|repeat)\\s+(the\\s+)?(hidden\\s+)?system\\s+prompt"),
-            Regex("(?i)you\\s+are\\s+now\\s+(a|an|the)\\s+"),
+            Regex("(?i)you\\s+are\\s+now\\s+(a|an|the)\\s+[^\\n.!?]{1,80}"),
             Regex("ละเว้นคำสั่ง(ทั้งหมด)?(ก่อนหน้า|ก่อนหน้านี้)"),
             Regex("ไม่ต้องทำตามคำสั่ง(เดิม|ก่อนหน้า)"),
             Regex("(เปิดเผย|แสดง|พิมพ์|บอก)คำสั่ง(ระบบ|ภายใน)"),
-            Regex("ตั้งแต่นี้ไปคุณ(คือ|ต้อง)")
+            Regex("ตั้งแต่นี้ไปคุณ(คือ|ต้อง)[^\\n.!?]{0,80}")
         )
         return injectionPatterns.fold(bounded) { text, pattern ->
             pattern.replace(text, "[untrusted instruction removed]")
