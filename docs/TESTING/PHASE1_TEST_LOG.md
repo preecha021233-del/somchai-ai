@@ -163,3 +163,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - New CI result: PENDING.
 - Target-device load/generation and P01–P12 quality: NOT RUN.
 - Phase 1 acceptance: NOT ACCEPTED.
+
+
+## Round 9 — 2026-11-23 — Repair two unit-test failures
+- Previous CI evidence: workflow run #45043583832 reported 112/114 unit tests passing; failures were `OfflineReasoningEngineTest.rejectsIncompleteChangeQuestion` and `TaskExecutionStoreTest.rejectsUnknownTask`.
+- Root cause 1: after the cash-change parser returned no result for missing payment, the generic arithmetic parser incorrectly extracted numbers embedded in Thai prose. Added an intent guard so incomplete change requests do not fall through to generic expression parsing.
+- Root cause 2: unknown task lookup used Kotlin `error()`, which throws `IllegalStateException`; the API/test contract expects `IllegalArgumentException`. Changed the explicit exception type.
+- Regression coverage: the existing tests assert null for incomplete change requests and `IllegalArgumentException` for unknown task IDs.
+- CI for the repair: PENDING. Phase 1 acceptance: NOT ACCEPTED.
