@@ -90,13 +90,15 @@ class LocalMemoryStoreTest {
     }
 
     @Test fun rejectsTamperedImportWithoutReplacingExistingMemory() {
-        val source = LocalMemoryStore(temporaryFolder.newFolder("tamper-source"), PrefixCipher())
+        val key = javax.crypto.spec.SecretKeySpec(ByteArray(32) { it.toByte() }, "AES")
+        val authenticatedCipher = AesGcmMemoryCipher { key }
+        val source = LocalMemoryStore(temporaryFolder.newFolder("tamper-source"), authenticatedCipher)
         source.add("ต้นฉบับ")
         val tampered = source.exportEncrypted().also { it[it.lastIndex] = (it.last().toInt() xor 1).toByte() }
 
-        val destination = LocalMemoryStore(temporaryFolder.newFolder("tamper-destination"), PrefixCipher())
+        val destination = LocalMemoryStore(temporaryFolder.newFolder("tamper-destination"), authenticatedCipher)
         destination.add("ข้อมูลที่ต้องเก็บไว้")
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+        org.junit.Assert.assertThrows(java.security.GeneralSecurityException::class.java) {
             destination.importEncrypted(tampered)
         }
         assertEquals("ข้อมูลที่ต้องเก็บไว้", destination.all().first().content)
