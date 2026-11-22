@@ -76,8 +76,8 @@ class SkillStore(
         engine: OnDeviceInferenceEngine
     ): LearnedSkill {
         require(engine.isModelLoaded()) { "ต้องติดตั้งและโหลดโมเดล AI ภายในก่อนเรียนรู้ทักษะ" }
-        require(successfulExperience.isNotBlank() && successfulExperience.length <= 4000) {
-            "ประสบการณ์ต้นแบบต้องมีความยาวไม่เกิน 4,000 ตัวอักษร"
+        require(successfulExperience.isNotBlank() && successfulExperience.length <= MAX_EXPERIENCE_CHARS) {
+            "ประสบการณ์ต้นแบบต้องมีความยาวไม่เกิน 2,400 ตัวอักษร"
         }
         val prompt = buildString {
             append("สกัดขั้นตอนทักษะที่นำกลับมาใช้ซ้ำได้จากประสบการณ์ตัวอย่างด้านล่าง\n")
@@ -100,12 +100,15 @@ class SkillStore(
             val prompt = buildString {
                 append("ใช้ขั้นตอนทักษะต่อไปนี้ทำงานตามข้อมูลทดสอบ\n")
                 append("ทักษะ: ").append(skill.name).append("\n")
-                append(skill.procedure).append("\n")
-                append("ข้อมูลทดสอบ: ").append(test.input).append("\n")
+                append(skill.procedure.take(MAX_EVALUATION_PROCEDURE_CHARS)).append("\n")
+                append("ข้อมูลทดสอบ: ").append(test.input.take(MAX_EVALUATION_INPUT_CHARS)).append("\n")
                 append("ตอบเฉพาะผลลัพธ์ที่ทำได้จริง ห้ามอ้างว่าทำสิ่งที่ไม่ได้ทำ")
             }
+            check(prompt.length <= MAX_EVALUATION_PROMPT_CHARS) { "Prompt ทดสอบทักษะยาวเกินกำหนด" }
             val output = engine.generate(BrainRequest(prompt)).take(2000)
-            SkillTestResult(output.contains(test.expectedContains, ignoreCase = true), output)
+            val normalizedOutput = output.lowercase().filterNot(Char::isWhitespace)
+            val normalizedExpected = test.expectedContains.lowercase().filterNot(Char::isWhitespace)
+            SkillTestResult(normalizedExpected.isNotEmpty() && normalizedOutput.contains(normalizedExpected), output)
         }
         synchronized(lock) {
             val current = readAll()
@@ -226,5 +229,9 @@ class SkillStore(
     companion object {
         private const val MAX_SKILLS = 100
         private const val MAX_FILE_BYTES = 1_048_576
+        private const val MAX_EXPERIENCE_CHARS = 2_400
+        private const val MAX_EVALUATION_PROCEDURE_CHARS = 1_200
+        private const val MAX_EVALUATION_INPUT_CHARS = 400
+        private const val MAX_EVALUATION_PROMPT_CHARS = 2_000
     }
 }
