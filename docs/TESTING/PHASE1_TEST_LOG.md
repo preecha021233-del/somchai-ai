@@ -66,3 +66,37 @@ For every subsequent round and every phase:
 - A feature is phase-accepted only when its phase acceptance criteria are met with evidence; code merged or CI green alone is insufficient.
 - Record regressions as new entries and link the earlier passing round.
 - Never claim a test was run or passed without evidence.
+
+## Round 2 — 2026-11-22 — Arithmetic and Thai memory retrieval hardening
+
+- Phase: Phase 1
+- App version / versionCode: 1.7.0 / 8 (source branch; not yet installed on device)
+- Commit range: `4a0e08707ecc8c4ebb8cc1a77627966be20a3cce` through `c30127b97f8e08d05be898136ac88f012fd90993`
+- Test method: automated unit tests in GitHub Actions; no manual device test yet
+- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45026776652
+- CI status at log update: in progress; no pass/fail conclusion recorded yet
+
+### Changes under test
+- Arithmetic parser now checks that every character in the selected expression is tokenized; unsupported characters cannot be silently skipped.
+- Unary plus/minus are supported, including a sign before a parenthesized expression.
+- Regression cases added for precedence, nested parentheses, negative values, decimals, and malformed expressions.
+- Local memory search now compares a whitespace-compacted Thai query against whitespace-compacted content/category before its all-term fallback.
+- Memory ID prefix search trims surrounding whitespace.
+
+### Automated test cases added
+- 8 arithmetic expressions: `2 + 3 * 4`, `(2 + 3) * 4`, `10 - (2 + 3) * 2`, nested parentheses, nested multiplication, unary negative, negative parenthesized factor, and decimal unary plus.
+- 1 malformed arithmetic expression must be rejected rather than returning a partial result.
+- 1 Thai memory query without spaces and 1 whitespace-padded ID lookup.
+
+### Results
+- Unit tests: PENDING CI
+- Debug APK build: PENDING CI
+- Owner-signed APK and signing continuity: PENDING CI
+- Manual device tests: NOT RUN
+- Phase 1 acceptance: NOT ACCEPTED
+
+### Follow-up
+- Do not merge or distribute this revision until CI completes successfully.
+- After a successful build, install only as an in-place update and repeat device tests.
+- Continue with offline Brain/model benchmarking, task execution planning, plugin runtime, permission matrix, and backup/restore acceptance tests.
+
