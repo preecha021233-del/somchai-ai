@@ -1,5 +1,14 @@
 package com.somchai.ai.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.speech.tts.TextToSpeech
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.DisposableEffect
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,6 +51,7 @@ fun AgentApp(runtime: CoreRuntime) {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val appContext = LocalContext.current
 
     Scaffold(
         containerColor = SomchaiBackground,
@@ -93,6 +103,11 @@ fun AgentApp(runtime: CoreRuntime) {
             Tab.CHAT -> ChatPage(
                 modifier = Modifier.padding(padding), messages = messages, input = input,
                 onInput = { input = it }, busy = busy, error = error,
+                onFeedback = { answer, positive ->
+                    runCatching { runtime.memory.add("feedback=${if (positive) "positive" else "negative"}; answer=$answer", "response-feedback") }
+                        .onSuccess { Toast.makeText(appContext, if (positive) "ขอบคุณสำหรับคำติชม" else "รับทราบคำติชมแล้ว", Toast.LENGTH_SHORT).show() }
+                        .onFailure { runtime.logger.record("FEEDBACK_ERROR", it.message ?: "unknown") }
+                },
                 onSend = {
                     val text = input.trim()
                     if (text.isNotEmpty() && !busy) {
@@ -139,11 +154,14 @@ fun AgentApp(runtime: CoreRuntime) {
 @Composable
 private fun ChatPage(
     modifier: Modifier, messages: List<String>, input: String, onInput: (String) -> Unit,
-    busy: Boolean, error: String?, onSend: () -> Unit
+    busy: Boolean, error: String?, onFeedback: (String, Boolean) -> Unit, onSend: () -> Unit
 ) {
     val listState = rememberLazyListState()
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val speech = remember(context) { TextToSpeech(context) {} }
+    DisposableEffect(speech) { onDispose { speech.stop(); speech.shutdown() } }
 
     LaunchedEffect(messages.size, busy) {
         val lastIndex = messages.size + if (busy) 1 else 0
@@ -189,15 +207,50 @@ private fun ChatPage(
                             Text(body, color = Color.White, style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        Surface(
-                            modifier = Modifier.widthIn(max = 310.dp),
-                            color = Color(0xFFECECEF),
-                            shape = RoundedCornerShape(topStart = 7.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
-                        ) {
-                            Text(
-                                body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
-                                color = Color(0xFF17171B), style = MaterialTheme.typography.bodyLarge
-                            )
+                        Column(Modifier.widthIn(max = 310.dp)) {
+                            Surface(
+                                color = Color(0xFFECECEF),
+                                shape = RoundedCornerShape(topStart = 7.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+                            ) {
+                                Text(
+                                    body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
+                                    color = Color(0xFF17171B), style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
+                                    Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
+                                }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Outlined.ContentCopy, "คัดลอก", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                }
+                                IconButton(onClick = { onFeedback(body, true) }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Outlined.ThumbUp, "ถูกใจ", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                }
+                                IconButton(onClick = { onFeedback(body, false) }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Outlined.ThumbDown, "ไม่ถูกใจ", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                }
+                                IconButton(onClick = {
+                                    speech.language = Locale("th", "TH")
+                                    speech.speak(body, TextToSpeech.QUEUE_FLUSH, null, "somchai-${body.hashCode()}")
+                                }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Outlined.VolumeUp, "อ่านออกเสียง", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                }
+                                IconButton(onClick = {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, body)
+                                    }
+                                    context.startActivity(Intent.createChooser(intent, "แชร์คำตอบจาก SOMCHAI AI"))
+                                }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Outlined.Share, "แชร์", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                }
+                            }
                         }
                     }
                 }
