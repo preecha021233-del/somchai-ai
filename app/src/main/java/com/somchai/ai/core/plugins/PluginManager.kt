@@ -19,7 +19,10 @@ class PluginManager(
     fun ensureStarterCandidate() {
         val candidate = File(paths.staging, "web-search.json")
         val active = File(paths.active, "web-search.json")
-        if (!candidate.exists() && !active.exists()) {
+        val disabled = paths.backups.listFiles()?.any {
+            it.isFile && it.name.startsWith("disabled-web-search-") && it.extension == "json"
+        } == true
+        if (!candidate.exists() && !active.exists() && !disabled) {
             candidate.writeText(PluginManifest(
                 "web-search", "Web Search", 1,
                 "ค้นหาข้อมูลสาธารณะจาก DuckDuckGo Instant Answer API",
@@ -41,6 +44,36 @@ class PluginManager(
         ?.filter { it.isFile && it.extension == "json" }
         ?.mapNotNull { runCatching { validator.validate(it.readText()) }.getOrNull() }
         ?: emptyList()
+
+    fun disabledPlugins(): List<PluginManifest> = paths.backups.listFiles()
+        ?.filter { it.isFile && it.name.startsWith("disabled-") && it.extension == "json" }
+        ?.mapNotNull { file -> runCatching { validator.validate(file.readText()) }.getOrNull() }
+        ?.distinctBy { it.id } ?: emptyList()
+
+    @Synchronized
+    fun enable(id: String): Boolean {
+        require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
+        val source = paths.backups.listFiles()
+            ?.filter { it.isFile && it.name.startsWith("disabled-$id-") && it.extension == "json" }
+            ?.maxByOrNull { it.lastModified() } ?: return false
+        val manifest = validator.validate(source.readText())
+        require(manifest.id == id) { "Plugin identity mismatch" }
+        val target = File(paths.active, "$id.json")
+        check(!target.exists()) { "Plugin is already active" }
+        val temp = File(paths.active, "$id.tmp")
+        source.copyTo(temp, overwrite = false)
+        try {
+            check(temp.renameTo(target)) { "Atomic plugin reactivation failed" }
+            validator.validate(target.readText())
+            check(source.delete()) { "Could not remove disabled backup" }
+            logger.record("PLUGIN_ENABLED", "$id backup=${source.name}")
+            return true
+        } catch (error: Exception) {
+            temp.delete()
+            target.delete()
+            throw error
+        }
+    }
 
     @Synchronized
     fun approve(id: String, expectedHash: String): Boolean {
