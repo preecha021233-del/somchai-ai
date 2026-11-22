@@ -77,6 +77,7 @@ class PluginManager(
 
     @Synchronized
     fun approve(id: String, expectedHash: String): Boolean {
+        require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
         val source = File(paths.staging, "$id.json")
         require(paths.contained(paths.staging, source) && source.isFile) { "Candidate not found" }
         val raw = source.readText()
@@ -118,8 +119,12 @@ class PluginManager(
         return true
     }
 
+    @Synchronized
     fun reject(id: String) {
-        File(paths.staging, "$id.json").delete()
+        require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
+        val candidate = File(paths.staging, "$id.json")
+        require(paths.contained(paths.staging, candidate)) { "Candidate path is outside staging" }
+        if (candidate.isFile) check(candidate.delete()) { "Could not remove plugin candidate" }
         logger.record("PLUGIN_REJECTED", id)
     }
 
