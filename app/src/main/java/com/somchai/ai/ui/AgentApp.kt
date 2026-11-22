@@ -151,7 +151,18 @@ private fun PluginsPage(runtime: CoreRuntime, modifier: Modifier, refresh: Int, 
         message?.let { Text(it, color = SomchaiPrimaryLight) }
         Spacer(Modifier.height(24.dp))
         Text("ปลั๊กอินที่ใช้งาน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
-        active.forEach { Text("• ${it.name} v${it.version} — ${it.operation}", color = SomchaiTextSecondary, modifier = Modifier.padding(8.dp)) }
+        active.forEach { plugin ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("• ${plugin.name} v${plugin.version} — ${plugin.operation}",
+                    color = SomchaiTextSecondary, modifier = Modifier.weight(1f).padding(8.dp))
+                TextButton(onClick = {
+                    runCatching { runtime.plugins.disable(plugin.id) }
+                        .onSuccess { message = if (it) "ปิดใช้งาน ${plugin.name} แล้ว" else "ไม่พบปลั๊กอินที่เปิดใช้งาน" }
+                        .onFailure { message = it.message }
+                    onRefresh()
+                }) { Text("ปิดใช้งาน") }
+            }
+        }
         Spacer(Modifier.height(20.dp))
         Text("การทำงานถูกจำกัดไว้ใน Core allowlist ไม่มีการรันโค้ดที่ดาวน์โหลดมา", color = SomchaiTextSecondary)
     }
