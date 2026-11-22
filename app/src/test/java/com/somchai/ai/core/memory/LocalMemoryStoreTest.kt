@@ -138,4 +138,13 @@ class LocalMemoryStoreTest {
         assertEquals(entry.id, store.search("  ${entry.id.take(8)}  ").single().id)
     }
 
+    @Test fun retrievesOnlyRelevantMemoriesWithBoundedResults() {
+        val store = LocalMemoryStore(temporaryFolder.newFolder("relevant"))
+        val relevant = store.add("โครงการ SOMCHAI พัฒนา AI ภายใน", "owner-note")
+        store.add("รายการซื้อของใช้ในบ้าน", "experience")
+        val matches = store.relevantFor("SOMCHAI โครงการ", 3)
+        assertEquals(relevant.id, matches.first().id)
+        assertTrue(matches.size <= 3)
+    }
+
 }
