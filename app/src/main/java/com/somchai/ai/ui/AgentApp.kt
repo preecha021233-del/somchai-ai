@@ -117,7 +117,21 @@ fun AgentApp(runtime: CoreRuntime) {
                         input = ""; messages = messages + "คุณ: $text"; busy = true; error = null
                         scope.launch {
                             try {
-                                val answer = if (text.startsWith("/search ", true)) {
+                                val answer = if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
+                                    val active = runtime.plugins.activePlugins()
+                                    val candidates = runtime.plugins.candidates()
+                                    val disabled = runtime.plugins.disabledPlugins()
+                                    buildString {
+                                        append("สถานะปลั๊กอิน SOMCHAI\\n")
+                                        append("ใช้งานอยู่: ").append(active.size).append("\\n")
+                                        active.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — เปิดใช้งาน\\n") }
+                                        append("รออนุมัติ: ").append(candidates.size).append("\\n")
+                                        candidates.forEach { append("• ").append(it.manifest.name).append(" (").append(it.manifest.id).append(") — รอเจ้าของอนุมัติ\\n") }
+                                        append("ปิดใช้งาน: ").append(disabled.size).append("\\n")
+                                        disabled.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — ปิดใช้งาน\\n") }
+                                        if (active.isEmpty() && candidates.isEmpty() && disabled.isEmpty()) append("ยังไม่มีปลั๊กอินในระบบ")
+                                    }
+                                } else if (text.startsWith("/search ", true)) {
                                     check(runtime.plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }) {
                                         "ต้องอนุมัติปลั๊กอิน Web Search ในหน้า Plugins ก่อน"
                                     }
