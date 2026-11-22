@@ -100,3 +100,40 @@ For every subsequent round and every phase:
 - After a successful build, install only as an in-place update and repeat device tests.
 - Continue with offline Brain/model benchmarking, task execution planning, plugin runtime, permission matrix, and backup/restore acceptance tests.
 
+
+
+## Round 3 — 2026-11-22 — Local Brain routing and safe web page reader
+
+- Phase: Phase 1
+- App version / versionCode: 1.8.0 / 9
+- Commit: 3d20e0be7aebd0b15b4792385f8724eab8b53f32
+- Pull request: https://github.com/preecha021233-del/somchai-ai/pull/13
+- Test method: GitHub Actions CI on Ubuntu / Java 17 / Android SDK 35
+- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45032186488
+
+### Automated results
+
+| Check | Result | Evidence |
+|---|---|---|
+| Gradle testDebugUnitTest | PASS | CI step completed successfully |
+| assembleDebug | PASS | CI step completed successfully |
+| assembleRelease | PASS | Owner-signed release artifact produced |
+| Package identity | PASS | Verified package ID com.somchai.ai |
+| Version increment | PASS | versionCode 9 exceeds the configured owner-signed baseline |
+| Signing certificate continuity | PASS | SHA-256 signing certificate matched the owner-signed baseline |
+
+New WebPageReader unit tests cover visible-text extraction, script/navigation removal, numeric HTML entities, output bounds, HTTPS URL acceptance, and rejection of HTTP, localhost, private IP, unsafe port, embedded credentials and private host suffixes.
+
+Artifacts:
+- Debug APK artifact ID: 14758471792; ZIP SHA-256: 922bf4856baa0b29e5ffd22adbefed46e657a1bf1f713f318867e134048ac1f5
+- Owner-signed release APK artifact ID: 14758451820; ZIP SHA-256: 4246ad1c9ad0ac48f1634ee1cfa4911452c81cfe544b3d81569049a3b6383e91
+
+### Not tested / not passed
+
+- Live search and actual page-reading success on the owner's Android device.
+- Whether two independent source pages are readable for a real query.
+- Local language model installation, Thai model quality, latency, RAM, heat and battery benchmark.
+- Manual UI, response actions, memory persistence/export/restore, plugin lifecycle and fault-recovery tests on the target device.
+- In-place installation of version 1.8.0 over the owner's current installed app. Do not uninstall or clear data to work around any failure.
+
+CI success is not a Phase 1 completion decision. The above device/model checks remain open.
