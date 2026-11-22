@@ -35,7 +35,8 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Model installer downloads the official Qwen model over HTTPS, checks the GGUF header and pinned SHA-256, and rejects incomplete or oversized downloads.
 - Settings page exposes an explicit model download/install action; the optional external provider remains separate.
 - Added JVM tests for valid/invalid GGUF headers.
-- New CI workflow builds the ARM64 native library and app. Result is pending; no build pass is claimed yet.
+- GitHub Actions run #45036781218 passed JVM tests, native llama.cpp CMake/NDK ARM64 build and debug APK assembly for commit `2019246a51e5453edfdcc4b49b21ced930b57eac`. Debug artifact ID `14760117769`; ZIP SHA-256 `0a03f6b1a8d687c524d88394308aedf7f459053a986705eb1839233c4fca13de`.
+- The successful CI proves compile/test/package integration only; it does not prove model download, native inference, Thai quality or performance on the owner's device.
 - The starter 0.5B model is intended to prove on-device inference feasibility. It is not evidence of advanced reasoning quality. Benchmarking and model-quality evaluation are still required.
 
 ## Final acceptance gates — not yet passed
@@ -44,9 +45,9 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 |---|---|---|
 | Chat UI / Figma parity | Updated in code | Build and inspect on Android device at the target viewport; verify keyboard collapse and scrolling |
 | Response actions | Wired in code | Tap every action on a real device; verify clipboard, feedback persistence, Thai TTS availability and Android share sheet |
-| Internal processing | Deterministic processor plus local-first Brain boundary; local model unavailable | CI tests and device checks with network disabled and no API key; verify normal chat uses internal Brain and reports fallback honestly |
+| Internal processing | Deterministic processor plus local-first Brain; native llama.cpp/Qwen runtime builds successfully on ARM64 CI | Device checks with model installed, network disabled and no API key; verify ordinary chat uses local inference and reports fallback honestly |
 | Task decomposition | Implemented with JVM tests | CI pass and device output check |
-| Research | Two search endpoints plus linked HTTPS page reader in code | CI pass plus online device check; confirm at least two actual pages can be opened/read, source URLs/date labels, failures and untrusted-data handling |
+| Research | DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search, Wikipedia and bounded HTTPS page reader; up to three page-read attempts | CI pass plus online device check; confirm at least two actual pages can be opened/read, source URLs/date labels, failures and untrusted-data handling |
 | Local memory | Encrypted CRUD, backup/restore and encrypted export/import | CI pass; device persistence, Keystore, file round-trip and tamper rejection |
 | Basic plugin development | Validation, approval, smoke checks, disable/enable and rollback | CI pass plus lifecycle, owner-approval, denial and rollback checks |
 | Protection and recovery | App-private storage, permission checks, audit log and rollback | CI pass plus fault-injection and negative security checks |
@@ -54,7 +55,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 
 ## Known limits — do not overclaim
 
-- The processor is deterministic and rule-based. A starter local LLM runtime has now been added on a development branch, but it has not yet passed CI or target-device benchmarking and must not be described as accepted.
+- The deterministic processor remains the fallback. A starter local LLM runtime (llama.cpp + Qwen2.5-0.5B-Instruct Q4_K_M) now passes ARM64 CI, but target-device model loading, Thai quality and performance are not yet accepted.
 - Learned Skills are owner-proposed, model-drafted prompt procedures with smoke tests and explicit approval; they do not autonomously create new code, tools, or reasoning algorithms.
 - Research is still bounded to DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search and Wikipedia; it is not yet a full web-scale crawler or comprehensive source-verification system.
 - The Android app sandbox and in-process rule engine are not a hardened arbitrary-code sandbox.
