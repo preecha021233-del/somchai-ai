@@ -15,19 +15,31 @@ SOMCHAI AI is an Android personal assistant built around an immutable-by-agent c
 - Daily API request and local storage budgets.
 - GitHub Actions build, unit tests and APK artifact upload.
 
+## App update compatibility — mandatory
+Published updates must install directly over the existing SOMCHAI AI installation. Keep the application ID `com.somchai.ai` and the exact same owner-controlled signing keystore/certificate for every release. Increase `versionCode` with every published update. Do not uninstall the old app or clear its data to work around a signing mismatch.
+
+The release build uses these protected environment variables / GitHub Actions secrets:
+- `SOMCHAI_SIGNING_KEYSTORE` (local keystore file path; in CI the workflow creates it from the base64 secret)
+- `SOMCHAI_SIGNING_KEYSTORE_BASE64` (GitHub Actions only)
+- `SOMCHAI_SIGNING_STORE_PASSWORD`
+- `SOMCHAI_SIGNING_KEY_ALIAS`
+- `SOMCHAI_SIGNING_KEY_PASSWORD`
+
+Never commit the keystore or passwords. CI produces an owner-signed release APK only when all required secrets are configured. Debug APKs are development builds and are not the supported production update channel.
+
 ## Security boundary
 The agent does not execute arbitrary downloaded Kotlin, shell commands, APKs or JavaScript. Plugins are JSON manifests selecting a finite core-owned operation. The Protected Core is protected from agent modification by application packaging and release signing, not by a folder name alone. Internet results and model output are untrusted data.
 
 ## Build
-GitHub Actions installs Gradle 8.9 and JDK 17, runs testDebugUnitTest and assembleDebug, then uploads the debug APK. Android SDK API 35 is used.
+GitHub Actions installs Gradle 8.9 and JDK 17, runs testDebugUnitTest and assembleDebug, then uploads the debug APK. If owner signing secrets are configured, it also builds and uploads an owner-signed release APK. Android SDK API 35 is used.
 
 For local Android Studio use, open the repository as a Gradle project and use a locally installed Gradle 8.9 or generate a wrapper with: gradle wrapper --gradle-version 8.9.
 
 ## Setup
-1. Install the generated debug APK.
+1. Install the owner-signed release APK for normal use and future in-place updates.
 2. Open Settings and enter an HTTPS OpenAI-compatible API base URL, model and API key.
 3. Approve the staged Web Search plugin in Plugins.
 4. Chat with SOMCHAI. Use /search followed by a query for web lookup.
 
 ## Release limitations
-This is a functional initial app baseline, not a security-certified release. DuckDuckGo Instant Answer is not exhaustive general web search. Device testing, provider compatibility, encrypted backup, release signing, privacy disclosure, accessibility review and penetration testing remain release gates.
+This is a functional initial app baseline, not a security-certified release. DuckDuckGo Instant Answer is not exhaustive general web search. Device testing, owner signing-key setup, in-place upgrade verification, provider compatibility, encrypted backup, privacy disclosure, accessibility review and penetration testing remain release gates.
