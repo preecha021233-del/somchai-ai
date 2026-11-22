@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
+import com.somchai.ai.core.brain.BrainRequest
 import com.somchai.ai.core.processing.TaskPlan
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
@@ -161,7 +162,12 @@ fun AgentApp(runtime: CoreRuntime) {
                                         }
                                     }
                                     runtime.llm.ask(history, text.removeRange(0, 4).trim())
-                                } else {
+                                } else if (
+                                    text.startsWith("/") ||
+                                    text.startsWith("จำไว้ว่า ") ||
+                                    text.startsWith("จำว่า ") ||
+                                    listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน").any { text.contains(it) }
+                                ) {
                                     val result = runtime.processor.process(text)
                                     runtime.logger.record("INTERNAL_PROCESS", "intent=${result.intent}")
                                     if (result.intent == "task.plan") {
@@ -169,6 +175,17 @@ fun AgentApp(runtime: CoreRuntime) {
                                         pendingPlan = runtime.planner.plan(goal)
                                     }
                                     result.answer
+                                } else {
+                                    val history = messages.takeLast(12).mapNotNull {
+                                        when {
+                                            it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
+                                            it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
+                                            else -> null
+                                        }
+                                    }
+                                    val reply = runtime.brain.respond(BrainRequest(text, history))
+                                    runtime.logger.record("BRAIN_ROUTE", "engine=${reply.engineId} fallback=${reply.usedFallback}")
+                                    reply.text
                                 }
                                 messages = messages + "SOMCHAI: $answer"
                             } catch (e: Exception) {
