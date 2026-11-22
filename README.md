@@ -1,110 +1,34 @@
-# SOMCHAI FULL SYSTEM
+# SOMCHAI AI
 
-**Android-first AI Personal Assistant**  
-Secure Modular Architecture • Governed Self-Evolution • Owner-Controlled Execution
+**Self-Evolving Modular AI Agent — Protected Core + Sandboxed Plugins**
 
----
+SOMCHAI AI is an Android-first personal agent. Its immutable Protected Core controls identity, permissions, model access, plugin validation, approval, backup/rollback, logging, and resource budgets. Extensions are treated as untrusted data and are activated only after validation and explicit owner approval.
 
-## Overview
+## Non-negotiable security rules
 
-Somchai is a high-trust, owner-controlled AI personal assistant designed for Android.  
-It prioritizes **security**, **transparency**, and **user sovereignty** over autonomy theater.
+- Network content, model output, plugin packages, and imported files are untrusted data, never privileged instructions.
+- Extensions cannot modify Protected Core or grant themselves permissions.
+- No extension is activated without validation and a one-time owner approval.
+- Plugin execution is limited to explicitly supported, allowlisted operations. Arbitrary downloaded code is not executed.
+- A failed activation is reverted to the last known-good plugin version.
+- Secrets are never committed to the repository.
 
-Core principles:
-- Owner has absolute control
-- All critical actions require explicit approval
-- Memory and tools are fully inspectable
-- Self-evolution is governed and auditable
-- UI never hides system state
+## Project status
 
----
+The repository is being rebuilt from a UI-only starting point. See:
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security model](docs/SECURITY_MODEL.md)
+- [Plugin lifecycle](docs/PLUGIN_LIFECYCLE.md)
+- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 
-## Architecture (High Level)
+## Build
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Owner Layer                       │
-│         (Security Center + Owner Control)           │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│              Governance & Policy Engine             │
-│     (Permissions, Approval Rules, Audit Log)        │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                  Agent Core                         │
-│   Reasoning • Planning • Tool Use • Memory Access   │
-└───────────┬─────────────────────────────┬───────────┘
-            │                             │
-┌───────────▼──────────┐     ┌────────────▼───────────┐
-│   Memory System      │     │   Tool & Automation    │
-│ (Long-term + Working)│     │   (Sandboxed Execution)│
-└──────────────────────┘     └────────────────────────┘
-```
+The Android project uses Gradle Kotlin DSL and GitHub Actions. Build instructions will be finalized with the Gradle wrapper and CI workflow. Do not consider the project production-ready until CI, device tests, and security tests pass.
 
----
+## Repository layout
 
-## Tech Stack (Android)
-
-- **Language**: Kotlin
-- **UI**: Jetpack Compose + Material 3 (custom Design System)
-- **Architecture**: Clean Architecture + MVI
-- **DI**: Hilt
-- **Local Storage**: Room + DataStore
-- **Security**: Android Keystore, Biometric, StrongBox when available
-- **Background**: WorkManager + Foreground Service (with clear user visibility)
-
----
-
-## Design System
-
-Located in `app/src/main/java/com/somchai/ai/ui/theme/` and `design-system/`
-
-- Dark-first premium aesthetic
-- Clear status semantics (Normal / Warning / Critical)
-- High accessibility contrast
-- Consistent 8pt grid
-
----
-
-## Module Structure
-
-```
-com.somchai.ai
-├── ui/
-│   ├── theme/          # Color, Typography, Shape, Theme
-│   ├── components/     # Reusable design system components
-│   └── screens/
-│       ├── dashboard/
-│       ├── security/
-│       ├── memory/
-│       ├── tasks/
-│       ├── owner/
-│       └── settings/
-├── core/               # Navigation, Base classes, Utils
-└── domain/             # Use cases, Models, Repository interfaces
-```
-
----
-
-## Current Status
-
-- [x] Project structure
-- [x] Design System (Color, Typography, Theme)
-- [x] Core Components
-- [x] Dashboard Screen
-- [x] Security Center Screen
-- [x] Memory Management Screen
-- [x] Task & Automation Monitor
-- [x] Owner Control Panel
-- [x] Settings
-- [ ] Full navigation graph
-- [ ] Backend / Agent core integration
-- [ ] Real security policy engine
-
----
-
-## License
-
-Private — Owner controlled.
+- `app/src/main/java/com/somchai/ai/core/`: Protected Core
+- `app/src/main/java/com/somchai/ai/extensions/`: extension contracts and runtime
+- `app/src/main/java/com/somchai/ai/ui/`: Android user interface
+- `app/src/main/assets/`: bundled non-secret defaults
+- `docs/`: current architecture and engineering records
