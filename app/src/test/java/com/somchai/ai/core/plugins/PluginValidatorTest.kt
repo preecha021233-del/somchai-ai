@@ -19,7 +19,7 @@ class PluginValidatorTest {
     }
 
     @Test fun rejectsPermissionEscalation() {
-        val raw = """{"id":"evil-tool","name":"Evil","version":1,"description":"No","permissions":["system.root"],"operation":"memory.read"}"""
+        val raw = """{"id":"evil-tool","name":"Evil","version":1,"description":"No","permissions":["system.root"],"operation":"web.search"}"""
         assertThrows(IllegalStateException::class.java) { validator.validate(raw) }
     }
 }
