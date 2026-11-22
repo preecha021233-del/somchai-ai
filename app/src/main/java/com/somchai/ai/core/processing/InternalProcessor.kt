@@ -90,6 +90,7 @@ class InternalProcessor(
             "/forget รหัส — ลบความจำตามรหัส\n" +
             "/search คำค้น — ค้นเว็บเมื่อปลั๊กอินได้รับอนุมัติแล้ว\n" +
             "/skill list — แสดงทักษะที่เรียนรู้และสถานะ\n" +
+            "/skill learn ชื่อ | คำกระตุ้น | ประสบการณ์ | input => expected ;; input => expected — ให้โมเดลสกัดทักษะจากประสบการณ์\n" +
             "/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected — เสนอทักษะใหม่\n" +
             "/skill test รหัส — ทดสอบด้วยโมเดลภายใน\n" +
             "/skill approve รหัส — อนุมัติทักษะที่ผ่านทุกการทดสอบ\n" +
