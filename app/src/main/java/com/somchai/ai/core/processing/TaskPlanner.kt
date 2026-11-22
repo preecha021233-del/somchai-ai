@@ -10,8 +10,12 @@ data class TaskPlan(val goal: String, val type: TaskType, val steps: List<String
  */
 class TaskPlanner {
     fun plan(goal: String): TaskPlan {
-        val clean = goal.trim().take(1000)
+        val clean = goal.trim()
         require(clean.isNotEmpty()) { "Task description cannot be empty" }
+        require(clean.length <= 1000) { "Task description is limited to 1,000 characters" }
+        require(clean.none { it.isISOControl() && it != '\n' && it != '\t' }) {
+            "Task description contains unsupported control characters"
+        }
         val type = classify(clean)
         val steps = when (type) {
             TaskType.EXAM -> listOf(
@@ -78,7 +82,7 @@ class TaskPlanner {
             containsAny(text, listOf("แก้", "ซ่อม", "ปัญหา", "error", "fix", "troubleshoot")) -> TaskType.TROUBLESHOOTING
             containsAny(examText, listOf("สอบ", "ข้อสอบ", "ทบทวนบทเรียน", "exam", "test preparation")) -> TaskType.EXAM
             containsAny(text, listOf("เดินทาง", "ท่องเที่ยว", "เที่ยว", "trip", "travel")) -> TaskType.TRAVEL
-            containsAny(text, listOf("ค้นคว้า", "วิจัย", "research", "ศึกษา")) -> TaskType.RESEARCH
+            containsAny(text, listOf("ค้นคว้า", "วิจัย", "สืบค้น", "หาข้อมูล", "เปรียบเทียบข้อมูล", "research", "ศึกษา")) -> TaskType.RESEARCH
             containsAny(text, listOf("พัฒนา", "เขียนโค้ด", "โปรแกรม", "แอป", "build", "develop", "code")) -> TaskType.DEVELOPMENT
             else -> TaskType.GENERAL
         }
