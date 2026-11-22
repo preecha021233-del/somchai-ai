@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
+import com.somchai.ai.core.processing.TaskPlan
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
 import kotlinx.coroutines.launch
@@ -53,6 +54,7 @@ fun AgentApp(runtime: CoreRuntime) {
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var pendingPlan by remember { mutableStateOf<TaskPlan?>(null) }
     val scope = rememberCoroutineScope()
     val appContext = LocalContext.current
 
@@ -106,6 +108,18 @@ fun AgentApp(runtime: CoreRuntime) {
             Tab.CHAT -> ChatPage(
                 modifier = Modifier.padding(padding), messages = messages, input = input,
                 onInput = { input = it }, busy = busy, error = error,
+                pendingPlan = pendingPlan,
+                onStartPlan = {
+                    val plan = pendingPlan
+                    if (plan != null) {
+                        val task = runtime.tasks.create(plan)
+                        val started = runtime.tasks.startStep(task.id, 0)
+                        runtime.logger.record("TASK_CREATED", "id=${task.id} type=${task.type} steps=${task.steps.size}")
+                        runtime.logger.record("TASK_STEP_STARTED", "id=${task.id} step=0")
+                        messages = messages + "SOMCHAI: สร้างงานและบันทึกลงเครื่องแล้ว รหัส ${task.id.take(8)}\nขั้นตอนที่ 1: ${started.steps.first().title}\nสถานะ: กำลังติดตามงาน (ยังไม่ได้ดำเนินการภายนอก)"
+                        pendingPlan = null
+                    }
+                },
                 onFeedback = { answer, positive ->
                     runCatching { runtime.memory.add("feedback=${if (positive) "positive" else "negative"}; answer=$answer", "response-feedback") }
                         .onSuccess { Toast.makeText(appContext, if (positive) "ขอบคุณสำหรับคำติชม" else "รับทราบคำติชมแล้ว", Toast.LENGTH_SHORT).show() }
@@ -115,6 +129,7 @@ fun AgentApp(runtime: CoreRuntime) {
                     val text = input.trim()
                     if (text.isNotEmpty() && !busy) {
                         input = ""; messages = messages + "คุณ: $text"; busy = true; error = null
+                        pendingPlan = null
                         scope.launch {
                             try {
                                 val answer = if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
@@ -149,6 +164,10 @@ fun AgentApp(runtime: CoreRuntime) {
                                 } else {
                                     val result = runtime.processor.process(text)
                                     runtime.logger.record("INTERNAL_PROCESS", "intent=${result.intent}")
+                                    if (result.intent == "task.plan") {
+                                        val goal = if (text.startsWith("/plan ", true)) text.substringAfter(' ').trim() else text
+                                        pendingPlan = runtime.planner.plan(goal)
+                                    }
                                     result.answer
                                 }
                                 messages = messages + "SOMCHAI: $answer"
@@ -171,7 +190,8 @@ fun AgentApp(runtime: CoreRuntime) {
 @Composable
 private fun ChatPage(
     modifier: Modifier, messages: List<String>, input: String, onInput: (String) -> Unit,
-    busy: Boolean, error: String?, onFeedback: (String, Boolean) -> Unit, onSend: () -> Unit
+    busy: Boolean, error: String?, pendingPlan: TaskPlan?, onStartPlan: () -> Unit,
+    onFeedback: (String, Boolean) -> Unit, onSend: () -> Unit
 ) {
     val listState = rememberLazyListState()
     val keyboard = LocalSoftwareKeyboardController.current
@@ -318,6 +338,20 @@ private fun ChatPage(
                             }
                         }
 
+                    }
+                }
+            }
+            if (pendingPlan != null) {
+                item {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("พร้อมเริ่มติดตามงาน: ${pendingPlan.goal}", style = MaterialTheme.typography.titleSmall)
+                            Text("${pendingPlan.steps.size} ขั้นตอน · ${pendingPlan.type}", style = MaterialTheme.typography.bodySmall)
+                            Button(onClick = onStartPlan, modifier = Modifier.fillMaxWidth()) {
+                                Text("เริ่มงานขั้นตอนที่ 1")
+                            }
+                            Text("ปุ่มนี้สร้างงานและบันทึกสถานะในเครื่อง ยังไม่สั่งงานภายนอกอัตโนมัติ", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
