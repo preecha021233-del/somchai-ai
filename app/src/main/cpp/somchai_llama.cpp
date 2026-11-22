@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -16,6 +17,7 @@ struct Engine {
     llama_model * model = nullptr;
     llama_context * context = nullptr;
     const llama_vocab * vocab = nullptr;
+    uint32_t contextSize = 2048;
     std::mutex mutex;
     ~Engine() {
         if (context) llama_free(context);
@@ -66,6 +68,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeLoadModel(
         const int threads = std::clamp(requestedThreads, 2, std::min(available, 6));
         contextParams.n_threads = threads;
         contextParams.n_threads_batch = threads;
+        engine->contextSize = contextParams.n_ctx;
         engine->context = llama_init_from_model(engine->model, contextParams);
         if (!engine->context) {
             throwJava(env, "หน่วยความจำไม่เพียงพอสำหรับโหลดโมเดลนี้");
@@ -135,7 +138,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
                 static_cast<int32_t>(input.size()), tokens.data(),
                 static_cast<int32_t>(tokens.size()), true, true);
         }
-        if (tokenCount <= 0 || tokenCount >= static_cast<int32_t>(llama_model_n_ctx_train(engine->model))) {
+        if (tokenCount <= 0 || tokenCount > static_cast<int32_t>(engine->contextSize) - 128) {
             throwJava(env, "คำถามยาวเกินขีดจำกัดของโมเดล");
             return nullptr;
         }
