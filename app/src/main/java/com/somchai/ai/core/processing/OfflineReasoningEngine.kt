@@ -39,18 +39,41 @@ class OfflineReasoningEngine {
     }
 
     private fun solveChangeProblem(input: String): String? {
-        if (!input.contains("เงินทอน") || !input.contains("ราคา") || !input.contains("จ่าย")) return null
+        val asksForChange = listOf("เงินทอน", "ได้ทอน", "ทอนเท่าไร", "ทอนเท่าไหร่").any(input::contains)
+        if (!asksForChange || !input.contains("จ่าย")) return null
+
         val priceSection = Regex("ราคา(.*?)(?:จ่าย|ชำระ)", RegexOption.DOT_MATCHES_ALL)
-            .find(input)?.groupValues?.getOrNull(1) ?: return null
-        val prices = numberRegex.findAll(priceSection).mapNotNull { it.value.replace(",", "").toBigDecimalOrNull() }.toList()
+            .find(input)?.groupValues?.getOrNull(1)
+        val listedPrices = priceSection?.let { section ->
+            numberRegex.findAll(section).mapNotNull {
+                it.value.replace(",", "").toBigDecimalOrNull()
+            }.toList()
+        }.orEmpty()
+
+        val quantityPrice = Regex("""(\\d+)\\s*(?:ชิ้น|อัน|รายการ).*?(?:ชิ้นละ|อันละ)\\s*([\\d,]+(?:\\.\\d+)?)""")
+            .find(input)
+        val total: BigDecimal
+        val calculation: String
+        if (quantityPrice != null) {
+            val quantity = quantityPrice.groupValues[1].toBigDecimalOrNull() ?: return null
+            val unitPrice = quantityPrice.groupValues[2].replace(",", "").toBigDecimalOrNull() ?: return null
+            if (quantity <= BigDecimal.ZERO || quantity > BigDecimal("10000") || unitPrice < BigDecimal.ZERO) return null
+            total = quantity.multiply(unitPrice)
+            calculation = "${format(quantity)} × ${format(unitPrice)} = ${format(total)} บาท"
+        } else {
+            if (listedPrices.isEmpty()) return null
+            total = listedPrices.fold(BigDecimal.ZERO, BigDecimal::add)
+            calculation = listedPrices.joinToString(" + ") { format(it) } + " = ${format(total)} บาท"
+        }
+
         val paid = Regex("(?:จ่าย|ชำระ)(?:เงิน)?(?:ไป|เป็น)?\\s*([\\d,]+(?:\\.\\d+)?)")
             .find(input)?.groupValues?.getOrNull(1)?.replace(",", "")?.toBigDecimalOrNull() ?: return null
-        if (prices.isEmpty()) return null
-        val total = prices.fold(BigDecimal.ZERO, BigDecimal::add)
         val change = paid.subtract(total)
-        if (change.signum() < 0) return "ยอดสินค้า ${format(total)} บาท มากกว่าเงินที่จ่าย ${format(paid)} บาท จึงยังมีเงินไม่พอ"
-        return "วิธีคำนวณ:\nราคารวม = ${prices.joinToString(" + ") { format(it) }} = ${format(total)} บาท\n" +
-            "เงินทอน = เงินที่จ่าย - ราคารวม\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
+        if (change.signum() < 0) {
+            return "ยอดสินค้ารวม ${format(total)} บาท มากกว่าเงินที่จ่าย ${format(paid)} บาท จึงยังมีเงินไม่พอ"
+        }
+        return "วิธีคำนวณ:\\nราคารวม = $calculation\\n" +
+            "เงินทอน = เงินที่จ่าย - ราคารวม\\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
     }
 
     private fun solveBatteryProblem(input: String): String? {
