@@ -60,7 +60,6 @@ fun AgentApp(runtime: CoreRuntime) {
         containerColor = SomchaiBackground,
         topBar = {
             TopAppBar(
-                modifier = Modifier.height(86.dp),
                 title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))), contentAlignment = Alignment.Center) {
                         Text("S", color = Color.White, style = MaterialTheme.typography.headlineMedium)
@@ -213,7 +212,7 @@ private fun ChatPage(
                             Text(body, color = Color.White, style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        Column(Modifier.fillMaxWidth().widthIn(max = 316.dp)) {
+                        Column(Modifier.widthIn(max = 316.dp).fillMaxWidth()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 color = Color(0xFFEEF0F4),
