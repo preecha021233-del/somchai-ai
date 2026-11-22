@@ -39,7 +39,7 @@ class PermissionManager {
             .filter { character ->
                 character == '\n' || character == '\t' ||
                     (!character.isISOControl() &&
-                        Character.getType(character) != Character.FORMAT)
+                        Character.getType(character) != Character.FORMAT.toInt())
             }
             .take(12_000)
 
