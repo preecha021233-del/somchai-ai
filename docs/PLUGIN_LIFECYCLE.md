@@ -1,14 +1,12 @@
-# Plugin Lifecycle Contract
+# Plugin Lifecycle
 
-States: DRAFT → STAGED → VALIDATED → AWAITING_APPROVAL → ACTIVE → SUSPENDED or ROLLED_BACK.
+1. Candidate JSON is written to plugins/staging.
+2. Core validator checks size, ID, version, permission allowlist and finite operation allowlist.
+3. UI displays description, requested permissions and SHA-256.
+4. Owner explicitly approves or rejects.
+5. Approval is checked against the exact current candidate hash.
+6. Existing active manifest is backed up before promotion.
+7. Active manifest is parsed again; failures restore the previous copy.
+8. Every lifecycle event is written to the activity log.
 
-1. Create a manifest in staging.
-2. Validate schema, identifier, version, content hash, permissions, operation allowlist, and resource limits.
-3. Run deterministic smoke checks without granting network or secret access.
-4. Show the owner the manifest, permissions, hash, and test result.
-5. Receive one-time approval for that exact hash.
-6. Snapshot the active manifest and promote the candidate atomically.
-7. Run a health check; on failure restore the previous snapshot.
-8. Record every transition in the audit log.
-
-A manifest is data, not executable code. Unsupported operations are rejected. Candidate code cannot certify itself or modify the validator.
+Only core-owned operations are executable. Plugin manifests are data, not code.

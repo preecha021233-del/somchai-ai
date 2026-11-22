@@ -1,32 +1,16 @@
-# Implementation Plan — New Baseline
+# Implementation and Release Gates
 
-This replaces the former 40-phase / 7-volume / A–M planning scheme.
+## Current baseline
+Android Gradle project, Compose UI, LLM connector, Keystore-backed API-key encryption, plugin approval/rollback, constrained web-search operation, memory notes, audit log, resource budgets, unit test and GitHub Actions workflow have been added.
 
-## Track 1 — Build foundation
-- Gradle project, Android manifest, application entry point, CI build.
-- Preserve reusable Compose components only after compilation is established.
+## Release gates still open
+- Run CI and resolve any build/test errors.
+- Install and test on the target Android 16 device.
+- Verify multiple OpenAI-compatible providers and error handling.
+- Add encrypted backup/export and tested restore.
+- Add tamper-evident audit chain and robust log rotation.
+- Add richer search provider integration and source citations.
+- Add owner-controlled memory edit/delete/export.
+- Add release signing, privacy disclosure, accessibility and penetration testing.
 
-## Track 2 — Protected Core
-- Permission manager and untrusted-input boundary.
-- LLM connector with user-provided credential storage.
-- Activity log and resource budgets.
-- Safe-state behavior.
-
-## Track 3 — Extension lifecycle
-- Strict declarative manifest format.
-- Staging, validation, smoke checks, explicit approval.
-- Atomic promotion, versioned backup, rollback.
-
-## Track 4 — Owner experience
-- Chat, candidate review, approval/deny, plugin inventory.
-- Dynamic UI from validated declarative JSON.
-- Memory inspection and deletion controls.
-
-## Track 5 — Verification
-- Unit tests for permission decisions, manifest validation, path containment, approval binding, rollback.
-- GitHub Actions build and test.
-- Device tests on the target Android version and hardware.
-- Security review before enabling any additional execution capability.
-
-## Completion rule
-A feature is not complete because source files exist. It is complete only after successful CI, tests, and documented device verification. This repository must not be described as 100% complete until that evidence exists.
+Do not call the app production-certified until all gates have evidence.
