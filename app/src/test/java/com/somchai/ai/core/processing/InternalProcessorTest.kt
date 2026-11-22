@@ -72,8 +72,9 @@ class InternalProcessorTest {
             "คำนวณ 2 * -(3 + 4)" to "-14",
             "คำนวณ +2.5 * 4" to "10"
         )
+        val subject = processor()
         cases.forEach { (input, expected) ->
-            val result = processor().process(input)
+            val result = subject.process(input)
             assertTrue("Expected $expected from $input, got: ${result.answer}", result.answer.contains("= $expected"))
         }
     }
