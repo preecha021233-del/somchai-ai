@@ -64,7 +64,7 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
-    @Test fun encryptedStorePersistsApprovedSkillAcrossInstances() {
+    @Test fun approvedSkillPersistsAcrossStoreInstances() {
         val dir = createTempDir()
         try {
             val first = newStore(dir)
