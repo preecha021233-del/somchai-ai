@@ -8,7 +8,7 @@ package com.somchai.ai.core.brain
 internal object BrainPromptBuilder {
     const val MAX_PROMPT_CHARS = 3_600
     private const val MAX_SYSTEM_CHARS = 1_000
-    private const val MAX_CURRENT_CHARS = 1_600
+    const val MAX_CURRENT_CHARS = 1_600
     private const val MAX_HISTORY_CHARS = 700
     private const val MAX_SKILL_CHARS = 280
     private const val MAX_MEMORY_CHARS = 320
