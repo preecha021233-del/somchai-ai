@@ -115,15 +115,48 @@ class LocalMemoryStore(
         .put("content", entry.content).put("createdAt", entry.createdAt).toString()
 
     private fun migrateLegacyRecords() = synchronized(lock) {
-        if (!file.isFile) return@synchronized
-        val lines = runCatching { file.readLines().filter { it.isNotBlank() } }.getOrNull()
-            ?: return@synchronized
+        val lines = if (file.isFile) {
+            runCatching { file.readLines().filter { it.isNotBlank() } }.getOrNull()
+                ?: return@synchronized
+        } else emptyList()
         val entries = runCatching { lines.map { decode(it) } }.getOrNull()
             ?: return@synchronized
-        val hasLegacyRecords = lines.any { line -> runCatching { JSONObject(line).optInt("schemaVersion", 0) < 1 }.getOrDefault(true) }
+        val hasLegacyRecords = lines.any { line ->
+            runCatching { JSONObject(line).optInt("schemaVersion", 0) < 1 }.getOrDefault(true)
+        }
         if (hasLegacyRecords) {
             rewrite(entries)
             log("MEMORY_MIGRATED", "schema=1 records=${entries.size}")
+        }
+        migrateLegacyNotes(entries)
+    }
+
+    private fun migrateLegacyNotes(existing: List<MemoryEntry>) {
+        val legacyFile = File(file.parentFile, "notes.txt")
+        if (!legacyFile.isFile) return
+        val notes = runCatching { legacyFile.readLines().map { it.trim() }.filter { it.isNotEmpty() } }
+            .getOrNull() ?: return
+        if (notes.isEmpty()) return
+
+        val existingNotes = existing.filter { it.category == "owner-note" }.map { it.content }.toSet()
+        val missing = notes.distinct().filterNot { it in existingNotes }
+        val availableSlots = (500 - existing.size).coerceAtLeast(0)
+        val toImport = missing.takeLast(availableSlots)
+        if (toImport.isNotEmpty()) {
+            val imported = toImport.map { note ->
+                MemoryEntry(UUID.randomUUID().toString(), "owner-note", note.take(2000), java.time.Instant.now().toString())
+            }
+            rewrite((existing + imported).takeLast(500))
+        }
+
+        val verified = readEntries().filter { it.category == "owner-note" }.map { it.content }.toSet()
+        if (notes.all { it in verified }) {
+            val archive = File(file.parentFile, "notes.txt.migrated")
+            legacyFile.copyTo(archive, overwrite = true)
+            if (archive.readText() == legacyFile.readText()) {
+                check(legacyFile.delete()) { "Could not retire migrated legacy notes file" }
+                log("MEMORY_LEGACY_NOTES_MIGRATED", "records=${notes.size}")
+            }
         }
     }
 
