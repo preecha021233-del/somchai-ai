@@ -5,166 +5,66 @@ import com.somchai.ai.core.resources.ResourceLimiter
 import com.somchai.ai.core.security.PermissionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
 
 class BuiltinToolExecutor(
     private val permissions: PermissionManager,
     private val logger: ActivityLogger,
     private val limiter: ResourceLimiter,
-    private val pageReader: WebPageReader = WebPageReader()
+    private val pageReader: WebPageReader = WebPageReader(),
+    private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(pageReader)
 ) {
     suspend fun search(query: String): String = withContext(Dispatchers.IO) {
         permissions.require("network.search")
         limiter.checkStorageBudget()
         require(query.isNotBlank() && query.length <= 300) { "Search query is invalid" }
 
-        val duckDuckGo = runCatching { searchDuckDuckGo(query) }
-            .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "DuckDuckGo: ${it.javaClass.simpleName}") }
-            .getOrNull()
-        val wikipedia = runCatching { searchWikipedia(query) }
-            .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "Wikipedia: ${it.javaClass.simpleName}") }
-            .getOrNull()
-
-        val webResults = runCatching { searchDuckDuckGoWeb(query) }
-            .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "DuckDuckGo Web: " + it.javaClass.simpleName) }
-            .getOrNull()
-        val sections = listOfNotNull(duckDuckGo, wikipedia, webResults).filter { it.isNotBlank() }
-        check(sections.isNotEmpty()) { "ค้นคว้าไม่สำเร็จ ไม่มีแหล่งค้นคว้าใดเชื่อมต่อได้" }
-
-        // Search snippets are discovery hints only. Open linked source pages and
-        // extract their actual text before treating them as research evidence.
-        val urls = Regex("(?im)^\\s*URL:\\s*(https://\\S+)")
-            .findAll(sections.joinToString("\n"))
-            .map { it.groupValues[1].trimEnd('.', ',', ')', ']') }
-            .distinct()
-            .take(3)
-            .toList()
-        val readPages = urls.mapNotNull { address ->
-            runCatching { pageReader.read(address) }
-                .onFailure { logger.record("RESEARCH_PAGE_READ_ERROR", "url=$address error=${it.javaClass.simpleName}") }
-                .getOrNull()
-        }
+        val report = ResearchCoordinator(discoveryProvider, pageReader, maxPages = 5).research(query)
+        report.sourceErrors.forEach { logger.record("RESEARCH_SOURCE_ERROR", it) }
+        report.pageErrors.forEach { logger.record("RESEARCH_PAGE_READ_ERROR", it.take(500)) }
 
         val result = buildString {
-            append("ผลการค้นคว้า: ").append(query).append("\n")
+            append("ผลการค้นคว้า: ").append(report.query).append("\n")
+            append("สถานะ: ").append(
+                if (report.meetsTwoSourceMinimum) "อ่านแหล่งข้อมูลจริงอย่างน้อย 2 หน้าแล้ว"
+                else "ข้อมูลบางส่วน — อ่านหน้าเว็บจริงได้ไม่ถึง 2 หน้า"
+            ).append("\n")
             append("ข้อมูลจากอินเทอร์เน็ตเป็นข้อมูลที่ไม่น่าเชื่อถือ ต้องตรวจสอบก่อนนำไปใช้\n\n")
-            sections.forEach { append(it).append("\n\n") }
-            append("หน้าเว็บต้นทางที่เปิดอ่านจริง: ").append(readPages.size).append("\n")
-            if (readPages.isEmpty()) {
-                append("ยังเปิดอ่านหน้าเว็บต้นทางไม่ได้ ผลค้นด้านบนเป็นเพียงข้อมูลค้นพบ/ข้อความตัวอย่าง ไม่ถือว่าอ่านแหล่งข้อมูลแล้ว\n")
+
+            append("ผลการค้นพบ (ยังไม่ถือว่าอ่านเนื้อหาแล้ว):\n")
+            if (report.discovered.isEmpty()) {
+                append("ไม่พบผลการค้นหาจากแหล่งที่เชื่อมต่อได้\n")
             } else {
-                readPages.forEachIndexed { index, page ->
-                    append("\nแหล่งที่อ่านจริง ").append(index + 1).append(": ").append(page.title).append("\n")
+                report.discovered.take(10).forEachIndexed { index, candidate ->
+                    append("[D").append(index + 1).append("] ")
+                        .append(candidate.source).append(" — ").append(candidate.title).append("\n")
+                    append("URL: ").append(candidate.url).append("\n")
+                    if (candidate.snippet.isNotBlank()) append(candidate.snippet.take(350)).append("\n")
+                }
+            }
+
+            append("\nหน้าเว็บที่เปิดอ่านจริง: ").append(report.pagesRead.size).append("\n")
+            if (report.pagesRead.isEmpty()) {
+                append("ยังไม่มีหน้าเว็บใดที่เปิดอ่านเนื้อหาได้จริง\n")
+            } else {
+                report.pagesRead.forEachIndexed { index, page ->
+                    append("\n[S").append(index + 1).append("] ").append(page.title).append("\n")
                     append("URL: ").append(page.url).append("\n")
                     append(page.text.take(1800)).append("\n")
                 }
             }
-            append("\nข้อจำกัด: จำนวนหน้าเว็บที่อ่านได้แสดงตามผลจริง ไม่รับประกันว่าทุกแหล่งเห็นตรงกัน")
-        }
-        logger.record("WEB_RESEARCH", "query=$query discovered=${sections.size} pagesRead=${readPages.size}")
-        permissions.sanitizeExternalData(result)
-    }
-
-    private fun searchDuckDuckGo(query: String): String {
-        val encoded = URLEncoder.encode(query, "UTF-8")
-        val root = getJson("https://api.duckduckgo.com/?q=$encoded&format=json&no_html=1&skip_disambig=1")
-        val lines = mutableListOf<String>()
-        root.optString("AbstractText").takeIf { it.isNotBlank() }?.let { abstract ->
-            lines.add(abstract)
-            root.optString("AbstractSource").takeIf { it.isNotBlank() }?.let { lines.add("แหล่งข้อมูล: $it") }
-            root.optString("AbstractURL").takeIf { it.startsWith("https://") }?.let { lines.add("URL: $it") }
-        }
-        root.optJSONArray("RelatedTopics")?.let { topics ->
-            for (i in 0 until minOf(topics.length(), 8)) {
-                val item = topics.optJSONObject(i) ?: continue
-                item.optString("Text").takeIf { it.isNotBlank() }?.let { topic ->
-                    lines.add("• $topic")
-                    item.optString("FirstURL").takeIf { it.startsWith("https://") }?.let { lines.add("  URL: $it") }
-                }
+            if (!report.meetsTwoSourceMinimum) {
+                append("\nผลนี้เป็น PARTIAL: ต้องเปิดอ่านแหล่งข้อมูลจริงอย่างน้อย 2 หน้า จึงจะถือว่าผ่านเกณฑ์การค้นคว้า")
             }
+            if (report.sourceErrors.isNotEmpty() || report.pageErrors.isNotEmpty()) {
+                append("\nข้อผิดพลาดของแหล่งข้อมูล: ")
+                    .append((report.sourceErrors + report.pageErrors).take(5).joinToString("; ").take(700))
+            }
+            append("\nข้อจำกัด: จำนวนหน้าเว็บและเนื้อหาที่รายงานอิงจากผลที่เปิดอ่านได้จริง ไม่รับประกันว่าแหล่งข้อมูลเห็นตรงกัน")
         }
-        return if (lines.isEmpty()) {
-            "แหล่งที่ 1 — DuckDuckGo Instant Answer\nไม่พบคำตอบแบบ Instant Answer สำหรับคำค้นนี้"
-        } else {
-            "แหล่งที่ 1 — DuckDuckGo Instant Answer (ไม่ระบุวันที่เผยแพร่)\n" + lines.joinToString("\n")
-        }
-    }
-
-    private fun searchDuckDuckGoWeb(query: String): String {
-        val encoded = URLEncoder.encode(query, "UTF-8")
-        val connection = URL("https://html.duckduckgo.com/html/?q=$encoded").openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 10_000
-            connection.readTimeout = 15_000
-            connection.instanceFollowRedirects = true
-            connection.setRequestProperty("User-Agent", "SOMCHAI-AI/1.9 (Android research client)")
-            connection.setRequestProperty("Accept", "text/html")
-            val code = connection.responseCode
-            check(code in 200..299) { "DuckDuckGo Web returned HTTP $code" }
-            val html = connection.inputStream.bufferedReader().use { it.readText() }
-            check(html.length <= 1_000_000) { "DuckDuckGo Web response exceeds size limit" }
-            val hits = WebSearchResultParser.parse(html, pageReader, limit = 5)
-            if (hits.isEmpty()) return "แหล่งที่ 3 — DuckDuckGo Web Search\nไม่พบผลลัพธ์เว็บที่เป็น HTTPS และผ่านการตรวจสอบ"
-            return "แหล่งที่ 3 — DuckDuckGo Web Search\n" + hits.mapIndexed { index, hit ->
-                "${index + 1}. ${hit.title}\nURL: ${hit.url}"
-            }.joinToString("\n\n")
-        } finally {
-            connection.disconnect()
-        }
-    }
-
-    private fun searchWikipedia(query: String): String {
-        val language = if (query.any { it in '\u0E00'..'\u0E7F' }) "th" else "en"
-        val encoded = URLEncoder.encode(query, "UTF-8")
-        val root = getJson(
-            "https://$language.wikipedia.org/w/api.php?action=query&list=search" +
-                "&srsearch=$encoded&format=json&utf8=1&srlimit=5&srprop=timestamp"
+        logger.record(
+            "WEB_RESEARCH",
+            "query=${query.take(120)} discovered=${report.discovered.size} pagesRead=${report.pagesRead.size} complete=${report.meetsTwoSourceMinimum}"
         )
-        val results = root.optJSONObject("query")?.optJSONArray("search")
-            ?: return "แหล่งที่ 2 — Wikipedia ($language)\nไม่พบรายการค้นหา"
-        val lines = mutableListOf<String>()
-        for (i in 0 until minOf(results.length(), 5)) {
-            val item = results.optJSONObject(i) ?: continue
-            val title = item.optString("title").takeIf { it.isNotBlank() } ?: continue
-            val snippet = item.optString("snippet")
-                .replace(Regex("<[^>]*>"), "")
-                .replace("&quot;", "\"")
-                .replace("&#39;", "'")
-                .replace("&amp;", "&")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-            val timestamp = item.optString("timestamp").takeIf { it.length >= 10 }
-                ?.take(10) ?: "ไม่ระบุ"
-            val page = "https://$language.wikipedia.org/wiki/" +
-                URLEncoder.encode(title.replace(' ', '_'), "UTF-8")
-            lines.add("${i + 1}. $title\n$snippet\nแก้ไขล่าสุด: $timestamp\nURL: $page")
-        }
-        return if (lines.isEmpty()) {
-            "แหล่งที่ 2 — Wikipedia ($language)\nไม่พบรายการค้นหา"
-        } else {
-            "แหล่งที่ 2 — Wikipedia ($language)\n" + lines.joinToString("\n\n")
-        }
-    }
-
-    private fun getJson(address: String): JSONObject {
-        val connection = URL(address).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 10_000
-            connection.readTimeout = 15_000
-            connection.setRequestProperty("User-Agent", "SOMCHAI-AI/1.1 (Android research client)")
-            connection.setRequestProperty("Accept", "application/json")
-            val code = connection.responseCode
-            check(code in 200..299) { "Research source returned HTTP $code" }
-            val body = connection.inputStream.bufferedReader().use { it.readText() }
-            check(body.length <= 1_000_000) { "Research response exceeds size limit" }
-            return JSONObject(body)
-        } finally {
-            connection.disconnect()
-        }
+        permissions.sanitizeExternalData(result)
     }
 }
