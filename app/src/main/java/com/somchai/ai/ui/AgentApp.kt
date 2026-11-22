@@ -95,7 +95,17 @@ fun AgentApp(runtime: CoreRuntime) {
                     }
                     Column {
                         Text("SOMCHAI AI", color = SomchaiTextPrimary, style = MaterialTheme.typography.titleLarge)
-                        Text("● กำลังใช้งานอยู่", style = MaterialTheme.typography.labelMedium, color = Color(0xFF20A464))
+                        Text(
+                            when (modelStatus) {
+                                com.somchai.ai.core.LocalModelStatus.READY -> "● สมองภายในพร้อม"
+                                com.somchai.ai.core.LocalModelStatus.DOWNLOADING -> "● กำลังดาวน์โหลดโมเดล"
+                                com.somchai.ai.core.LocalModelStatus.LOADING -> "● กำลังโหลดสมอง"
+                                com.somchai.ai.core.LocalModelStatus.FAILED -> "● ใช้ระบบสำรอง"
+                                com.somchai.ai.core.LocalModelStatus.NOT_INSTALLED -> "● ยังไม่ติดตั้งโมเดล"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (modelStatus == com.somchai.ai.core.LocalModelStatus.READY) Color(0xFF20A464) else SomchaiTextSecondary
+                        )
                     }
                 } },
                 actions = {
@@ -773,8 +783,14 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("สมอง AI ภายใน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
         Text(
-            if (modelReady) "โมเดลภาษาในเครื่องพร้อมใช้งาน — คำถามทั่วไปจะประมวลผลบนโทรศัพท์ ไม่ส่งไป AI ภายนอก"
-            else "ยังไม่มีโมเดลภาษาในเครื่อง ขณะนี้ระบบใช้ตัวประมวลผลสำรองแบบกฎ",
+            when (modelStatus) {
+                com.somchai.ai.core.LocalModelStatus.READY ->
+                    "โมเดลภาษาในเครื่องพร้อมใช้งาน — คำถามทั่วไปประมวลผลบนโทรศัพท์"
+                com.somchai.ai.core.LocalModelStatus.DOWNLOADING -> "กำลังดาวน์โหลดโมเดลภาษา..."
+                com.somchai.ai.core.LocalModelStatus.LOADING -> "กำลังตรวจสอบและโหลดโมเดลเข้าสู่หน่วยความจำ..."
+                com.somchai.ai.core.LocalModelStatus.FAILED -> "โหลดโมเดลไม่สำเร็จ ขณะนี้ใช้ระบบสำรองแบบกฎ"
+                com.somchai.ai.core.LocalModelStatus.NOT_INSTALLED -> "ยังไม่ได้ติดตั้งโมเดลภาษาในเครื่อง"
+            },
             color = if (modelReady) Color(0xFF16834A) else SomchaiTextSecondary
         )
         Text(
