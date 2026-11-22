@@ -113,3 +113,4 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Source requests now state when no sources have actually been opened and direct the user to approved Web Search rather than inventing citations.
 - Added focused regression cases for these exact behaviors.
 - Chat header and settings now display truthful model states instead of a generic always-online/always-active label.
+- Tightened optional provider configuration: HTTPS only, no embedded credentials/query/fragment, standard HTTPS port, no local hostnames/private IP literals, and bounded model/API-key lengths. The stored endpoint is revalidated when loaded.
