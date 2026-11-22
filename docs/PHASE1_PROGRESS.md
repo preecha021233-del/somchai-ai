@@ -9,9 +9,10 @@ Updated: 2026-11-22
 - Deterministic internal intent handling for greetings, capability description, help, task planning, and local-memory commands.
 - Task planner decomposes research, development, troubleshooting and general requests into explicit steps. It describes a plan and does not claim to have executed it.
 - Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.
-- Research output now displays the DuckDuckGo Instant Answer source name and result URLs when supplied by the endpoint.
+- Research now queries DuckDuckGo Instant Answer and Wikipedia, displays source URLs and Wikipedia last-edit dates when supplied, and labels missing dates/coverage limits.
 - Active plugins can be disabled by the owner; the manifest is retained in the app-private backup area for recovery.
-- Plugin validation now accepts only the `web.search` operation actually implemented by Core; unimplemented memory operations are rejected.
+- Plugin validation accepts only the `web.search` operation actually implemented by Core and enforces its exact required permission; unimplemented operations and unnecessary permissions are rejected.
+- Local memory records now carry schema version 1; valid legacy records without a version are migrated without overwriting a file containing invalid records.
 - Memory tab now reads and manages real local-memory records rather than displaying hard-coded sample memories.
 - Added JVM unit tests for processor intents, task planning, and memory CRUD/persistence.
 - Application ID remains `com.somchai.ai`; versionCode incremented from 1 to 2 and versionName from 1.0.0 to 1.1.0. Existing owner signing configuration was not changed.
@@ -22,9 +23,9 @@ Updated: 2026-11-22
 |---|---|---|
 | Internal processing | Implemented, automated tests pending CI | CI pass and device tests with network disabled and no API key |
 | Task decomposition | Implemented, automated tests pending CI | CI pass; verify plan output on device |
-| Research | Approved DuckDuckGo Instant Answer with source/URL display | Multi-source comparison, publication dates and prompt-injection tests |
+| Research | DuckDuckGo + Wikipedia lookup with source URLs and available Wikipedia edit dates | Automated source-parser tests, adversarial content tests and device validation |
 | Local memory | Add/search/list/delete implemented | CI pass; device persistence across app restart and update |
-| Basic plugin development | JSON validation, smoke checks, hash-bound approval, activation, disable and rollback | Lifecycle integration tests, tampering, denial and rollback tests |
+| Basic plugin development | JSON validation, smoke checks, hash-bound approval, activation, disable and rollback; least-privilege permission matching | Lifecycle integration tests, tampering, denial and rollback tests |
 | Protection and recovery | Existing app-private storage, permissions, audit log and plugin rollback retained | Fault-injection and adversarial tests |
 | Update compatibility | Version increment and prior owner device update test recorded | Test this new v2 APK over installed v1 on device; verify certificate fingerprint |
 
@@ -41,7 +42,7 @@ Updated: 2026-11-22
 ## Next implementation work
 
 1. Run CI and fix all compile/test failures.
-2. Add schema versioning/migration and encrypted export/import for memory.
+2. Add encrypted memory storage/export/import and verify key recovery behavior.
 3. Expand plugin operation tests and ensure owner approval is required.
 4. Improve research result provenance and untrusted-data handling.
 5. Add negative/security tests and stability tests.
