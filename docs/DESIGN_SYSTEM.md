@@ -46,6 +46,26 @@
 
 ---
 
+## 2A. Approved Chat UI Surface (Figma reference)
+
+The SOMCHAI chat screen uses a dedicated light surface based on the approved 390×844 Figma frame. This is an intentional screen-level exception to the dark-first administrative screens above.
+
+| Element | Value |
+|---|---|
+| Chat background / header / composer | `#FFFFFF` |
+| Assistant response card | `#EEF0F4` |
+| Composer input fill | `#F0F0F2` |
+| Main chat text | `#17171B` |
+| Secondary/action text | `#77777D` |
+| Online status | `#20A464` |
+| User bubble / SOMCHAI avatar | Linear gradient `#7438E8 → #356DEB` |
+| Chat bubble radius | `22dp` |
+| Header avatar | `48dp` |
+| Message avatar | `34dp` |
+| Composer input / send control | Rounded pill / `58dp` circular send button |
+
+Navigation stays in the top-right menu. The chat screen has no bottom tab bar. Assistant response actions (Copy, Like, Dislike, Read aloud and Share) are part of the assistant response card and must remain interactive, not decorative.
+
 ## 3. Typography
 
 - **Primary Font:** System Default (Inter / SF Pro on device)
