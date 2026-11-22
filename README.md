@@ -7,16 +7,19 @@ SOMCHAI AI is an Android personal assistant being developed toward an independen
 ## Current implemented baseline
 
 - Android app foundation using Kotlin, Jetpack Compose and Material 3.
-- Chat UI and an OpenAI-compatible Chat Completions connector.
+- Offline-first chat UI routed through a deterministic internal rule engine by default.
+- Optional OpenAI-compatible Chat Completions connector, invoked only with the explicit `/ai` command.
 - API key encryption with Android Keystore (AES-GCM).
 - Core permission allowlist and untrusted external-data boundary.
 - Declarative plugin staging, validation, SHA-256-bound approval, activation and rollback.
 - Built-in web search operation using DuckDuckGo Instant Answer API, invoked with `/search` after approval.
-- Owner-inspectable memory notes and append-oriented activity log.
+- Structured local memory with add, search, retrieval and deletion; stored in app-private files and not uploaded automatically.
+- Deterministic task decomposition for research, development, troubleshooting and general tasks.
+- Append-oriented activity log for internal processing and memory events.
 - Daily API request and local storage budgets.
 - GitHub Actions build, unit tests and APK artifact upload.
 
-**Important current limitation:** the chat response path in this repository still calls the configured external LLM connector. The independent internal reasoning, task-planning and learning engine described in the Master Command have not yet been implemented. The app can open without an API key, but LLM chat responses will not work until an owner-authorized provider is configured. Configuring an external provider is optional and must never be treated as a prerequisite for the project's long-term architecture. Do not create accounts, API keys, subscriptions or charges without the owner's explicit approval.
+**Phase 1 implementation limitation:** the internal processor is a deterministic, bounded rule engine with explicit supported intents and a task-planning workflow. It is not a general-purpose language model, does not learn new reasoning rules autonomously, and does not claim human-level reasoning. Unsupported requests are reported honestly rather than silently sent to an external provider. Optional provider requests require the explicit `/ai` command and an owner-configured provider. Do not create accounts, API keys, subscriptions or charges without the owner's explicit approval.
 
 The current JSON plugin system selects a finite set of operations already implemented by the app. It is not an arbitrary code execution runtime and is not yet the full self-extension system described in the Master Command.
 
@@ -48,15 +51,15 @@ For local Android Studio use, open the repository as a Gradle project and use a 
 ## Setup
 
 1. Install the owner-signed release APK for normal use and future in-place updates.
-2. The app can be opened without configuring an external AI provider. The current chat response feature still depends on an OpenAI-compatible provider; only configure one if the owner explicitly chooses to do so. No provider, account, API key or paid service is mandatory to the project's architecture.
+2. Internal supported commands work without an external AI provider. An optional provider is called only when the owner explicitly uses `/ai` and has configured the provider. No provider, account, API key or paid service is mandatory.
 3. To use the currently implemented web-search operation, approve the staged Web Search plugin in Plugins and use `/search` followed by a query.
-4. Local memory notes and the existing app UI can be inspected without configuring an LLM provider.
+4. Use `/remember text`, `/recall query`, and `/forget id` for local memory. The Memory tab also supports adding, searching and deleting stored entries.
 
 ## Master Command and development status
 
 The authoritative requirements, owner-approval rules, Protected Core/Evolution Zone architecture, phase gates, internal processing goals and self-evolution roadmap are in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
-The current code is an early functional app baseline, not a completed independent AI brain and not a security-certified release. Phase 0 repository audit and subsequent implementation gates must be completed with evidence. Do not describe planned capabilities as implemented.
+Phase 0 is closed based on repository audit and owner device update testing. Phase 1 implementation is in progress. The current internal processor is deliberately bounded and is not a completed independent AI brain or a security-certified release. Remaining Phase 1 acceptance gates must be completed with automated and device evidence. Do not describe planned capabilities as implemented.
 
 ## Release limitations
 
