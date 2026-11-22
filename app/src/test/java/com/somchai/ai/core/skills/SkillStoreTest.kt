@@ -72,6 +72,28 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun evaluationBoundsLongPromptsAndIgnoresWhitespaceInExpectedText() {
+        val dir = createTempDir()
+        try {
+            val store = newStore(dir)
+            val skill = store.propose(
+                "สรุปยาว",
+                listOf("สรุปยาว"),
+                "ขั้นตอน".repeat(500),
+                listOf(SkillTestCase("ข้อมูลทดสอบ".repeat(50), "คำตอบ"), SkillTestCase("อีกกรณี", "คำตอบ"))
+            )
+            var longestPrompt = 0
+            val results = runBlocking {
+                store.evaluate(skill.id, FakeEngine { prompt ->
+                    longestPrompt = maxOf(longestPrompt, prompt.length)
+                    "คำ ตอบ"
+                })
+            }
+            assertTrue(longestPrompt <= 2_000)
+            assertTrue(results.all { it.passed })
+        } finally { dir.deleteRecursively() }
+    }
+
     @Test fun approvalIsBlockedWhenAnyTestFails() {
         val dir = createTempDir()
         try {
