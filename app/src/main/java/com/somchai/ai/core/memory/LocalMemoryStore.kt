@@ -108,8 +108,8 @@ class LocalMemoryStore(
 
     private fun rewrite(entries: List<MemoryEntry>) {
         val content = trimToLimit(entries).joinToString(
-            separator = "\\n",
-            postfix = if (entries.isEmpty()) "" else "\\n"
+            separator = "\n",
+            postfix = if (entries.isEmpty()) "" else "\n"
         ) { encode(it) }.toByteArray(Charsets.UTF_8)
         val encrypted = cipher.encrypt(content)
         val temp = File(file.parentFile, "memory.enc.tmp")
