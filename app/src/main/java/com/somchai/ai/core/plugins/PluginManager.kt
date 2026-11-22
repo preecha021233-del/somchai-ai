@@ -71,6 +71,20 @@ class PluginManager(
         }
     }
 
+    @Synchronized
+    fun disable(id: String): Boolean {
+        require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
+        val source = File(paths.active, "$id.json")
+        if (!source.isFile || !paths.contained(paths.active, source)) return false
+        val manifest = validator.validate(source.readText())
+        require(manifest.id == id) { "Plugin identity mismatch" }
+        val target = File(paths.backups, "disabled-$id-${System.currentTimeMillis()}.json")
+        source.copyTo(target, overwrite = false)
+        check(source.delete()) { "Could not remove plugin from active set" }
+        logger.record("PLUGIN_DISABLED", "$id backup=${target.name}")
+        return true
+    }
+
     fun reject(id: String) {
         File(paths.staging, "$id.json").delete()
         logger.record("PLUGIN_REJECTED", id)
