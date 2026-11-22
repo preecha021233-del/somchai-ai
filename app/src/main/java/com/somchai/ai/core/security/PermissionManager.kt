@@ -43,12 +43,19 @@ class PermissionManager {
             }
             .take(12_000)
 
+        // Keep this list deliberately explicit: it is a defense-in-depth filter,
+        // not a substitute for treating every external page as untrusted data.
         val injectionPatterns = listOf(
             Regex("(?i)ignore\\s+(all\\s+)?previous\\s+instructions"),
+            Regex("(?i)ignore\\s+(the\\s+)?(system|developer)\\s+(prompt|message|instructions)"),
             Regex("(?i)disregard\\s+(all\\s+)?(prior|previous)\\s+instructions"),
             Regex("(?i)override\\s+(the\\s+)?system\\s+prompt"),
+            Regex("(?i)(reveal|print|show|repeat)\\s+(the\\s+)?(hidden\\s+)?system\\s+prompt"),
+            Regex("(?i)you\\s+are\\s+now\\s+(a|an|the)\\s+"),
             Regex("ละเว้นคำสั่ง(ทั้งหมด)?(ก่อนหน้า|ก่อนหน้านี้)"),
-            Regex("ไม่ต้องทำตามคำสั่ง(เดิม|ก่อนหน้า)")
+            Regex("ไม่ต้องทำตามคำสั่ง(เดิม|ก่อนหน้า)"),
+            Regex("(เปิดเผย|แสดง|พิมพ์|บอก)คำสั่ง(ระบบ|ภายใน)"),
+            Regex("ตั้งแต่นี้ไปคุณ(คือ|ต้อง)")
         )
         return injectionPatterns.fold(bounded) { text, pattern ->
             pattern.replace(text, "[untrusted instruction removed]")
