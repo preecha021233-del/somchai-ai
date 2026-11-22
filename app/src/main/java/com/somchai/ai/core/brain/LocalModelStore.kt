@@ -1,7 +1,6 @@
 package com.somchai.ai.core.brain
 
-import android.content.Context
-import android.util.StatFs
+import android.os.StatFs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -14,22 +13,20 @@ import java.security.MessageDigest
  * Downloads the official Qwen GGUF asset into app-private storage.
  * The pinned SHA-256 is checked before the model is made visible to the runtime.
  */
-class LocalModelStore(context: Context, private val directory: File) {
-    private val appContext = context.applicationContext
-
+class LocalModelStore(private val directory: File) {
     fun modelFile(): File = File(directory, MODEL_FILE_NAME)
 
     suspend fun downloadDefaultModel(onProgress: (Int) -> Unit = {}): File = withContext(Dispatchers.IO) {
         check(directory.exists() || directory.mkdirs()) { "สร้างโฟลเดอร์เก็บโมเดลไม่สำเร็จ" }
         val target = modelFile()
-        if (target.isFile && target.length() == EXPECTED_BYTES &&
+        if (target.isFile && target.length() in MIN_MODEL_BYTES..MAX_MODEL_BYTES &&
             sha256(target) == EXPECTED_SHA256 && GgufFileValidator.isValid(target)) {
             onProgress(100)
             return@withContext target
         }
         target.delete()
         val available = StatFs(directory.absolutePath).availableBytes
-        require(available >= EXPECTED_BYTES + 150_000_000L) {
+        require(available >= MIN_FREE_BYTES) {
             "พื้นที่ว่างไม่เพียงพอ ต้องมีพื้นที่ว่างอย่างน้อยประมาณ 650 MB"
         }
 
@@ -46,9 +43,6 @@ class LocalModelStore(context: Context, private val directory: File) {
             val status = connection.responseCode
             check(status in 200..299) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
             val declared = connection.contentLengthLong
-            require(declared == EXPECTED_BYTES || declared <= 0L) {
-                "ขนาดไฟล์โมเดลไม่ตรงกับรุ่นที่กำหนด"
-            }
             val digest = MessageDigest.getInstance("SHA-256")
             var total = 0L
             connection.inputStream.use { input ->
@@ -61,12 +55,13 @@ class LocalModelStore(context: Context, private val directory: File) {
                         require(total <= MAX_MODEL_BYTES) { "ไฟล์โมเดลมีขนาดเกินขีดจำกัด" }
                         digest.update(buffer, 0, count)
                         output.write(buffer, 0, count)
-                        if (declared > 0L) onProgress(((total * 100L) / declared).toInt().coerceIn(0, 99))
+                        val progressTotal = if (declared > 0L) declared else EXPECTED_BYTES
+                        onProgress(((total * 100L) / progressTotal).toInt().coerceIn(0, 99))
                     }
                     output.fd.sync()
                 }
             }
-            require(total == EXPECTED_BYTES) { "ดาวน์โหลดไม่ครบ ขนาดไฟล์ไม่ถูกต้อง" }
+            require(total in MIN_MODEL_BYTES..MAX_MODEL_BYTES) { "ดาวน์โหลดไม่ครบหรือขนาดไฟล์โมเดลไม่ถูกต้อง" }
             val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
             require(actualHash.equals(EXPECTED_SHA256, ignoreCase = true)) {
                 "ตรวจสอบ SHA-256 ไม่ผ่าน ไฟล์โมเดลถูกปฏิเสธ"
@@ -99,9 +94,11 @@ class LocalModelStore(context: Context, private val directory: File) {
     companion object {
         const val MODEL_FILE_NAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
         const val MODEL_URL = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
-        const val EXPECTED_BYTES = 514_000_000L
+        const val EXPECTED_BYTES = 514_000_000L // Approximate progress denominator only.
         const val EXPECTED_SHA256 = "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+        private const val MIN_MODEL_BYTES = 400_000_000L
         private const val MAX_MODEL_BYTES = 600_000_000L
+        private const val MIN_FREE_BYTES = 650_000_000L
     }
 }
 
