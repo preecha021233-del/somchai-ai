@@ -68,6 +68,22 @@ fun AgentApp(runtime: CoreRuntime) {
     var pendingPlan by remember { mutableStateOf<TaskPlan?>(null) }
     val scope = rememberCoroutineScope()
     val appContext = LocalContext.current
+    val modelStatus by runtime.localModelStatus.collectAsState()
+    LaunchedEffect(modelStatus) {
+        when (modelStatus) {
+            com.somchai.ai.core.LocalModelStatus.READY -> {
+                if (messages.none { it.contains("สมอง AI ภายในพร้อมทำงาน") }) {
+                    messages = messages + "SOMCHAI: สมอง AI ภายในพร้อมทำงานครับ"
+                }
+            }
+            com.somchai.ai.core.LocalModelStatus.FAILED -> {
+                if (messages.none { it.contains("โหลดโมเดลภายในไม่สำเร็จ") }) {
+                    messages = messages + "SOMCHAI: โหลดโมเดลภายในไม่สำเร็จ ระบบสำรองยังพร้อมใช้งานครับ"
+                }
+            }
+            else -> Unit
+        }
+    }
 
     Scaffold(
         containerColor = SomchaiBackground,
@@ -744,8 +760,10 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
 private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (String) -> Unit) {
     val provider = runtime.secrets.provider()
     val scope = rememberCoroutineScope()
-    var modelReady by remember { mutableStateOf(runtime.localInference.isModelLoaded()) }
-    var modelDownloading by remember { mutableStateOf(false) }
+    val modelStatus by runtime.localModelStatus.collectAsState()
+    val modelReady = modelStatus == com.somchai.ai.core.LocalModelStatus.READY
+    val modelBusy = modelStatus == com.somchai.ai.core.LocalModelStatus.DOWNLOADING ||
+        modelStatus == com.somchai.ai.core.LocalModelStatus.LOADING
     var modelProgress by remember { mutableIntStateOf(0) }
     var modelMessage by remember { mutableStateOf<String?>(null) }
     var baseUrl by remember { mutableStateOf(provider?.baseUrl ?: "https://api.openai.com/v1") }
@@ -767,7 +785,6 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
         Button(
             onClick = {
                 scope.launch {
-                    modelDownloading = true
                     modelProgress = 0
                     modelMessage = "กำลังดาวน์โหลดโมเดลจาก Hugging Face..."
                     try {
@@ -776,27 +793,26 @@ private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (S
                         } else {
                             runtime.downloadAndLoadLocalModel { modelProgress = it }
                         }
-                        modelReady = true
                         modelMessage = "โหลดโมเดลภายในสำเร็จ"
                     } catch (failure: Exception) {
                         modelMessage = failure.message ?: "ติดตั้งโมเดลไม่สำเร็จ"
-                    } finally {
-                        modelDownloading = false
                     }
                 }
             },
-            enabled = !modelDownloading && !modelReady
+            enabled = !modelBusy && !modelReady
         ) {
             Text(
-                if (modelDownloading) "กำลังติดตั้งโมเดล..."
+                if (modelBusy) "กำลังติดตั้ง/โหลดโมเดล..."
                 else if (modelReady) "โมเดลพร้อมใช้งาน"
                 else if (runtime.modelStore.modelFile().isFile) "ตรวจสอบ/โหลดโมเดลที่ติดตั้งไว้"
                 else "ดาวน์โหลดและติดตั้งสมอง AI"
             )
         }
-        if (modelDownloading) {
+        if (modelStatus == com.somchai.ai.core.LocalModelStatus.DOWNLOADING) {
             LinearProgressIndicator(progress = modelProgress / 100f, modifier = Modifier.fillMaxWidth())
             Text("$modelProgress%", color = SomchaiTextSecondary)
+        } else if (modelStatus == com.somchai.ai.core.LocalModelStatus.LOADING) {
+            Text("กำลังโหลดโมเดลเข้าสู่หน่วยความจำของเครื่อง...", color = SomchaiTextSecondary)
         }
         modelMessage?.let { Text(it, color = SomchaiPrimaryLight) }
         Text(
