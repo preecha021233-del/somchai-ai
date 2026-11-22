@@ -36,15 +36,18 @@ class LocalFirstBrain(
     override suspend fun respond(request: BrainRequest): BrainReply {
         require(request.prompt.isNotBlank()) { "Prompt cannot be blank" }
         require(request.prompt.length <= 6000) { "Prompt exceeds the local context input limit" }
-        if (engine.isModelLoaded()) {
+        if (runCatching { engine.isModelLoaded() }.getOrDefault(false)) {
             val generated = runCatching { engine.generate(request).trim() }.getOrNull()
             if (!generated.isNullOrBlank()) {
                 return BrainReply(generated, engine.engineId, usedFallback = false)
             }
         }
-        val safeFallback = fallback(request).ifBlank {
-            "โมเดลภายในยังไม่พร้อมใช้งาน และระบบสำรองยังไม่มีคำตอบสำหรับคำขอนี้"
-        }
+        val safeFallback = runCatching { fallback(request).trim() }
+            .getOrNull()
+            .orEmpty()
+            .ifBlank {
+                "โมเดลภายในยังไม่พร้อมใช้งาน และระบบสำรองยังไม่มีคำตอบสำหรับคำขอนี้"
+            }
         return BrainReply(safeFallback, "offline-fallback", usedFallback = true)
     }
 }
