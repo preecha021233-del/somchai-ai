@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.DisposableEffect
 import java.util.Locale
@@ -461,6 +463,42 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
     var refresh by remember { mutableIntStateOf(0) }
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var memoryMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri != null) runCatching {
+            val payload = runtime.memory.exportEncrypted()
+            val stream = requireNotNull(context.contentResolver.openOutputStream(uri)) { "เปิดไฟล์ปลายทางไม่ได้" }
+            stream.use { it.write(payload) }
+        }.onSuccess {
+            memoryMessage = "ส่งออกไฟล์ความจำที่เข้ารหัสแล้ว (ใช้ได้กับเครื่องและกุญแจเดิม)"
+        }.onFailure { memoryMessage = it.message ?: "ส่งออกไม่สำเร็จ" }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) runCatching {
+            val stream = requireNotNull(context.contentResolver.openInputStream(uri)) { "เปิดไฟล์นำเข้าไม่ได้" }
+            val bytes = stream.use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= 1_048_576) { "ไฟล์นำเข้ามีขนาดเกิน 1 MB" }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+            runtime.memory.importEncrypted(bytes)
+        }.onSuccess {
+            memoryMessage = "นำเข้าความจำ $it รายการแล้ว"
+            refresh++
+        }.onFailure { memoryMessage = it.message ?: "นำเข้าไม่สำเร็จ" }
+    }
     val memoryResult = remember(refresh, query) {
         runCatching {
             if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
@@ -480,9 +518,22 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
                 runCatching { runtime.memory.backup() }
                     .onSuccess { memoryMessage = if (it) "สำรองความจำแล้ว" else "ยังไม่มีข้อมูลให้สำรอง" }
                     .onFailure { memoryMessage = it.message }
-            }) { Text("สำรองความจำ") }
-            OutlinedButton(onClick = { showRestoreConfirm = true }) { Text("กู้คืนข้อมูล") }
+            }) { Text("สำรองในแอป") }
+            OutlinedButton(onClick = { showRestoreConfirm = true }) { Text("กู้คืนในแอป") }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { exportLauncher.launch("somchai-memory.enc") }) {
+                Text("ส่งออกไฟล์")
+            }
+            OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/octet-stream", "*/*")) }) {
+                Text("นำเข้าไฟล์")
+            }
+        }
+        Text(
+            "ไฟล์ส่งออกเข้ารหัสและผูกกับกุญแจ Android Keystore ของการติดตั้งนี้ จึงกู้คืนได้บนแอปติดตั้งเดิมที่ยังมีกุญแจอยู่เท่านั้น ไม่สามารถย้ายไปเครื่องใหม่ได้",
+            color = SomchaiTextTertiary,
+            style = MaterialTheme.typography.bodySmall
+        )
         memoryMessage?.let { Text(it, color = SomchaiPrimaryLight) }
         if (showRestoreConfirm) {
             AlertDialog(
