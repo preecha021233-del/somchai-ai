@@ -39,6 +39,14 @@ class LocalFirstBrainTest {
         assertTrue(result.usedFallback)
     }
 
+    @Test fun returnsSafeMessageWhenBothModelAndFallbackFail(): Unit = runBlocking {
+        val result = LocalFirstBrain(UnavailableOnDeviceInferenceEngine) {
+            error("fallback processor failed")
+        }.respond(BrainRequest("คำถาม"))
+        assertTrue(result.usedFallback)
+        assertTrue(result.text.contains("ระบบสำรองยังไม่มีคำตอบ"))
+    }
+
     @Test fun rejectsBlankPrompt(): Unit = runBlocking {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             runBlocking { LocalFirstBrain(UnavailableOnDeviceInferenceEngine) { "fallback" }.respond(BrainRequest(" ")) }
