@@ -48,9 +48,13 @@ class CoreRuntime(context: Context) {
         if (installedModel.isFile) {
             // Never load a 491 MB model on Application.onCreate's main thread.
             modelLoader.execute {
-                runCatching { localInference.loadModel(installedModel) }
-                    .onSuccess { logger.record("LOCAL_MODEL_READY", installedModel.name) }
-                    .onFailure { logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown") }
+                if (!modelStore.isVerifiedModel(installedModel)) {
+                    logger.record("LOCAL_MODEL_REJECTED", "Installed model failed SHA-256/GGUF validation")
+                } else {
+                    runCatching { localInference.loadModel(installedModel) }
+                        .onSuccess { logger.record("LOCAL_MODEL_READY", installedModel.name) }
+                        .onFailure { logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown") }
+                }
             }
         }
         logger.record("CORE_START", "Protected core initialized; local model=" + localInference.isModelLoaded())
@@ -65,7 +69,7 @@ class CoreRuntime(context: Context) {
 
     suspend fun loadInstalledLocalModel(): File = withContext(Dispatchers.IO) {
         val file = modelStore.modelFile()
-        require(file.isFile) { "ยังไม่มีไฟล์โมเดลในเครื่อง" }
+        require(modelStore.isVerifiedModel(file)) { "ไฟล์โมเดลไม่ผ่านการตรวจสอบ SHA-256/GGUF กรุณาดาวน์โหลดใหม่" }
         if (!localInference.isModelLoaded()) localInference.loadModel(file)
         logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
         file
