@@ -150,3 +150,12 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Expanded the external-page sanitization denylist to cover additional English override patterns (developer/system instruction replacement, hidden system-prompt disclosure, and role reassignment) and Thai equivalents (requesting system/internal instructions and role reassignment).
 - Added regression cases for the additional English and Thai patterns.
 - These filters are defense in depth only: all external page content must still remain explicitly untrusted in the model prompt. CI execution for this commit is pending.
+
+
+## Native Brain CI compile repair and model-load verification — 2026-11-22
+- Investigated failed workflow run [#45043127526](https://github.com/preecha021233-del/somchai-ai/actions/runs/45043127526): Kotlin compilation failed because `NativeLlamaInferenceEngine` referenced `BrainPromptBuilder.MAX_CURRENT_CHARS` while the constant was private.
+- Exposed the prompt-bound constant within the internal Brain package so the runtime and prompt builder share the same fixed limit.
+- Added a mandatory pre-load check in `NativeLlamaInferenceEngine`: the file must be a valid GGUF, fall within the pinned model size range, and match the approved Qwen SHA-256. The installer and runtime now use the same validator.
+- Added JVM regression coverage that rejects a small GGUF-shaped file as the approved default model.
+- Commits: `297ede6b51daa14eb955908626f62216114c4d47`, `a8f1de1331d2d710af07d593a9f431d48c4e9f0b`, `d9e1225d0e07c6a0568c8945c6be7045092b3a3e`, `14551e2bfe006ac4c802b72b14a1bafaab4276b2`.
+- Validation status for these changes: CI NOT YET RUN; do not count this repair as passed until a new workflow completes.
