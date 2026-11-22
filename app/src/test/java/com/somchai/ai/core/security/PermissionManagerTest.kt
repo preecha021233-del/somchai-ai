@@ -22,4 +22,24 @@ class PermissionManagerTest {
     @Test fun boundsExternalDataLength() {
         assertEquals(12000, permissions.sanitizeExternalData("x".repeat(13000)).length)
     }
+
+    @Test fun enforcesCompletePermissionMatrix() {
+        val allowed = listOf("network.search", "memory.read", "memory.write")
+        val denied = listOf("system.root", "filesystem.write", "shell.exec", "network.raw", "unknown.permission")
+        allowed.forEach { permission ->
+            assertEquals(true, permissions.isAllowed(permission))
+            permissions.require(permission)
+        }
+        denied.forEach { permission ->
+            assertEquals(false, permissions.isAllowed(permission))
+            assertThrows(IllegalStateException::class.java) { permissions.require(permission) }
+        }
+    }
+
+    @Test fun deniesPermissionByDefaultForUnrecognizedCapabilities() {
+        assertEquals(false, permissions.isAllowed(""))
+        assertEquals(false, permissions.isAllowed("network.search.extra"))
+        assertEquals(false, permissions.isAllowed("memory.delete"))
+    }
+
 }
