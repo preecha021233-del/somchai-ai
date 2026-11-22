@@ -85,6 +85,7 @@ class InternalProcessor(
         "คำสั่งภายในที่รองรับ:\n" +
             "/help — แสดงคำสั่ง\n" +
             "/plan งาน — แยกงานเป็นขั้นตอน\n" +
+            "/task list|show|start|complete|fail|retry|cancel — จัดการสถานะงาน\n" +
             "/remember ข้อความ — บันทึกความจำในเครื่อง\n" +
             "/recall คำค้นหรือรหัส — ค้นคืนความจำ\n" +
             "/forget รหัส — ลบความจำตามรหัส\n" +
