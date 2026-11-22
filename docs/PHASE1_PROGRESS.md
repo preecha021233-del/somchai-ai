@@ -114,3 +114,9 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added focused regression cases for these exact behaviors.
 - Chat header and settings now display truthful model states instead of a generic always-online/always-active label.
 - Tightened optional provider configuration: HTTPS only, no embedded credentials/query/fragment, standard HTTPS port, no local hostnames/private IP literals, and bounded model/API-key lengths. The stored endpoint is revalidated when loaded.
+
+## Implementation fixes — 2026-11-22 (continued)
+- Fixed learned-skill extraction prompt line breaks so the local model receives real separated prompt sections instead of literal backslash-n text.
+- Wrapped owner-supplied experience in explicit untrusted-data delimiters and instructed the model not to obey embedded instructions while extracting reusable steps.
+- Extended the learned-skill test to assert the delimiters, untrusted-data warning and real newline formatting.
+- Corrected WebPageReader redirect enforcement: the configured maximum is now exactly three redirects; a fourth redirect is rejected rather than accidentally being followed.
