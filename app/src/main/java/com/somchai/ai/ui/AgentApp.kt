@@ -146,7 +146,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                             val skills = runtime.skills.all()
                                             if (skills.isEmpty()) "ยังไม่มีทักษะที่บันทึกไว้" else skills.joinToString("\n") { skill ->
                                                 val status = if (skill.approved) "อนุมัติแล้ว" else "รอทดสอบ/อนุมัติ"
-                                                "• " + skill.name + " [" + skill.id.take(8) + "] — " + status +
+                                                "• " + skill.name + " [" + skill.id + "] — " + status +
                                                     " — ผ่าน " + skill.results.count { it.passed } + "/" + skill.tests.size
                                             }
                                         }
