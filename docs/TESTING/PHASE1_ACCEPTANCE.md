@@ -77,6 +77,14 @@ Phase 1 passes only when all six capability groups pass their automated and devi
 - [ ] P39 Verify normal chat uses `llama.cpp-android` when the model is ready, reports fallback when unavailable, and never calls the remote provider unless `/ai` is explicitly requested.
 - Pass threshold: all model integrity checks pass; native load/generation are stable on the target device; model quality is evaluated using the unchanged P01–P12 rubric. A successful native build alone does not pass these checks.
 
+## Learned-skill acceptance checks
+
+- [ ] P40 The installed local model extracts a reusable procedure from a supplied successful experience and stores it as an encrypted, unapproved draft.
+- [ ] P41 A skill requires 2–10 test cases; approval is blocked if any case fails or if the model is unavailable.
+- [ ] P42 Only an explicitly approved skill is injected into a matching Brain request; unapproved and deleted skills are never retrieved.
+- [ ] P43 Skill storage cannot execute code, grant permissions, or add plugin operations; proposal, evaluation, approval and deletion are audit logged.
+- Pass threshold: 4/4. A skill is reusable prompt data only; this does not count as autonomous code modification.
+
 ## Evidence required for each run
 
 Record test-set version, exact prompt, expected behavior, actual output, pass/fail, app version/versionCode, commit SHA, device/Android/ABI, model name/hash/quantization if used, test method (unit/CI/manual device), timestamp, and evidence link.
