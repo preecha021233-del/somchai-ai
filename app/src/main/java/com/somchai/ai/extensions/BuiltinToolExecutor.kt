@@ -37,7 +37,7 @@ class BuiltinToolExecutor(
             .findAll(sections.joinToString("\n"))
             .map { it.groupValues[1].trimEnd('.', ',', ')', ']') }
             .distinct()
-            .take(4)
+            .take(2)
             .toList()
         val readPages = urls.mapNotNull { address ->
             runCatching { pageReader.read(address) }
@@ -56,7 +56,7 @@ class BuiltinToolExecutor(
                 readPages.forEachIndexed { index, page ->
                     append("\nแหล่งที่อ่านจริง ").append(index + 1).append(": ").append(page.title).append("\n")
                     append("URL: ").append(page.url).append("\n")
-                    append(page.text).append("\n")
+                    append(page.text.take(1800)).append("\n")
                 }
             }
             append("\nข้อจำกัด: จำนวนหน้าเว็บที่อ่านได้แสดงตามผลจริง ไม่รับประกันว่าทุกแหล่งเห็นตรงกัน")
