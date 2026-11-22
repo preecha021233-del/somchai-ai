@@ -137,13 +137,13 @@ fun AgentApp(runtime: CoreRuntime) {
                                     val candidates = runtime.plugins.candidates()
                                     val disabled = runtime.plugins.disabledPlugins()
                                     buildString {
-                                        append("สถานะปลั๊กอิน SOMCHAI\\n")
-                                        append("ใช้งานอยู่: ").append(active.size).append("\\n")
-                                        active.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — เปิดใช้งาน\\n") }
-                                        append("รออนุมัติ: ").append(candidates.size).append("\\n")
-                                        candidates.forEach { append("• ").append(it.manifest.name).append(" (").append(it.manifest.id).append(") — รอเจ้าของอนุมัติ\\n") }
-                                        append("ปิดใช้งาน: ").append(disabled.size).append("\\n")
-                                        disabled.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — ปิดใช้งาน\\n") }
+                                        append("สถานะปลั๊กอิน SOMCHAI\n")
+                                        append("ใช้งานอยู่: ").append(active.size).append("\n")
+                                        active.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — เปิดใช้งาน\n") }
+                                        append("รออนุมัติ: ").append(candidates.size).append("\n")
+                                        candidates.forEach { append("• ").append(it.manifest.name).append(" (").append(it.manifest.id).append(") — รอเจ้าของอนุมัติ\n") }
+                                        append("ปิดใช้งาน: ").append(disabled.size).append("\n")
+                                        disabled.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — ปิดใช้งาน\n") }
                                         if (active.isEmpty() && candidates.isEmpty() && disabled.isEmpty()) append("ยังไม่มีปลั๊กอินในระบบ")
                                     }
                                 } else if (text.startsWith("/search ", true)) {
