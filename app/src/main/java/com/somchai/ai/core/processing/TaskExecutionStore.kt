@@ -110,8 +110,8 @@ class TaskExecutionStore(private val directory: File) {
 
     private fun updateTask(id: String, transform: (TaskRecord) -> TaskRecord): TaskRecord = synchronized(lock) {
         val records = readAll().toMutableList()
-        val position = records.indexOfFirst { it.id == id || it.id.startsWith(id) }
-        require(position >= 0) { "Task not found" }
+        val matched = findById(records, id) ?: error("Task not found")
+        val position = records.indexOfFirst { it.id == matched.id }
         val updated = transform(records[position])
         records[position] = updated
         write(records)
