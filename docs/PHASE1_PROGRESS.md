@@ -137,3 +137,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - External web text filtering now strips control/bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before local-model use.
 - TaskPlanner no longer silently truncates goals beyond 1,000 characters. It rejects oversized/control-character input and recognizes additional common Thai research requests (หาข้อมูล, สืบค้น, เปรียบเทียบข้อมูล).
 - Added regression tests for capability escalation, prompt-injection sanitization, Thai research intent and invalid task input. These changes are committed; the new workflow result and target-device checks are still pending.
+
+
+## Local Brain context isolation and fallback resilience — 2026-11-22
+- Saved-memory context is now explicitly marked as untrusted reference data, with XML-like delimiters and escaping for angle brackets so stored notes cannot close the data boundary and inject new system sections.
+- Kept the closing memory delimiter inside the fixed prompt budget even when several long memories are selected.
+- LocalFirstBrain now catches failures from model readiness checks and from the deterministic fallback itself; if both local inference and fallback fail, it returns a truthful safe fallback message rather than propagating the processor exception.
+- Added regression tests for delimiter injection, long-memory truncation and simultaneous model/fallback failure.
+- Automated CI for the latest code commit is running; no pass result is claimed yet.
