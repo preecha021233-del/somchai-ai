@@ -157,7 +157,8 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 - Explicit in-app download/install control for the 491 MB official Qwen GGUF model.
 - Model installer checks free storage, HTTPS response, bounded size, GGUF header and SHA-256 before installation.
 - Model stored in app-private storage; ordinary chat remains independent from the optional external provider.
-- Added GGUF file-validator JVM tests and a dedicated ARM64 native CI workflow.
+- Added GGUF file-validator and reasoning-policy JVM tests, plus a dedicated ARM64 native CI workflow.
+- Added a Thai reasoning policy for intent/context, assumption, contradiction, missing-information and source-integrity checks. The policy is prompt guidance; answer quality remains unverified.
 
 ### Results
 - Source changes: ADDED; not yet accepted.
