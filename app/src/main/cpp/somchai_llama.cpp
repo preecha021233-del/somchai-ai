@@ -138,8 +138,11 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
                 static_cast<int32_t>(input.size()), tokens.data(),
                 static_cast<int32_t>(tokens.size()), true, true);
         }
-        if (tokenCount <= 0 || tokenCount > static_cast<int32_t>(engine->contextSize) - 128) {
-            throwJava(env, "คำถามยาวเกินขีดจำกัดของโมเดล");
+        const int limit = std::clamp(maxTokens, 1, 512);
+        const int32_t generationReserve = limit + 16;
+        if (tokenCount <= 0 ||
+            tokenCount > static_cast<int32_t>(engine->contextSize) - generationReserve) {
+            throwJava(env, "คำถามยาวเกินขีดจำกัดของโมเดลเมื่อเผื่อพื้นที่สร้างคำตอบแล้ว");
             return nullptr;
         }
         tokens.resize(static_cast<size_t>(tokenCount));
@@ -158,7 +161,6 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
         llama_sampler_chain_add(sampler, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
         std::string output;
-        const int limit = std::clamp(maxTokens, 1, 512);
         for (int i = 0; i < limit; ++i) {
             const llama_token token = llama_sampler_sample(sampler, engine->context, -1);
             if (llama_vocab_is_eog(engine->vocab, token)) break;
