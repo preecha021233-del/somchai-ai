@@ -84,4 +84,43 @@ class InternalProcessorTest {
         assertTrue(result.intent == "unsupported")
     }
 
+
+    @Test fun answersThunderQuestionWithCausalExplanation() {
+        val result = processor().process("ทำไมฟ้าร้อง")
+        assertTrue(result.intent == "knowledge.fact")
+        assertTrue(result.answer.contains("คลื่นกระแทก"))
+    }
+
+    @Test fun explainsBackupAdvantagesAndDisadvantages() {
+        val result = processor().process("อธิบายข้อดีข้อเสียของการสำรองข้อมูล")
+        assertTrue(result.intent == "knowledge.fact")
+        assertTrue(result.answer.contains("ข้อดี"))
+        assertTrue(result.answer.contains("ข้อเสีย"))
+    }
+
+    @Test fun flagsConflictingWeekdayPremises() {
+        val result = processor().process("วันนี้เป็นวันจันทร์ แต่วันนี้เป็นวันอังคาร")
+        assertTrue(result.intent == "reasoning.contradiction")
+        assertTrue(result.answer.contains("ขัดแย้ง"))
+    }
+
+    @Test fun asksForMissingDistanceOrTimeWhenAskedForSpeed() {
+        val result = processor().process("รถคันนี้มีความเร็วเท่าไร")
+        assertTrue(result.intent == "reasoning.insufficient_information")
+        assertTrue(result.answer.contains("ระยะทาง"))
+        assertTrue(result.answer.contains("เวลา"))
+    }
+
+    @Test fun refusesToInventSourcesWhenNoResearchWasPerformed() {
+        val result = processor().process("ขอแหล่งอ้างอิง")
+        assertTrue(result.intent == "research.sources_required")
+        assertTrue(result.answer.contains("ไม่สร้างรายการอ้างอิง"))
+    }
+
+    @Test fun solvesQuantityAndUnitPriceCashChangePrompt() {
+        val result = processor().process("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท จ่าย 100 บาท ได้ทอนเท่าไร")
+        assertTrue(result.intent == "reasoning.arithmetic")
+        assertTrue(result.answer.contains("25 บาท"))
+    }
+
 }
