@@ -3,7 +3,7 @@ package com.somchai.ai.core.plugins
 import com.somchai.ai.core.security.PermissionManager
 
 class PluginValidator(private val permissions: PermissionManager) {
-    private val operations = setOf("web.search", "memory.read", "memory.write")
+    private val operations = setOf("web.search")
     fun validate(raw: String): PluginManifest {
         require(raw.toByteArray().size <= 16_384) { "Plugin manifest exceeds 16 KB" }
         val manifest = PluginManifest.parse(raw)
@@ -17,8 +17,6 @@ class PluginValidator(private val permissions: PermissionManager) {
         manifest.permissions.forEach { permissions.require(it) }
         when (manifest.operation) {
             "web.search" -> require("network.search" in manifest.permissions)
-            "memory.read" -> require("memory.read" in manifest.permissions)
-            "memory.write" -> require("memory.write" in manifest.permissions)
         }
         return manifest
     }
