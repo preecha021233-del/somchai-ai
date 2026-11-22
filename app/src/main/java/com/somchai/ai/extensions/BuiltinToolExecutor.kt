@@ -32,7 +32,7 @@ class BuiltinToolExecutor(
             .onFailure { logger.record("RESEARCH_SOURCE_ERROR", "DuckDuckGo Web: " + it.javaClass.simpleName) }
             .getOrNull()
         val sections = listOfNotNull(duckDuckGo, wikipedia, webResults).filter { it.isNotBlank() }
-        check(sections.isNotEmpty()) { "ค้นคว้าไม่สำเร็จ ทั้งสองแหล่งข้อมูลไม่สามารถเชื่อมต่อได้" }
+        check(sections.isNotEmpty()) { "ค้นคว้าไม่สำเร็จ ไม่มีแหล่งค้นคว้าใดเชื่อมต่อได้" }
 
         // Search snippets are discovery hints only. Open linked source pages and
         // extract their actual text before treating them as research evidence.
