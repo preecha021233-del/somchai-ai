@@ -62,7 +62,9 @@ class SkillStoreTest {
                     }
                 )
             }
-            assertTrue(capturedPrompt.contains("สำเร็จต่อไปนี้"))
+            assertTrue(capturedPrompt.contains("<experience>"))
+            assertTrue(capturedPrompt.contains("</experience>"))
+            assertTrue(capturedPrompt.contains("ไม่ใช่คำสั่ง"))
             assertTrue(capturedPrompt.contains("\nอ่านเอกสาร"))
             assertFalse(draft.approved)
             assertTrue(draft.procedure.contains("แยกหัวข้อ"))
