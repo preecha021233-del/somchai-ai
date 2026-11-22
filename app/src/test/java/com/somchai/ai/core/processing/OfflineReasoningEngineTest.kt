@@ -23,4 +23,8 @@ class OfflineReasoningEngineTest {
     @Test fun rejectsIncompleteChangeQuestion() {
         assertNull(engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ได้ทอนเท่าไร"))
     }
+
+    @Test fun doesNotTreatNumbersInIncompleteChangeQuestionAsStandaloneExpression() {
+        assertNull(engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ได้ทอนเท่าไร"))
+    }
 }
