@@ -69,9 +69,13 @@ class TaskExecutionStoreTest {
         val store = TaskExecutionStore(temporaryFolder.newFolder("cancel"))
         val task = store.create(TaskPlanner().plan("งานทั่วไป"))
         assertEquals(TaskStepStatus.CANCELLED, store.cancelStep(task.id, 0).steps[0].status)
-        store.startStep(task.id, 0)
-        store.completeStep(task.id, 0)
-        assertThrows(IllegalArgumentException::class.java) { store.cancelStep(task.id, 0) }
+        val activeTask = store.create(TaskPlanner().plan("งานอีกชิ้น"))
+        store.startStep(activeTask.id, 0)
+        assertEquals(TaskStepStatus.CANCELLED, store.cancelStep(activeTask.id, 0).steps[0].status)
+        val completedTask = store.create(TaskPlanner().plan("งานที่เสร็จแล้ว"))
+        store.startStep(completedTask.id, 0)
+        store.completeStep(completedTask.id, 0)
+        assertThrows(IllegalArgumentException::class.java) { store.cancelStep(completedTask.id, 0) }
     }
 
 
