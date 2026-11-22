@@ -30,4 +30,19 @@ class LocalMemoryStoreTest {
         repeat(505) { store.add("entry-$it") }
         assertEquals(500, store.all(500).size)
     }
+    @Test fun migratesLegacyMemoryRecordsToVersionedSchema() {
+        val directory = temporaryFolder.newFolder("legacy")
+        val id = java.util.UUID.randomUUID().toString()
+        val timestamp = java.time.Instant.parse("2026-01-01T00:00:00Z").toString()
+        val legacy = org.json.JSONObject()
+            .put("id", id).put("category", "skill")
+            .put("content", "legacy memory").put("createdAt", timestamp)
+        java.io.File(directory, "memory.jsonl").writeText(legacy.toString() + "\n")
+
+        val store = LocalMemoryStore(directory)
+        assertEquals("legacy memory", store.all().first().content)
+        val migrated = org.json.JSONObject(java.io.File(directory, "memory.jsonl").readLines().first())
+        assertEquals(1, migrated.getInt("schemaVersion"))
+    }
+
 }
