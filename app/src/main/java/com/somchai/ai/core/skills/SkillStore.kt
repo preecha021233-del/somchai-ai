@@ -171,7 +171,7 @@ class SkillStore(
             val results = JSONArray()
             skill.results.forEach { results.put(JSONObject().put("passed", it.passed).put("output", it.output)) }
             val triggers = JSONArray()
-            skill.triggers.forEach(triggers::put)
+            skill.triggers.forEach { triggers.put(it) }
             root.put(
                 JSONObject()
                     .put("id", skill.id)
