@@ -39,9 +39,15 @@ class CoreRuntime(context: Context) {
     // Otherwise it reports the deterministic internal fallback; it never silently calls a remote provider.
     val brain = LocalFirstBrain(localInference) { request -> processor.process(request.prompt).answer }
     val plugins = PluginManager(paths, logger, permissions)
-    val tools = BuiltinToolExecutor(permissions, logger, resources, summarizeLocally = { prompt ->
-        if (localInference.isModelLoaded()) localInference.generate(BrainRequest(prompt)) else ""
-    })
+    val tools = BuiltinToolExecutor(
+        permissions, logger, resources,
+        isWebSearchApproved = {
+            plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }
+        },
+        summarizeLocally = { prompt ->
+            if (localInference.isModelLoaded()) localInference.generate(BrainRequest(prompt)) else ""
+        }
+    )
     val llm = LlmConnector(secrets, resources, logger)
 
     private val modelLoader = Executors.newSingleThreadExecutor { task -> Thread(task, "somchai-model-loader").apply { isDaemon = true } }
