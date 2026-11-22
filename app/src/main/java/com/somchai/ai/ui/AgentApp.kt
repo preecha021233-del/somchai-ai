@@ -38,7 +38,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
 import com.somchai.ai.core.brain.BrainRequest
-import com.somchai.ai.core.processing.TaskPlan\nimport com.somchai.ai.core.skills.SkillTestCase
+import com.somchai.ai.core.processing.TaskPlan
+import com.somchai.ai.core.skills.SkillTestCase
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
 import kotlinx.coroutines.launch
@@ -163,7 +164,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                             val skill = runtime.skills.learnFromExperience(
                                                 fields[0], fields[1].split(",").map { it.trim() }, fields[2], tests, runtime.localInference
                                             )
-                                            "โมเดลสกัดทักษะจากประสบการณ์เป็นฉบับร่างแล้ว รหัส " + skill.id.take(8) +
+                                            "โมเดลสกัดทักษะจากประสบการณ์เป็นฉบับร่างแล้ว รหัส " + skill.id +
                                                 "\nต้องทดสอบด้วย /skill test " + skill.id +
                                                 " และเจ้าของต้องอนุมัติด้วย /skill approve " + skill.id
                                         }
@@ -180,7 +181,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                             val skill = runtime.skills.propose(
                                                 fields[0], fields[1].split(",").map { it.trim() }, fields[2], tests
                                             )
-                                            "บันทึกทักษะเป็นฉบับร่างแล้ว รหัส " + skill.id.take(8) +
+                                            "บันทึกทักษะเป็นฉบับร่างแล้ว รหัส " + skill.id +
                                                 "\nต้องทดสอบด้วย /skill test " + skill.id +
                                                 " และเจ้าของต้องอนุมัติด้วย /skill approve " + skill.id
                                         }
