@@ -176,3 +176,41 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 - Install the model on the target device and run P01–P12 plus P36–P39.
 - Do not claim that the starter 0.5B model has advanced reasoning ability without benchmark evidence.
 - Preserve the existing app ID, owner signing key and app data; do not ask the owner to uninstall or clear data.
+
+
+## Round 5 — 2026-11-22 — Native Brain and learned-skill integration CI
+
+- Branch: `phase-1/local-brain-runtime`
+- Commit tested: `2019246a51e5453edfdcc4b49b21ced930b57eac`
+- App version / versionCode: 1.9.0 / 10
+- CI run: https://github.com/preecha021233-del/somchai-ai/actions/runs/45036781218
+- Test method: GitHub Actions, Ubuntu, Java 17, Android SDK/NDK, ARM64 native CMake build
+
+### Automated results
+
+| Check | Result | Evidence |
+|---|---|---|
+| Gradle JVM unit tests | PASS | `testDebugUnitTest` completed |
+| Kotlin compile | PASS | `compileDebugKotlin` completed |
+| llama.cpp native ARM64 build/link | PASS | workflow step "Run JVM tests and build ARM64 APK with native llama.cpp" completed |
+| Android debug APK | PASS | `assembleDebug` and artifact upload completed |
+| Learned-skill tests | PASS | Draft from experience, no auto-approval, failed-test approval block, persistence, retrieval and deletion revocation included in JVM suite |
+| Model hash constant | PASS — source reviewed against official Hugging Face file metadata | Official model file page lists SHA-256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db` |
+
+- Debug artifact ID: `14760117769`
+- ZIP SHA-256: `0a03f6b1a8d687c524d88394308aedf7f459053a986705eb1839233c4fca13de`
+
+### Still not tested / not passed
+
+- Downloading the 491 MB model on the owner's Android device.
+- Native GGUF load and Thai generation on the target device.
+- P01–P12 model quality threshold (18/20 and reasoning 4/4).
+- Real-world RAM, latency, heat and battery measurements.
+- Live research verification that at least two distinct source pages can be opened and read on device.
+- Full owner-signed release APK certificate continuity and in-place update over the currently installed app.
+- Remaining Phase 1 device, plugin lifecycle, backup/recovery and security acceptance checks.
+
+### Decision
+
+- This commit passes the automated JVM + ARM64 native build gate.
+- Phase 1 remains IN PROGRESS and is NOT ACCEPTED until all fixed acceptance criteria, including target-device model and update checks, pass.
