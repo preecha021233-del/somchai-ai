@@ -14,6 +14,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Task Planner classifies exam, travel, research, development, troubleshooting, writing and general requests into distinct deterministic plans without claiming that the steps were executed.
 - TaskExecutionStore persists task plans and step states; chat can create a task and mark its first step in progress without claiming external execution.
 - Expanded research with DuckDuckGo HTML web-result parsing, HTTPS-only link filtering and up to three actual page-read attempts; added parser tests.
+- Added encrypted Learned Skills storage. The local model can extract a reusable procedure from an owner-provided successful experience; each candidate needs 2–10 test cases and explicit owner approval before it is injected into matching Brain prompts. Skills are declarative prompt data, not executable code.
 - Added a Thai reasoning policy that instructs the local model to check intent, context, assumptions, contradictions, missing information, calculations, unsupported claims and fabricated sources; this prompt policy is guidance, not proof of correct reasoning.
 - Added an actual llama.cpp JNI inference adapter, pinned to upstream commit `8d60873dfb8619f2b5ed31adfbab07cccb40db5c`, and connected it to LocalFirstBrain. The app can download the official Qwen2.5-0.5B-Instruct Q4_K_M GGUF model, verify its SHA-256, store it privately, and load it on-device. This implementation is pending native CI and target-device verification; until the model is installed and loaded, the deterministic InternalProcessor fallback remains active.
 - Local memory supports add, search, list, delete, backup and owner-confirmed restore, with a maximum of 500 records.
@@ -54,7 +55,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 ## Known limits — do not overclaim
 
 - The processor is deterministic and rule-based. A starter local LLM runtime has now been added on a development branch, but it has not yet passed CI or target-device benchmarking and must not be described as accepted.
-- It does not autonomously learn new reasoning skills or modify its own code.
+- Learned Skills are owner-proposed, model-drafted prompt procedures with smoke tests and explicit approval; they do not autonomously create new code, tools, or reasoning algorithms.
 - Research is still bounded to DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search and Wikipedia; it is not yet a full web-scale crawler or comprehensive source-verification system.
 - The Android app sandbox and in-process rule engine are not a hardened arbitrary-code sandbox.
 - Encrypted memory export is tied to the non-exportable Android Keystore key of the original installation. If that key is permanently lost or app data is cleared, exported ciphertext cannot be decrypted; there is no key-recovery or cross-device migration mechanism.
