@@ -166,3 +166,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Fixed unknown task lookup to throw the documented/expected `IllegalArgumentException` instead of Kotlin's `IllegalStateException` from `error()`.
 - Existing regression tests cover the incomplete change question and unknown task ID; the workflow must rerun before these repairs can be marked passed.
 - Phase 1 remains NOT ACCEPTED until CI and device acceptance gates pass.
+
+## External text Unicode obfuscation hardening — 2026-11-23
+- Updated the external-data sanitizer to remove all Unicode FORMAT characters before prompt-injection pattern checks, not only the previously enumerated bidirectional controls.
+- This closes a concrete bypass where zero-width formatting characters could be inserted inside phrases such as `ignore previous instructions` so the denylist no longer matched.
+- Added regression coverage proving the obfuscated phrase is neutralized and ordinary text is joined safely after zero-width removal.
+- Commits: `03cc75d5122702f4a8ae961832fd36a76c8718c4`, `b4847e5604866dcedc8b32cba026ff9f3fd6e85f`.
+- CI result is pending; this is not marked passed until the workflow completes.
