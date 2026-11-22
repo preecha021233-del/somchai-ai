@@ -120,3 +120,5 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Wrapped owner-supplied experience in explicit untrusted-data delimiters and instructed the model not to obey embedded instructions while extracting reusable steps.
 - Extended the learned-skill test to assert the delimiters, untrusted-data warning and real newline formatting.
 - Corrected WebPageReader redirect enforcement: the configured maximum is now exactly three redirects; a fourth redirect is rejected rather than accidentally being followed.
+- Bounded learned-skill extraction input and evaluation prompts so long owner-provided procedures/test cases cannot silently crowd out the test request; evaluation now compares expected text without depending on whitespace.
+- Added regression coverage for oversized skill procedures, prompt bounds and Thai output matching with whitespace variation.
