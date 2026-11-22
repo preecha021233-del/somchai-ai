@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
 import com.somchai.ai.core.brain.BrainRequest
 import com.somchai.ai.core.processing.TaskPlan
+import com.somchai.ai.core.processing.TaskCommandProcessor
 import com.somchai.ai.core.skills.SkillTestCase
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
@@ -140,7 +141,9 @@ fun AgentApp(runtime: CoreRuntime) {
                         pendingPlan = null
                         scope.launch {
                             try {
-                                val answer = if (text.startsWith("/skill", true)) {
+                                val answer = if (text.startsWith("/task", true)) {
+                                    TaskCommandProcessor(runtime.tasks).execute(text)
+                                } else if (text.startsWith("/skill", true)) {
                                     val command = text.substringAfter(" ", "").trim()
                                     when {
                                         command.equals("list", true) -> {
