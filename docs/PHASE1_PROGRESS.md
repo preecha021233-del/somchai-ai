@@ -112,3 +112,4 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added explicit contradiction detection for conflicting weekdays and selected direct logical opposites; added missing-input prompts for speed and cash-change questions.
 - Source requests now state when no sources have actually been opened and direct the user to approved Web Search rather than inventing citations.
 - Added focused regression cases for these exact behaviors.
+- Chat header and settings now display truthful model states instead of a generic always-online/always-active label.
