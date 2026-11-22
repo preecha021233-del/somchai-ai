@@ -30,7 +30,28 @@ jobs:
         run: gradle testDebugUnitTest
       - name: Assemble debug APK
         run: gradle assembleDebug
+      - name: Build owner-signed release APK when signing secrets are configured
+        env:
+          SOMCHAI_SIGNING_KEYSTORE_BASE64: ${{ secrets.SOMCHAI_SIGNING_KEYSTORE_BASE64 }}
+          SOMCHAI_SIGNING_STORE_PASSWORD: ${{ secrets.SOMCHAI_SIGNING_STORE_PASSWORD }}
+          SOMCHAI_SIGNING_KEY_ALIAS: ${{ secrets.SOMCHAI_SIGNING_KEY_ALIAS }}
+          SOMCHAI_SIGNING_KEY_PASSWORD: ${{ secrets.SOMCHAI_SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -n "$SOMCHAI_SIGNING_KEYSTORE_BASE64" ] && [ -n "$SOMCHAI_SIGNING_STORE_PASSWORD" ] && [ -n "$SOMCHAI_SIGNING_KEY_ALIAS" ] && [ -n "$SOMCHAI_SIGNING_KEY_PASSWORD" ]; then
+            echo "$SOMCHAI_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/somchai-release.jks"
+            export SOMCHAI_SIGNING_KEYSTORE="$RUNNER_TEMP/somchai-release.jks"
+            gradle assembleRelease
+          else
+            echo "::warning::Owner signing secrets are not configured; no update-capable release APK was produced."
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: somchai-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+      - name: Upload owner-signed release APK when present
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: somchai-owner-signed-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: ignore
