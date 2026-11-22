@@ -13,12 +13,13 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Deterministic internal intents cover greetings, capability description, help, task planning and local-memory commands. Unsupported requests are reported honestly.
 - Task Planner classifies exam, travel, research, development, troubleshooting, writing and general requests into distinct deterministic plans without claiming that the steps were executed.
 - TaskExecutionStore persists task plans and step states; chat can create a task and mark its first step in progress without claiming external execution.
+- Expanded research with DuckDuckGo HTML web-result parsing, HTTPS-only link filtering and up to three actual page-read attempts; added parser tests.
 - Added a Thai reasoning policy that instructs the local model to check intent, context, assumptions, contradictions, missing information, calculations, unsupported claims and fabricated sources; this prompt policy is guidance, not proof of correct reasoning.
 - Added an actual llama.cpp JNI inference adapter, pinned to upstream commit `8d60873dfb8619f2b5ed31adfbab07cccb40db5c`, and connected it to LocalFirstBrain. The app can download the official Qwen2.5-0.5B-Instruct Q4_K_M GGUF model, verify its SHA-256, store it privately, and load it on-device. This implementation is pending native CI and target-device verification; until the model is installed and loaded, the deterministic InternalProcessor fallback remains active.
 - Local memory supports add, search, list, delete, backup and owner-confirmed restore, with a maximum of 500 records.
 - Production memory and backups use AES-256-GCM with a non-exportable Android Keystore key. Legacy plaintext memory/notes are migrated only after encrypted data is verified.
 - Added owner-controlled encrypted file export/import. The exported ciphertext is bound to the same installation's Keystore key; it is not a cross-device migration format.
-- Research discovers URLs through DuckDuckGo Instant Answer and Wikipedia, then attempts to open linked HTTPS pages with a bounded read-only WebPageReader. It extracts visible text, limits response size/time, validates redirects and rejects local/private destinations. If no page opens, it explicitly labels snippets as discovery hints rather than read evidence.
+- Research now discovers URLs through DuckDuckGo Instant Answer, Wikipedia and DuckDuckGo HTML Web Search, parses public HTTPS result links, then attempts to open up to three linked pages with a bounded read-only WebPageReader. It extracts visible text, limits response size/time, validates redirects and rejects local/private destinations. If no page opens, it explicitly labels snippets as discovery hints rather than read evidence.
 - Plugin validation allowlists only the implemented `web.search` operation and enforces its exact permission. Candidate approval is hash-bound, smoke-checked and rollback-aware.
 - Plugin rejection and approval now validate plugin IDs and candidate paths to prevent path traversal.
 - Memory UI reads real local records and supports backup/restore plus owner-selected encrypted file export/import.
@@ -54,7 +55,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 
 - The processor is deterministic and rule-based. A starter local LLM runtime has now been added on a development branch, but it has not yet passed CI or target-device benchmarking and must not be described as accepted.
 - It does not autonomously learn new reasoning skills or modify its own code.
-- Research is a bounded lookup against DuckDuckGo Instant Answer and Wikipedia, not comprehensive multi-source research.
+- Research is still bounded to DuckDuckGo Instant Answer, DuckDuckGo HTML Web Search and Wikipedia; it is not yet a full web-scale crawler or comprehensive source-verification system.
 - The Android app sandbox and in-process rule engine are not a hardened arbitrary-code sandbox.
 - Encrypted memory export is tied to the non-exportable Android Keystore key of the original installation. If that key is permanently lost or app data is cleared, exported ciphertext cannot be decrypted; there is no key-recovery or cross-device migration mechanism.
 - No claim of Phase 1 completion until the final CI, device, security, memory, plugin lifecycle and update-compatibility acceptance checks pass.
