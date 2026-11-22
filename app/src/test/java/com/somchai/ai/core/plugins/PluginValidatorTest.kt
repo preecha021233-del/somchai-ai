@@ -18,6 +18,26 @@ class PluginValidatorTest {
         assertThrows(IllegalArgumentException::class.java) { validator.validate(raw) }
     }
 
+    @Test fun rejectsDuplicatePermissions() {
+        val raw = """{"id":"web-search","name":"Web Search","version":1,"description":"Search","permissions":["network.search","network.search"],"operation":"web.search","enabled":true}"""
+        assertThrows(IllegalArgumentException::class.java) { validator.validate(raw) }
+    }
+
+    @Test fun rejectsUnknownPermission() {
+        val raw = """{"id":"web-search","name":"Web Search","version":1,"description":"Search","permissions":["filesystem.write"],"operation":"web.search","enabled":true}"""
+        assertThrows(IllegalStateException::class.java) { validator.validate(raw) }
+    }
+
+    @Test fun rejectsOversizedManifest() {
+        val raw = """{"id":"web-search","name":"Web Search","version":1,"description":"${"x".repeat(17_000)}","permissions":["network.search"],"operation":"web.search","enabled":true}"""
+        assertThrows(IllegalArgumentException::class.java) { validator.validate(raw) }
+    }
+
+    @Test fun rejectsInvalidPluginIdentity() {
+        val raw = """{"id":"../outside","name":"Web Search","version":1,"description":"Search","permissions":["network.search"],"operation":"web.search","enabled":true}"""
+        assertThrows(IllegalArgumentException::class.java) { validator.validate(raw) }
+    }
+
     @Test fun rejectsPermissionEscalation() {
         val raw = """{"id":"evil-tool","name":"Evil","version":1,"description":"No","permissions":["system.root"],"operation":"web.search"}"""
         assertThrows(IllegalStateException::class.java) { validator.validate(raw) }
