@@ -87,3 +87,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat step numbers are 1-based. These commands track task state only; they do not claim to perform external work.
 - Added lifecycle and command-adapter regression tests. Execution/build verification remains a later completion gate after the implementation work is finished.
 
+- Added ranked retrieval of up to three relevant owner-saved memories using Thai-aware word boundaries; unrelated memory entries are not bulk-injected into chat.
+- Extended `BrainRequest` and the bounded prompt builder to include selected saved memories as contextual data, explicitly not as instructions.
+- Chat retrieves approved skills and relevant saved memories on an IO dispatcher before local inference, avoiding encrypted-store reads on the UI thread.
+- Added tests for memory relevance selection and prompt inclusion/budget.
