@@ -21,6 +21,7 @@ class CoreRuntime(context: Context) {
     val resources = ResourceLimiter(context.applicationContext, paths)
     val memory = LocalMemoryStore(paths.memory, AndroidMemoryCipher()) { event, detail -> logger.record(event, detail) }
     val planner = TaskPlanner()
+    val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core)
     val processor = InternalProcessor(memory, planner)
     val plugins = PluginManager(paths, logger, permissions)
     val tools = BuiltinToolExecutor(permissions, logger, resources)
