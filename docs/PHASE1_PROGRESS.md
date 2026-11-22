@@ -159,3 +159,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added JVM regression coverage that rejects a small GGUF-shaped file as the approved default model.
 - Commits: `297ede6b51daa14eb955908626f62216114c4d47`, `a8f1de1331d2d710af07d593a9f431d48c4e9f0b`, `d9e1225d0e07c6a0568c8945c6be7045092b3a3e`, `14551e2bfe006ac4c802b72b14a1bafaab4276b2`.
 - Validation status for these changes: CI NOT YET RUN; do not count this repair as passed until a new workflow completes.
+
+
+## Unit-test failure repairs — 2026-11-23
+- Fixed an arithmetic fall-through: an incomplete Thai cash-change question could be misread as a standalone numeric expression after the change solver correctly declined it. `solveArithmetic` now returns no arithmetic answer when a change request lacks payment information.
+- Fixed unknown task lookup to throw the documented/expected `IllegalArgumentException` instead of Kotlin's `IllegalStateException` from `error()`.
+- Existing regression tests cover the incomplete change question and unknown task ID; the workflow must rerun before these repairs can be marked passed.
+- Phase 1 remains NOT ACCEPTED until CI and device acceptance gates pass.
