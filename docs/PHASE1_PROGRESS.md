@@ -8,7 +8,8 @@ Updated: 2026-11-22
 - Optional external provider route is explicit via the `/ai` command and requires an owner-configured key.
 - Deterministic internal intent handling for greetings, capability description, help, task planning, and local-memory commands.
 - Task planner decomposes research, development, troubleshooting and general requests into explicit steps. It describes a plan and does not claim to have executed it.
-- Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.\n- Production memory and backups are encrypted with AES-256-GCM using a non-exportable Android Keystore key. Legacy plaintext memory/notes are migrated only after encrypted data is verified.
+- Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.
+- Production memory and backups are encrypted with AES-256-GCM using a non-exportable Android Keystore key. Legacy plaintext memory/notes are migrated only after encrypted data is verified.
 - Research now queries DuckDuckGo Instant Answer and Wikipedia, displays source URLs and Wikipedia last-edit dates when supplied, and labels missing dates/coverage limits.
 - Active plugins can be disabled by the owner; the manifest is retained in the app-private backup area for recovery.
 - Plugin validation accepts only the `web.search` operation actually implemented by Core and enforces its exact required permission; unimplemented operations and unnecessary permissions are rejected.
