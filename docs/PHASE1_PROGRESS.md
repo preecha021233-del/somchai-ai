@@ -92,3 +92,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat retrieves approved skills and relevant saved memories on an IO dispatcher before local inference, avoiding encrypted-store reads on the UI thread.
 - Added tests for memory relevance selection and prompt inclusion/budget.
 - Corrected prompt-budget accounting so memory, approved skills, and history are trimmed within a reserved budget; the current question and final response instruction can no longer be clipped by the final history section.
+
+## Research pipeline completion work
+- Split source discovery from page reading behind injectable provider/reader interfaces; the HTTP provider aggregates DuckDuckGo Instant Answer, DuckDuckGo Web Search, and Wikipedia candidates.
+- Added a research coordinator that distinguishes discovered links from pages whose content was actually opened and read.
+- Research output now marks PARTIAL unless at least two distinct pages were actually read; page/source failures are retained in the report and activity log.
+- Added an optional local-model synthesis step grounded only in the first two read pages, with explicit untrusted-web-data instructions and [S1]/[S2] references. If the local model is unavailable or synthesis fails, raw source evidence is still returned.
+- Moved Web Search approval enforcement into the BuiltinToolExecutor boundary and connected it to the active approved plugin manifest; UI checks alone are no longer the only guard.
+- Added mockable coordinator cases for success, empty results, timeout, provider error, and unreadable pages.
