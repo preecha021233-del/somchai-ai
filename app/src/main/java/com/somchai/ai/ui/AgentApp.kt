@@ -35,6 +35,7 @@ private enum class Tab(val label: String) { CHAT("แชต"), PLUGINS("ปล�
 @Composable
 fun AgentApp(runtime: CoreRuntime) {
     var tab by remember { mutableStateOf(Tab.CHAT) }
+    var menuExpanded by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
     var messages by remember { mutableStateOf(listOf("SOMCHAI: พร้อมทำงานครับ ระบบประมวลผลภายในพร้อมใช้งาน ไม่จำเป็นต้องตั้งค่า API Key")) }
     var input by remember { mutableStateOf("") }
@@ -55,25 +56,37 @@ fun AgentApp(runtime: CoreRuntime) {
                         Text("● กำลังใช้งานอยู่", style = MaterialTheme.typography.labelMedium, color = Color(0xFF20A464))
                     }
                 } },
+                actions = {
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Outlined.Menu, contentDescription = "เปิดเมนู", tint = SomchaiTextPrimary)
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            Tab.entries.forEach { item ->
+                                val icon = when (item) {
+                                    Tab.CHAT -> Icons.Outlined.Chat
+                                    Tab.PLUGINS -> Icons.Outlined.Extension
+                                    Tab.MEMORY -> Icons.Outlined.Bookmarks
+                                    Tab.SETTINGS -> Icons.Outlined.Settings
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(item.label, color = SomchaiTextPrimary) },
+                                    leadingIcon = { Icon(icon, contentDescription = null, tint = Color(0xFF6557E8)) },
+                                    onClick = {
+                                        tab = item
+                                        menuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SomchaiSurface)
             )
-        },
-        bottomBar = {
-            NavigationBar(containerColor = SomchaiSurface) {
-                Tab.entries.forEach { item ->
-                    val icon = when (item) {
-                        Tab.CHAT -> Icons.Outlined.Chat
-                        Tab.PLUGINS -> Icons.Outlined.Extension
-                        Tab.MEMORY -> Icons.Outlined.Bookmarks
-                        Tab.SETTINGS -> Icons.Outlined.Settings
-                    }
-                    NavigationBarItem(
-                        selected = tab == item, onClick = { tab = item },
-                        icon = { Icon(icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
-                    )
-                }
-            }
         }
     ) { padding ->
         when (tab) {
@@ -236,6 +249,12 @@ private fun ChatPage(
                         }
                     }),
                     colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF17171B),
+                        unfocusedTextColor = Color(0xFF17171B),
+                        disabledTextColor = Color(0xFF77777D),
+                        cursorColor = Color(0xFF7438E8),
+                        focusedPlaceholderColor = Color(0xFF85858C),
+                        unfocusedPlaceholderColor = Color(0xFF85858C),
                         focusedContainerColor = Color(0xFFF0F0F2),
                         unfocusedContainerColor = Color(0xFFF0F0F2),
                         disabledContainerColor = Color(0xFFF0F0F2),
