@@ -22,6 +22,14 @@ class GgufFileValidatorTest {
         } finally { file.delete() }
     }
 
+    @Test fun computesSha256WithoutSignedByteExpansion() {
+        val file = File.createTempFile("somchai-sha", ".bin")
+        try {
+            file.writeText("abc")
+            assertTrue(GgufFileValidator.sha256(file) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+        } finally { file.delete() }
+    }
+
     @Test fun rejectsMissingFile() {
         assertFalse(GgufFileValidator.isValid(File("missing-somchai-model.gguf")))
     }
