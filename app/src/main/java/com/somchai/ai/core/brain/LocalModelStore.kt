@@ -20,7 +20,7 @@ class LocalModelStore(private val directory: File) {
         check(directory.exists() || directory.mkdirs()) { "สร้างโฟลเดอร์เก็บโมเดลไม่สำเร็จ" }
         val target = modelFile()
         if (target.isFile && target.length() in MIN_MODEL_BYTES..MAX_MODEL_BYTES &&
-            sha256(target) == EXPECTED_SHA256 && GgufFileValidator.isValid(target)) {
+            GgufFileValidator.sha256(target) == EXPECTED_SHA256 && GgufFileValidator.isValid(target)) {
             onProgress(100)
             return@withContext target
         }
@@ -62,7 +62,7 @@ class LocalModelStore(private val directory: File) {
                 }
             }
             require(total in MIN_MODEL_BYTES..MAX_MODEL_BYTES) { "ดาวน์โหลดไม่ครบหรือขนาดไฟล์โมเดลไม่ถูกต้อง" }
-            val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
+            val actualHash = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
             require(actualHash.equals(EXPECTED_SHA256, ignoreCase = true)) {
                 "ตรวจสอบ SHA-256 ไม่ผ่าน ไฟล์โมเดลถูกปฏิเสธ"
             }
@@ -78,18 +78,6 @@ class LocalModelStore(private val directory: File) {
         }
     }
 
-    private fun sha256(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        file.inputStream().use { input ->
-            val buffer = ByteArray(128 * 1024)
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                digest.update(buffer, 0, count)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
 
     companion object {
         const val MODEL_FILE_NAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
@@ -103,6 +91,19 @@ class LocalModelStore(private val directory: File) {
 }
 
 object GgufFileValidator {
+    fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(128 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
+
     fun isValid(file: File): Boolean {
         if (!file.isFile || file.length() < 4L) return false
         return runCatching {
