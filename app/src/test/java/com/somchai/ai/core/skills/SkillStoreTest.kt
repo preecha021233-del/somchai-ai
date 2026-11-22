@@ -49,15 +49,21 @@ class SkillStoreTest {
         val dir = createTempDir()
         try {
             val store = newStore(dir)
+            var capturedPrompt = ""
             val draft = runBlocking {
                 store.learnFromExperience(
                     "สรุปเอกสาร",
                     listOf("สรุปเอกสาร"),
                     "อ่านเอกสาร แยกหัวข้อหลัก ตรวจตัวเลข แล้วสรุปเป็นข้อ",
                     listOf(SkillTestCase("สรุปเอกสารรายงาน", "หัวข้อ"), SkillTestCase("สรุปเอกสารบัญชี", "ตัวเลข")),
-                    FakeEngine { "1. อ่านเอกสาร 2. แยกหัวข้อ 3. ตรวจตัวเลข 4. สรุป" }
+                    FakeEngine { prompt ->
+                        capturedPrompt = prompt
+                        "1. อ่านเอกสาร 2. แยกหัวข้อ 3. ตรวจตัวเลข 4. สรุป"
+                    }
                 )
             }
+            assertTrue(capturedPrompt.contains("สำเร็จต่อไปนี้"))
+            assertTrue(capturedPrompt.contains("\nอ่านเอกสาร"))
             assertFalse(draft.approved)
             assertTrue(draft.procedure.contains("แยกหัวข้อ"))
             assertTrue(store.relevantFor("ช่วยสรุปเอกสาร").isEmpty())
