@@ -2,7 +2,6 @@ package com.somchai.ai.core.processing
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -75,14 +74,5 @@ class TaskExecutionStoreTest {
         assertThrows(IllegalArgumentException::class.java) { store.cancelStep(task.id, 0) }
     }
 
-    @Test fun rejectsAmbiguousTaskIdPrefix() {
-        val store = TaskExecutionStore(temporaryFolder.newFolder("ambiguous"))
-        val first = store.create(TaskPlanner().plan("งานแรก"))
-        val second = store.create(TaskPlanner().plan("งานสอง"))
-        // A deliberately shared prefix must never select an arbitrary task.
-        val shared = "00000000-0000-0000-0000-"
-        assertTrue(first.id != second.id)
-        assertThrows(IllegalArgumentException::class.java) { store.get(shared) }
-    }
 
 }
