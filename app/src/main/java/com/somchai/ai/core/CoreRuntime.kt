@@ -21,6 +21,11 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class LocalModelStatus { NOT_INSTALLED, DOWNLOADING, LOADING, READY, FAILED }
 
 class CoreRuntime(context: Context) {
     val paths = CorePaths(context.applicationContext)
@@ -35,6 +40,10 @@ class CoreRuntime(context: Context) {
     val processor = InternalProcessor(memory, planner)
     val modelStore = LocalModelStore(paths.models)
     val localInference = NativeLlamaInferenceEngine()
+    private val mutableLocalModelStatus = MutableStateFlow(
+        if (modelStore.modelFile().isFile) LocalModelStatus.LOADING else LocalModelStatus.NOT_INSTALLED
+    )
+    val localModelStatus: StateFlow<LocalModelStatus> = mutableLocalModelStatus.asStateFlow()
     // Ordinary chat uses the on-device llama.cpp engine when a verified GGUF model is installed.
     // Otherwise it reports the deterministic internal fallback; it never silently calls a remote provider.
     val brain = LocalFirstBrain(localInference) { request -> processor.process(request.prompt).answer }
@@ -60,11 +69,18 @@ class CoreRuntime(context: Context) {
             // Never load a 491 MB model on Application.onCreate's main thread.
             modelLoader.execute {
                 if (!modelStore.isVerifiedModel(installedModel)) {
+                    mutableLocalModelStatus.value = LocalModelStatus.FAILED
                     logger.record("LOCAL_MODEL_REJECTED", "Installed model failed SHA-256/GGUF validation")
                 } else {
                     runCatching { localInference.loadModel(installedModel) }
-                        .onSuccess { logger.record("LOCAL_MODEL_READY", installedModel.name) }
-                        .onFailure { logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown") }
+                        .onSuccess {
+                            mutableLocalModelStatus.value = LocalModelStatus.READY
+                            logger.record("LOCAL_MODEL_READY", installedModel.name)
+                        }
+                        .onFailure {
+                            mutableLocalModelStatus.value = LocalModelStatus.FAILED
+                            logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown")
+                        }
                 }
             }
         }
@@ -72,18 +88,35 @@ class CoreRuntime(context: Context) {
     }
 
     suspend fun downloadAndLoadLocalModel(onProgress: (Int) -> Unit = {}): File = withContext(Dispatchers.IO) {
-        val file = modelStore.downloadDefaultModel(onProgress)
-        localInference.loadModel(file)
-        logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
-        file
+        mutableLocalModelStatus.value = LocalModelStatus.DOWNLOADING
+        try {
+            val file = modelStore.downloadDefaultModel(onProgress)
+            mutableLocalModelStatus.value = LocalModelStatus.LOADING
+            localInference.loadModel(file)
+            mutableLocalModelStatus.value = LocalModelStatus.READY
+            logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
+            file
+        } catch (failure: Exception) {
+            mutableLocalModelStatus.value = LocalModelStatus.FAILED
+            logger.record("LOCAL_MODEL_SETUP_FAILED", failure.message ?: "unknown")
+            throw failure
+        }
     }
 
     suspend fun loadInstalledLocalModel(): File = withContext(Dispatchers.IO) {
-        val file = modelStore.modelFile()
-        require(modelStore.isVerifiedModel(file)) { "ไฟล์โมเดลไม่ผ่านการตรวจสอบ SHA-256/GGUF กรุณาดาวน์โหลดใหม่" }
-        if (!localInference.isModelLoaded()) localInference.loadModel(file)
-        logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
-        file
+        mutableLocalModelStatus.value = LocalModelStatus.LOADING
+        try {
+            val file = modelStore.modelFile()
+            require(modelStore.isVerifiedModel(file)) { "ไฟล์โมเดลไม่ผ่านการตรวจสอบ SHA-256/GGUF กรุณาดาวน์โหลดใหม่" }
+            if (!localInference.isModelLoaded()) localInference.loadModel(file)
+            mutableLocalModelStatus.value = LocalModelStatus.READY
+            logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
+            file
+        } catch (failure: Exception) {
+            mutableLocalModelStatus.value = LocalModelStatus.FAILED
+            logger.record("LOCAL_MODEL_LOAD_FAILED", failure.message ?: "unknown")
+            throw failure
+        }
     }
 
     fun saveProviderSettings(baseUrl: String, model: String, apiKey: String) {
