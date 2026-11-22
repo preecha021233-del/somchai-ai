@@ -3,7 +3,8 @@ package com.somchai.ai.core.brain
 data class BrainRequest(
     val prompt: String,
     val history: List<Pair<String, String>> = emptyList(),
-    val approvedSkills: List<String> = emptyList()
+    val approvedSkills: List<String> = emptyList(),
+    val memoryContext: List<String> = emptyList()
 )
 
 data class BrainReply(
