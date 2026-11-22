@@ -91,3 +91,4 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Extended `BrainRequest` and the bounded prompt builder to include selected saved memories as contextual data, explicitly not as instructions.
 - Chat retrieves approved skills and relevant saved memories on an IO dispatcher before local inference, avoiding encrypted-store reads on the UI thread.
 - Added tests for memory relevance selection and prompt inclusion/budget.
+- Corrected prompt-budget accounting so memory, approved skills, and history are trimmed within a reserved budget; the current question and final response instruction can no longer be clipped by the final history section.
