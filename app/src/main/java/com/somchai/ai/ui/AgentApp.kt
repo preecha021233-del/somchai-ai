@@ -51,7 +51,7 @@ fun AgentApp(runtime: CoreRuntime) {
     var tab by remember { mutableStateOf(Tab.CHAT) }
     var menuExpanded by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
-    var messages by remember { mutableStateOf(listOf("SOMCHAI: พร้อมทำงานครับ ระบบประมวลผลภายในพร้อมใช้งาน ไม่จำเป็นต้องตั้งค่า API Key")) }
+    var messages by remember { mutableStateOf(listOf(if (runtime.localInference.isModelLoaded()) "SOMCHAI: สมอง AI ภายในพร้อมทำงานครับ" else "SOMCHAI: ระบบพื้นฐานพร้อมทำงานครับ แต่ยังไม่ได้ติดตั้งโมเดลสมอง AI ภายใน ไปที่ ตั้งค่า เพื่อดาวน์โหลดโมเดลก่อนครับ")) }
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -660,12 +660,60 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
 @Composable
 private fun SettingsPage(runtime: CoreRuntime, modifier: Modifier, onMessage: (String) -> Unit) {
     val provider = runtime.secrets.provider()
+    val scope = rememberCoroutineScope()
+    var modelReady by remember { mutableStateOf(runtime.localInference.isModelLoaded()) }
+    var modelDownloading by remember { mutableStateOf(false) }
+    var modelProgress by remember { mutableIntStateOf(0) }
+    var modelMessage by remember { mutableStateOf<String?>(null) }
     var baseUrl by remember { mutableStateOf(provider?.baseUrl ?: "https://api.openai.com/v1") }
     var model by remember { mutableStateOf(provider?.model ?: "gpt-4o-mini") }
     var key by remember { mutableStateOf("") }
     var showKey by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("การเชื่อมต่อ LLM", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
+        Text("สมอง AI ภายใน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
+        Text(
+            if (modelReady) "โมเดลภาษาในเครื่องพร้อมใช้งาน — คำถามทั่วไปจะประมวลผลบนโทรศัพท์ ไม่ส่งไป AI ภายนอก"
+            else "ยังไม่มีโมเดลภาษาในเครื่อง ขณะนี้ระบบใช้ตัวประมวลผลสำรองแบบกฎ",
+            color = if (modelReady) Color(0xFF16834A) else SomchaiTextSecondary
+        )
+        Text(
+            "โมเดล Qwen2.5 0.5B Instruct (GGUF Q4_K_M) ขนาดประมาณ 491 MB • รองรับภาษาไทย • ใบอนุญาต Apache 2.0",
+            color = SomchaiTextTertiary,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Button(
+            onClick = {
+                scope.launch {
+                    modelDownloading = true
+                    modelProgress = 0
+                    modelMessage = "กำลังดาวน์โหลดโมเดลจาก Hugging Face..."
+                    try {
+                        runtime.downloadAndLoadLocalModel { modelProgress = it }
+                        modelReady = true
+                        modelMessage = "ติดตั้งและโหลดโมเดลภายในสำเร็จ"
+                    } catch (failure: Exception) {
+                        modelMessage = failure.message ?: "ติดตั้งโมเดลไม่สำเร็จ"
+                    } finally {
+                        modelDownloading = false
+                    }
+                }
+            },
+            enabled = !modelDownloading && !modelReady
+        ) {
+            Text(if (modelDownloading) "กำลังติดตั้งโมเดล..." else if (modelReady) "โมเดลพร้อมใช้งาน" else "ดาวน์โหลดและติดตั้งสมอง AI")
+        }
+        if (modelDownloading) {
+            LinearProgressIndicator(progress = modelProgress / 100f, modifier = Modifier.fillMaxWidth())
+            Text("$modelProgress%", color = SomchaiTextSecondary)
+        }
+        modelMessage?.let { Text(it, color = SomchaiPrimaryLight) }
+        Text(
+            "ต้องใช้อินเทอร์เน็ตและพื้นที่ว่างอย่างน้อย 650 MB แนะนำให้ใช้ Wi‑Fi การดาวน์โหลดตรวจ SHA-256 ก่อนติดตั้ง",
+            color = SomchaiTextTertiary,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(24.dp))
+        Text("การเชื่อมต่อ LLM ภายนอก (ไม่บังคับ)", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
         Text(if (runtime.secrets.hasKey()) "มี API Key บันทึกแบบเข้ารหัสใน Android Keystore" else "ยังไม่ได้ตั้งค่า API Key", color = SomchaiTextSecondary)
         OutlinedTextField(baseUrl, { baseUrl = it }, Modifier.fillMaxWidth(), label = { Text("API Base URL (HTTPS)") }, singleLine = true)
         OutlinedTextField(model, { model = it }, Modifier.fillMaxWidth(), label = { Text("Model") }, singleLine = true)
