@@ -14,6 +14,7 @@ import com.somchai.ai.core.processing.TaskPlanner
 import com.somchai.ai.core.resources.ResourceLimiter
 import com.somchai.ai.core.security.PermissionManager
 import com.somchai.ai.core.security.SecretStore
+import com.somchai.ai.core.skills.SkillStore
 import com.somchai.ai.extensions.BuiltinToolExecutor
 import java.io.File
 import java.util.concurrent.Executors
@@ -27,6 +28,7 @@ class CoreRuntime(context: Context) {
     val secrets = SecretStore(context.applicationContext)
     val resources = ResourceLimiter(context.applicationContext, paths)
     val memory = LocalMemoryStore(paths.memory, AndroidMemoryCipher()) { event, detail -> logger.record(event, detail) }
+    val skills = SkillStore(paths.skills, AndroidMemoryCipher()) { event, detail -> logger.record(event, detail) }
     val planner = TaskPlanner()
     val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core)
     val processor = InternalProcessor(memory, planner)
