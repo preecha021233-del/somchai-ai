@@ -150,6 +150,23 @@ fun AgentApp(runtime: CoreRuntime) {
                                                     " — ผ่าน " + skill.results.count { it.passed } + "/" + skill.tests.size
                                             }
                                         }
+                                        command.startsWith("learn ", true) -> {
+                                            val fields = command.substringAfter(" ").trim().split("|", limit = 4).map { it.trim() }
+                                            require(fields.size == 4) {
+                                                "รูปแบบ: /skill learn ชื่อ | คำกระตุ้น,คำกระตุ้น | ประสบการณ์ที่สำเร็จ | input1 => expected1 ;; input2 => expected2"
+                                            }
+                                            val tests = fields[3].split(";;").map { raw ->
+                                                val pair = raw.split("=>", limit = 2).map { it.trim() }
+                                                require(pair.size == 2) { "กรณีทดสอบต้องเขียน input => expected" }
+                                                SkillTestCase(pair[0], pair[1])
+                                            }
+                                            val skill = runtime.skills.learnFromExperience(
+                                                fields[0], fields[1].split(",").map { it.trim() }, fields[2], tests, runtime.localInference
+                                            )
+                                            "โมเดลสกัดทักษะจากประสบการณ์เป็นฉบับร่างแล้ว รหัส " + skill.id.take(8) +
+                                                "\\nต้องทดสอบด้วย /skill test " + skill.id +
+                                                " และเจ้าของต้องอนุมัติด้วย /skill approve " + skill.id
+                                        }
                                         command.startsWith("propose ", true) -> {
                                             val fields = command.substringAfter(" ").trim().split("|", limit = 4).map { it.trim() }
                                             require(fields.size == 4) {
@@ -185,7 +202,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                             val id = command.substringAfter(" ").trim()
                                             if (runtime.skills.delete(id)) "ลบทักษะแล้ว" else "ไม่พบทักษะ"
                                         }
-                                        else -> "คำสั่งทักษะ:\\n/skill list\\n/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected\\n/skill test รหัส\\n/skill approve รหัส\\n/skill delete รหัส"
+                                        else -> "คำสั่งทักษะ:\\n/skill list\\n/skill learn ชื่อ | คำกระตุ้น | ประสบการณ์ | input => expected ;; input => expected\\n/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected\\n/skill test รหัส\\n/skill approve รหัส\\n/skill delete รหัส"
                                     }
                                 } else if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
                                     val active = runtime.plugins.activePlugins()
