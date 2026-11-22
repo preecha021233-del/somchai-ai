@@ -85,6 +85,37 @@ class LocalMemoryStore(
         restored.size
     }
 
+    /**
+     * Returns the encrypted store bytes for owner-controlled export.
+     * The payload is bound to this installation's Android Keystore key and cannot be
+     * decrypted on another installation unless the same key is available there.
+     */
+    fun exportEncrypted(): ByteArray = synchronized(lock) {
+        require(file.isFile) { "ยังไม่มีข้อมูลความจำให้ส่งออก" }
+        val encrypted = file.readBytes()
+        require(encrypted.size <= 1_048_576) { "ไฟล์ความจำมีขนาดเกินกำหนด" }
+        // Authenticate and validate before allowing an export.
+        val entries = decodeRecords(cipher.decrypt(encrypted))
+        require(entries.size <= 500) { "จำนวนรายการความจำเกินกำหนด" }
+        log("MEMORY_EXPORTED", "records=${entries.size} bytes=${encrypted.size}")
+        encrypted.copyOf()
+    }
+
+    /** Imports only authenticated encrypted data and leaves the current store untouched on failure. */
+    fun importEncrypted(encrypted: ByteArray): Int = synchronized(lock) {
+        require(encrypted.isNotEmpty() && encrypted.size <= 1_048_576) { "ไฟล์นำเข้ามีขนาดไม่ถูกต้อง" }
+        val restored = decodeRecords(cipher.decrypt(encrypted))
+        require(restored.size <= 500) { "ไฟล์นำเข้ามีจำนวนรายการเกินกำหนด" }
+        require(restored.map { it.id }.distinct().size == restored.size) { "ไฟล์นำเข้ามีรหัสซ้ำ" }
+        // rewrite() encrypts with the current installation key, so only a successfully
+        // authenticated payload can replace the current data.
+        rewrite(restored)
+        val verified = readEntries()
+        check(verified == restored) { "ตรวจสอบข้อมูลหลังนำเข้าไม่สำเร็จ" }
+        log("MEMORY_IMPORTED", "records=${restored.size}")
+        restored.size
+    }
+
     fun clear(): Int = synchronized(lock) {
         val count = readEntries().size
         rewrite(emptyList())
