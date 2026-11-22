@@ -105,3 +105,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - The native generator now reserves context capacity for the requested output token budget plus a safety margin; it rejects prompts that cannot fit instead of decoding into an exhausted context.
 - Chat history no longer repeats the current user message in the prompt/provider request.
 - Added observable model lifecycle states (not installed, downloading, loading, ready, failed) so the chat and settings screens reflect asynchronous startup loading instead of remaining stuck on their initial status.
+
+## Deterministic Thai reasoning coverage
+- Added direct Thai answers for thunder formation and backup-data advantages/risks.
+- Extended change calculation to handle quantity × unit-price wording such as `3 ชิ้น ชิ้นละ 25 บาท จ่าย 100 บาท`.
+- Added explicit contradiction detection for conflicting weekdays and selected direct logical opposites; added missing-input prompts for speed and cash-change questions.
+- Source requests now state when no sources have actually been opened and direct the user to approved Web Search rather than inventing citations.
+- Added focused regression cases for these exact behaviors.
