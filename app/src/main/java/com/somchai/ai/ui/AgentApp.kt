@@ -58,7 +58,7 @@ fun AgentApp(runtime: CoreRuntime) {
         topBar = {
             TopAppBar(
                 title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(54.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF356DEB)))), contentAlignment = Alignment.Center) {
                         Text("S", color = Color.White, style = MaterialTheme.typography.headlineMedium)
                     }
                     Column {
@@ -69,7 +69,7 @@ fun AgentApp(runtime: CoreRuntime) {
                 actions = {
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Outlined.Menu, contentDescription = "เปิดเมนู", tint = SomchaiTextPrimary)
+                            Icon(Icons.Outlined.MoreVert, contentDescription = "เมนูหลัก", tint = SomchaiTextPrimary)
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -95,7 +95,7 @@ fun AgentApp(runtime: CoreRuntime) {
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SomchaiSurface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { padding ->
@@ -169,13 +169,13 @@ private fun ChatPage(
     }
 
     Column(
-        modifier.fillMaxSize().background(Color(0xFFF7F7F9))
+        modifier.fillMaxSize().background(Color.White)
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp),
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp),
             contentPadding = PaddingValues(top = 20.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             items(messages) { message ->
                 val isUser = message.startsWith("คุณ:")
@@ -200,7 +200,7 @@ private fun ChatPage(
                     }
                     if (isUser) {
                         Box(
-                            Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(22.dp))
+                            Modifier.widthIn(max = 310.dp).clip(RoundedCornerShape(30.dp))
                                 .background(Brush.linearGradient(listOf(Color(0xFF7438E8), Color(0xFF4267E8))))
                                 .padding(horizontal = 17.dp, vertical = 12.dp)
                         ) {
@@ -209,8 +209,9 @@ private fun ChatPage(
                     } else {
                         Column(Modifier.widthIn(max = 310.dp)) {
                             Surface(
-                                color = Color(0xFFECECEF),
-                                shape = RoundedCornerShape(topStart = 7.dp, topEnd = 22.dp, bottomEnd = 22.dp, bottomStart = 22.dp)
+                                color = Color(0xFFEEF1F5),
+                                shadowElevation = 5.dp,
+                                shape = RoundedCornerShape(topStart = 8.dp, topEnd = 30.dp, bottomEnd = 30.dp, bottomStart = 30.dp)
                             ) {
                                 Text(
                                     body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
@@ -227,7 +228,7 @@ private fun ChatPage(
                                     clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
                                     Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
                                 }, modifier = Modifier.size(34.dp)) {
-                                    Icon(Icons.Outlined.ContentCopy, "คัดลอก", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
+                                    Icon(Icons.Outlined.ContentCopy, "คัดลอก", tint = Color(0xFF7563B7), modifier = Modifier.size(19.dp))
                                 }
                                 IconButton(onClick = { onFeedback(body, true) }, modifier = Modifier.size(34.dp)) {
                                     Icon(Icons.Outlined.ThumbUp, "ถูกใจ", tint = SomchaiTextSecondary, modifier = Modifier.size(17.dp))
