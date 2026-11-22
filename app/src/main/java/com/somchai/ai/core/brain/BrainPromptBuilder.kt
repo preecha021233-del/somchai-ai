@@ -16,15 +16,15 @@ internal object BrainPromptBuilder {
         val system = ReasoningPolicy.SYSTEM_PROMPT.take(MAX_SYSTEM_CHARS)
         val current = request.prompt.trim().take(MAX_CURRENT_CHARS)
         val out = StringBuilder()
-        out.append(system).append("\\n")
+        out.append(system).append("\n")
 
         var remaining = (MAX_PROMPT_CHARS - out.length - current.length - 64).coerceAtLeast(0)
         val skills = request.approvedSkills.take(3).map { it.trim() }.filter { it.isNotEmpty() }
         if (skills.isNotEmpty() && remaining > 0) {
             val budget = minOf(MAX_SKILL_CHARS, remaining)
-            val section = skills.joinToString("\\n") { it.take(180) }.take(budget)
+            val section = skills.joinToString("\n") { it.take(180) }.take(budget)
             if (section.isNotBlank()) {
-                out.append("ทักษะที่เจ้าของอนุมัติ:\\n").append(section).append('\\n')
+                out.append("ทักษะที่เจ้าของอนุมัติ:\n").append(section).append('\n')
                 remaining -= section.length + 32
             }
         }
@@ -38,14 +38,14 @@ internal object BrainPromptBuilder {
                 val label = if (role == "user") "ผู้ใช้: " else "SOMCHAI: "
                 val available = (historyBudget - history.length - label.length - 1).coerceAtLeast(0)
                 if (available > 0) {
-                    history.insert(0, label + content.trim().take(available) + "\\n")
+                    history.insert(0, label + content.trim().take(available) + "\n")
                 }
             }
-            if (history.isNotEmpty()) out.append("บริบทก่อนหน้า:\\n").append(history)
+            if (history.isNotEmpty()) out.append("บริบทก่อนหน้า:\n").append(history)
         }
 
         out.append("คำถามปัจจุบัน: ").append(current)
-        out.append("\\nตอบเป็นภาษาไทยให้ตรงคำถาม")
+        out.append("\nตอบเป็นภาษาไทยให้ตรงคำถาม")
         return out.toString().take(MAX_PROMPT_CHARS)
     }
 }
