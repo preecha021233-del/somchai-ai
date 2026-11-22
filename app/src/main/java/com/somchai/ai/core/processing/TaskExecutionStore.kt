@@ -157,8 +157,24 @@ class TaskExecutionStore(private val directory: File) {
             require(runCatching { java.time.Instant.parse(record.createdAt) }.isSuccess) { "Invalid task timestamp" }
             record.steps.forEach { step ->
                 require(step.title.isNotBlank() && step.title.length <= MAX_STEP_CHARS) { "Invalid task step" }
+                require(step.failureReason == null || step.failureReason.length <= MAX_FAILURE_CHARS) {
+                    "Task failure reason exceeds size limit"
+                }
                 if (step.status == TaskStepStatus.FAILED) {
                     require(!step.failureReason.isNullOrBlank()) { "Failed task step has no reason" }
+                } else {
+                    require(step.failureReason == null) { "Only failed steps may contain a failure reason" }
+                }
+            }
+            require(record.steps.count { it.status == TaskStepStatus.IN_PROGRESS } <= 1) {
+                "Task has multiple active steps"
+            }
+            record.steps.forEachIndexed { index, step ->
+                if (step.status == TaskStepStatus.IN_PROGRESS || step.status == TaskStepStatus.COMPLETED ||
+                    step.status == TaskStepStatus.FAILED || step.status == TaskStepStatus.CANCELLED) {
+                    require(record.steps.take(index).all { it.status == TaskStepStatus.COMPLETED }) {
+                        "Task step history violates sequential execution order"
+                    }
                 }
             }
             record
