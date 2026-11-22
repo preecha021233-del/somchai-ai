@@ -49,10 +49,14 @@ class LocalMemoryStoreTest {
             .put("content", "legacy memory").put("createdAt", timestamp)
         java.io.File(directory, "memory.jsonl").writeText(legacy.toString() + "\n")
 
-        val store = LocalMemoryStore(directory)
+        val store = LocalMemoryStore(directory, PrefixCipher())
         assertEquals("legacy memory", store.all().first().content)
         assertFalse(java.io.File(directory, "memory.jsonl").exists())
-        val migrated = org.json.JSONObject(java.io.File(directory, "memory.enc").readLines().first())
+        val encrypted = java.io.File(directory, "memory.enc").readBytes()
+        assertTrue(String(encrypted, 0, 4) == "ENC:")
+        val migrated = org.json.JSONObject(
+            String(PrefixCipher().decrypt(encrypted), Charsets.UTF_8).lineSequence().first()
+        )
         assertEquals(1, migrated.getInt("schemaVersion"))
     }
 
@@ -61,8 +65,9 @@ class LocalMemoryStoreTest {
         val legacyFile = java.io.File(directory, "notes.txt")
         legacyFile.writeText("เจ้าของต้องการคำตอบกระชับ\nวิธีสำรองข้อมูล\n")
 
-        val store = LocalMemoryStore(directory)
+        val store = LocalMemoryStore(directory, PrefixCipher())
         val notes = store.all(500).filter { it.category == "owner-note" }
+        assertTrue(String(java.io.File(directory, "memory.enc").readBytes(), 0, 4) == "ENC:")
 
         assertEquals(2, notes.size)
         assertTrue(notes.any { it.content == "เจ้าของต้องการคำตอบกระชับ" })
