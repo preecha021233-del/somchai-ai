@@ -193,12 +193,16 @@ private fun MemoryPage(runtime: CoreRuntime, modifier: Modifier) {
     var refresh by remember { mutableIntStateOf(0) }
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var memoryMessage by remember { mutableStateOf<String?>(null) }
-    val entries = remember(refresh, query) {
-        if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
+    val memoryResult = remember(refresh, query) {
+        runCatching {
+            if (query.isBlank()) runtime.memory.all(200) else runtime.memory.search(query, 100)
+        }
     }
+    val entries = memoryResult.getOrDefault(emptyList())
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("ความจำภายใน", style = MaterialTheme.typography.titleLarge, color = SomchaiTextPrimary)
-        Text("จัดเก็บในพื้นที่ส่วนตัวของแอป ไม่ส่งขึ้นอินเทอร์เน็ตโดยอัตโนมัติ", color = SomchaiTextSecondary)
+        Text("จัดเก็บในพื้นที่ส่วนตัวและเข้ารหัสด้วย Android Keystore ไม่ส่งขึ้นอินเทอร์เน็ตโดยอัตโนมัติ", color = SomchaiTextSecondary)
+        if (memoryResult.isFailure) Text("อ่านความจำไม่ได้ ข้อมูลไม่ได้ถูกลบ กรุณาอย่าล้างข้อมูลแอป", color = SomchaiCritical)
         OutlinedTextField(
             value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(),
             label = { Text("บันทึกความจำใหม่") }, maxLines = 3
