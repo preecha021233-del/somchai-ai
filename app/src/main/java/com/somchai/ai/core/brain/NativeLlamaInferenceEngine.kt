@@ -30,21 +30,7 @@ class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
         synchronized(lock) {
             val current = handle
             check(current != 0L) { "ยังไม่ได้ติดตั้งโมเดล AI ภายใน" }
-            val prompt = buildString {
-                append(ReasoningPolicy.SYSTEM_PROMPT).append('\n')
-                request.approvedSkills.take(3).forEachIndexed { index, skill ->
-                    append("ทักษะที่เจ้าของอนุมัติ ").append(index + 1).append(":\n")
-                    append(skill.take(2500)).append('\n')
-                }
-                request.history.takeLast(8).forEach { (role, content) ->
-                    if (role == "user" || role == "assistant") {
-                        append(if (role == "user") "ผู้ใช้: " else "SOMCHAI: ")
-                        append(content.take(2500)).append('\n')
-                    }
-                }
-                append("คำถามปัจจุบัน: ").append(request.prompt)
-                append("\nตอบเป็นภาษาไทยให้ตรงคำถาม")
-            }
+            val prompt = BrainPromptBuilder.build(request)
             NativeLlamaBindings.nativeGenerate(current, prompt, 384).trim()
         }
     }
