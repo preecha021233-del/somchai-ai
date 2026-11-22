@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.DisposableEffect
 import java.util.Locale
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -212,90 +213,98 @@ private fun ChatPage(
                             Text(body, color = Color.White, style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        Column(Modifier.widthIn(max = 316.dp)) {
+                        Column(Modifier.fillMaxWidth().widthIn(max = 316.dp)) {
                             Surface(
+                                modifier = Modifier.fillMaxWidth(),
                                 color = Color(0xFFEEF0F4),
                                 shape = RoundedCornerShape(22.dp),
                                 shadowElevation = 5.dp
                             ) {
-                                Text(
-                                    body, Modifier.padding(horizontal = 17.dp, vertical = 13.dp),
-                                    color = Color(0xFF17171B), style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(1.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
-                                        Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(33.dp)
-                                ) {
-                                    Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(3.dp))
-                                    Text("คัดลอก", style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(
-                                    onClick = { feedbackState[body] = true; onFeedback(body, true) },
-                                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(33.dp)
-                                ) {
-                                    Icon(Icons.Outlined.ThumbUp, contentDescription = null, tint = if (feedbackState[body] == true) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(3.dp))
-                                    Text("ถูกใจ", style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(
-                                    onClick = { feedbackState[body] = false; onFeedback(body, false) },
-                                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(33.dp)
-                                ) {
-                                    Icon(Icons.Outlined.ThumbDown, contentDescription = null, tint = if (feedbackState[body] == false) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(3.dp))
-                                    Text("ไม่ถูกใจ", style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(
-                                    onClick = {
-                                        if (speechReady) {
-                                            val languageResult = speech.setLanguage(Locale("th", "TH"))
-                                            if (languageResult >= TextToSpeech.LANG_AVAILABLE) {
-                                                speech.speak(body, TextToSpeech.QUEUE_FLUSH, null, "somchai-${body.hashCode()}")
-                                            } else {
-                                                Toast.makeText(context, "อุปกรณ์ยังไม่มีเสียงภาษาไทย", Toast.LENGTH_SHORT).show()
-                                            }
-                                        } else {
-                                            Toast.makeText(context, "กำลังเตรียมระบบอ่านออกเสียง", Toast.LENGTH_SHORT).show()
+                                Column(Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
+                                    Text(
+                                        body,
+                                        color = Color(0xFF17171B),
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Spacer(Modifier.height(7.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                    clipboard.setPrimaryClip(ClipData.newPlainText("SOMCHAI AI", body))
+                                                    Toast.makeText(context, "คัดลอกแล้ว", Toast.LENGTH_SHORT).show()
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ContentCopy, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("คัดลอก", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
                                         }
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(33.dp)
-                                ) {
-                                    Icon(Icons.Outlined.VolumeUp, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(3.dp))
-                                    Text("อ่านเสียง", style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(
-                                    onClick = {
-                                        val intent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(Intent.EXTRA_TEXT, body)
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable { feedbackState[body] = true; onFeedback(body, true) }
+                                                .padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ThumbUp, contentDescription = null, tint = if (feedbackState[body] == true) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("ถูกใจ", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
                                         }
-                                        context.startActivity(Intent.createChooser(intent, "แชร์คำตอบจาก SOMCHAI AI"))
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(33.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(3.dp))
-                                    Text("แชร์", style = MaterialTheme.typography.labelSmall)
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable { feedbackState[body] = false; onFeedback(body, false) }
+                                                .padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.ThumbDown, contentDescription = null, tint = if (feedbackState[body] == false) Color(0xFF6557E8) else SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("ไม่ถูกใจ", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    if (speechReady) {
+                                                        val languageResult = speech.setLanguage(Locale("th", "TH"))
+                                                        if (languageResult >= TextToSpeech.LANG_AVAILABLE) {
+                                                            speech.speak(body, TextToSpeech.QUEUE_FLUSH, null, "somchai-${body.hashCode()}")
+                                                        } else {
+                                                            Toast.makeText(context, "อุปกรณ์ยังไม่มีเสียงภาษาไทย", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    } else {
+                                                        Toast.makeText(context, "กำลังเตรียมระบบอ่านออกเสียง", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.VolumeUp, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("อ่านเสียง", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(
+                                            Modifier.height(33.dp).clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, body)
+                                                    }
+                                                    context.startActivity(Intent.createChooser(intent, "แชร์คำตอบจาก SOMCHAI AI"))
+                                                }.padding(horizontal = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Outlined.Share, contentDescription = null, tint = SomchaiTextSecondary, modifier = Modifier.size(13.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("แชร์", color = SomchaiTextSecondary, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
                                 }
                             }
                         }
+
                     }
                 }
             }
