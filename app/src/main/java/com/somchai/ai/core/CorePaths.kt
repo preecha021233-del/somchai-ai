@@ -12,9 +12,10 @@ class CorePaths(context: Context) {
     val pluginData = File(root, "plugin-data")
     val memory = File(root, "memory")
     val audit = File(root, "audit")
+    val models = File(root, "models")
 
     fun ensureDirectories() {
-        listOf(root, core, staging, active, backups, pluginData, memory, audit)
+        listOf(root, core, staging, active, backups, pluginData, memory, audit, models)
             .forEach { check(it.exists() || it.mkdirs()) { "Cannot create app storage directory" } }
     }
 
