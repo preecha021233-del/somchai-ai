@@ -8,5 +8,6 @@ internal object NativeLlamaBindings {
 
     external fun nativeLoadModel(path: String, contextSize: Int, threads: Int): Long
     external fun nativeGenerate(handle: Long, prompt: String, maxTokens: Int): String
+    external fun nativeCountTokens(handle: Long, prompt: String): Int
     external fun nativeUnloadModel(handle: Long)
 }
