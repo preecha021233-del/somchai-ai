@@ -29,15 +29,27 @@ class BuiltinToolExecutor(
             val json = connection.inputStream.bufferedReader().use { it.readText() }
             val root = JSONObject(json)
             val lines = mutableListOf<String>()
-            root.optString("AbstractText").takeIf { it.isNotBlank() }?.let { lines.add(it) }
+            root.optString("AbstractText").takeIf { it.isNotBlank() }?.let { abstract ->
+                val source = root.optString("AbstractSource").takeIf { it.isNotBlank() }
+                val sourceUrl = root.optString("AbstractURL").takeIf { it.startsWith("https://") }
+                lines.add(abstract)
+                if (source != null) lines.add("แหล่งข้อมูล: $source")
+                if (sourceUrl != null) lines.add("URL: $sourceUrl")
+            }
             root.optJSONArray("RelatedTopics")?.let { topics ->
                 for (i in 0 until minOf(topics.length(), 8)) {
                     val item = topics.optJSONObject(i) ?: continue
-                    item.optString("Text").takeIf { it.isNotBlank() }?.let { lines.add(it) }
+                    item.optString("Text").takeIf { it.isNotBlank() }?.let { topic ->
+                        lines.add(topic)
+                        item.optString("FirstURL").takeIf { it.startsWith("https://") }?.let { lines.add("URL: $it") }
+                    }
                 }
             }
-            val result = lines.joinToString("\n").ifBlank {
+            val body = lines.joinToString("\n")
+            val result = if (body.isBlank()) {
                 "ไม่พบคำตอบแบบ Instant Answer สำหรับคำค้นนี้ ลองระบุคำค้นให้เฉพาะเจาะจงขึ้น"
+            } else {
+                "ผลค้นหา DuckDuckGo Instant Answer (อาจไม่ครอบคลุมทุกแหล่ง):\n$body"
             }
             logger.record("WEB_SEARCH", "query=$query")
             permissions.sanitizeExternalData(result)

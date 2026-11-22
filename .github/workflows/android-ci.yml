@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: android-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -44,6 +45,32 @@ jobs:
           else
             echo "::warning::Owner signing secrets are not configured; no update-capable release APK was produced."
           fi
+      - name: Verify package identity, version increment and signing certificate continuity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/release -name '*.apk' -print -quit)
+          test -n "$APK"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.somchai.ai'"
+          NEW_VERSION=$("$AAPT" dump badging "$APK" | sed -n "1s/.*versionCode='\\([0-9]*\\)'.*/\\1/p")
+          test -n "$NEW_VERSION"
+          mkdir -p "$RUNNER_TEMP/previous-release"
+          gh run download 45004339173 --repo "$GITHUB_REPOSITORY" --name somchai-owner-signed-release-apk --dir "$RUNNER_TEMP/previous-release"
+          OLD_APK=$(find "$RUNNER_TEMP/previous-release" -name '*.apk' -print -quit)
+          test -n "$OLD_APK"
+          "$AAPT" dump badging "$OLD_APK" | grep -F "package: name='com.somchai.ai'"
+          OLD_VERSION=$("$AAPT" dump badging "$OLD_APK" | sed -n "1s/.*versionCode='\\([0-9]*\\)'.*/\\1/p")
+          test -n "$OLD_VERSION"
+          test "$NEW_VERSION" -gt "$OLD_VERSION"
+          NEW_CERT=$("$APKSIGNER" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest/ {print $2; exit}')
+          OLD_CERT=$("$APKSIGNER" verify --print-certs "$OLD_APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest/ {print $2; exit}')
+          test -n "$NEW_CERT"
+          test -n "$OLD_CERT"
+          test "$NEW_CERT" = "$OLD_CERT"
+          echo "Package ID, increasing versionCode and owner signing certificate continuity verified."
       - uses: actions/upload-artifact@v4
         with:
           name: somchai-debug-apk
