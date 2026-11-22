@@ -37,7 +37,7 @@ class LocalMemoryStoreTest {
         val legacy = org.json.JSONObject()
             .put("id", id).put("category", "skill")
             .put("content", "legacy memory").put("createdAt", timestamp)
-        java.io.File(directory, "memory.jsonl").writeText(legacy.toString() + "\n")
+        java.io.File(directory, "memory.enc").writeText(legacy.toString() + "\n")
 
         val store = LocalMemoryStore(directory)
         assertEquals("legacy memory", store.all().first().content)
@@ -57,7 +57,7 @@ class LocalMemoryStoreTest {
         assertTrue(notes.any { it.content == "เจ้าของต้องการคำตอบกระชับ" })
         assertTrue(notes.any { it.content == "วิธีสำรองข้อมูล" })
         assertFalse(legacyFile.exists())
-        assertTrue(java.io.File(directory, "notes.txt.migrated").isFile)
+        assertFalse(java.io.File(directory, "notes.txt.migrated").exists())
     }
 
 }
