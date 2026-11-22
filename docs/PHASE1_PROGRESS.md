@@ -8,7 +8,7 @@ Updated: 2026-11-22
 - Optional external provider route is explicit via the `/ai` command and requires an owner-configured key.
 - Deterministic internal intent handling for greetings, capability description, help, task planning, and local-memory commands.
 - Task planner decomposes research, development, troubleshooting and general requests into explicit steps. It describes a plan and does not claim to have executed it.
-- Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.
+- Structured app-private local memory supports add, search, list, delete, backup and owner-confirmed restore, with a bounded maximum of 500 records.\n- Production memory and backups are encrypted with AES-256-GCM using a non-exportable Android Keystore key. Legacy plaintext memory/notes are migrated only after encrypted data is verified.
 - Research now queries DuckDuckGo Instant Answer and Wikipedia, displays source URLs and Wikipedia last-edit dates when supplied, and labels missing dates/coverage limits.
 - Active plugins can be disabled by the owner; the manifest is retained in the app-private backup area for recovery.
 - Plugin validation accepts only the `web.search` operation actually implemented by Core and enforces its exact required permission; unimplemented operations and unnecessary permissions are rejected.
@@ -24,7 +24,7 @@ Updated: 2026-11-22
 | Internal processing | Implemented, automated tests pending CI | CI pass and device tests with network disabled and no API key |
 | Task decomposition | Implemented, automated tests pending CI | CI pass; verify plan output on device |
 | Research | DuckDuckGo + Wikipedia lookup with source URLs and available Wikipedia edit dates | Automated source-parser tests, adversarial content tests and device validation |
-| Local memory | Add/search/list/delete implemented | CI pass; device persistence across app restart and update |
+| Local memory | Add/search/list/delete, schema migration, AES-GCM encryption, backup and owner-confirmed restore implemented | CI pass; device persistence, Keystore operation and legacy-note migration validation |
 | Basic plugin development | JSON validation, smoke checks, hash-bound approval, activation, disable and rollback; least-privilege permission matching | Lifecycle integration tests, tampering, denial and rollback tests |
 | Protection and recovery | Existing app-private storage, permissions, audit log and plugin rollback retained | Fault-injection and adversarial tests |
 | Update compatibility | Version increment and prior owner device update test recorded | Test this new v2 APK over installed v1 on device; verify certificate fingerprint |
@@ -36,13 +36,13 @@ Updated: 2026-11-22
 - Unsupported requests are reported as unsupported; optional LLM use requires the explicit `/ai` command.
 - Research is still a single DuckDuckGo Instant Answer endpoint, not comprehensive multi-source research.
 - The Android app sandbox and in-process rule engine are not a hardened arbitrary-code sandbox.
-- Memory is stored in app-private JSON Lines files. Backup/restore currently stays inside app-private storage; encrypted export/import and schema migrations are not yet implemented.
+- Memory is stored as encrypted app-private data. Encrypted export/import to owner-selected storage and key-recovery after Android Keystore loss remain unimplemented.
 - No claim of Phase 1 completion until CI, device, security, memory persistence, plugin lifecycle and recovery acceptance checks pass.
 
 ## Next implementation work
 
 1. Run CI and fix all compile/test failures.
-2. Add encrypted memory storage/export/import and verify key recovery behavior.
+2. Add encrypted memory export/import and document recovery behavior if the Android Keystore key becomes unavailable.
 3. Expand plugin operation tests and ensure owner approval is required.
 4. Improve research result provenance and untrusted-data handling.
 5. Add negative/security tests and stability tests.
