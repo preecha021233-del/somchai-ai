@@ -122,3 +122,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Corrected WebPageReader redirect enforcement: the configured maximum is now exactly three redirects; a fourth redirect is rejected rather than accidentally being followed.
 - Bounded learned-skill extraction input and evaluation prompts so long owner-provided procedures/test cases cannot silently crowd out the test request; evaluation now compares expected text without depending on whitespace.
 - Added regression coverage for oversized skill procedures, prompt bounds and Thai output matching with whitespace variation.
+
+
+## Permission boundary hardening — 2026-11-22
+- Centralized the operation-to-capability matrix in PermissionManager; the core now rejects unknown operations and requires an exact permission set for each supported operation.
+- PluginValidator delegates operation/permission binding to that core policy instead of maintaining a separate operation allowlist, preventing a manifest from adding unrelated capabilities to an otherwise allowed operation.
+- External web text sanitization now removes control and bidirectional formatting characters and neutralizes common English and Thai instruction-override phrases before prompt use; payload remains bounded to 12,000 characters.
+- Added regression tests for operation escalation, duplicate capabilities, bidi/control characters and Thai prompt-injection phrasing. These are implementation changes; CI/device acceptance still must run before claiming the gate passed.
