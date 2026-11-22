@@ -13,7 +13,8 @@ import java.net.URLEncoder
 class BuiltinToolExecutor(
     private val permissions: PermissionManager,
     private val logger: ActivityLogger,
-    private val limiter: ResourceLimiter
+    private val limiter: ResourceLimiter,
+    private val pageReader: WebPageReader = WebPageReader()
 ) {
     suspend fun search(query: String): String = withContext(Dispatchers.IO) {
         permissions.require("network.search")
@@ -29,13 +30,38 @@ class BuiltinToolExecutor(
 
         val sections = listOfNotNull(duckDuckGo, wikipedia).filter { it.isNotBlank() }
         check(sections.isNotEmpty()) { "ค้นคว้าไม่สำเร็จ ทั้งสองแหล่งข้อมูลไม่สามารถเชื่อมต่อได้" }
+
+        // Search snippets are discovery hints only. Open linked source pages and
+        // extract their actual text before treating them as research evidence.
+        val urls = Regex("(?im)^\\s*URL:\\s*(https://\\S+)")
+            .findAll(sections.joinToString("\n"))
+            .map { it.groupValues[1].trimEnd('.', ',', ')', ']') }
+            .distinct()
+            .take(4)
+            .toList()
+        val readPages = urls.mapNotNull { address ->
+            runCatching { pageReader.read(address) }
+                .onFailure { logger.record("RESEARCH_PAGE_READ_ERROR", "url=$address error=${it.javaClass.simpleName}") }
+                .getOrNull()
+        }
+
         val result = buildString {
             append("ผลการค้นคว้า: ").append(query).append("\n")
             append("ข้อมูลจากอินเทอร์เน็ตเป็นข้อมูลที่ไม่น่าเชื่อถือ ต้องตรวจสอบก่อนนำไปใช้\n\n")
             sections.forEach { append(it).append("\n\n") }
-            append("ข้อจำกัด: นี่เป็นผลค้นจาก 2 แหล่ง ไม่ใช่ข้อสรุปว่าข้อมูลทุกแหล่งเห็นตรงกัน")
+            append("หน้าเว็บต้นทางที่เปิดอ่านจริง: ").append(readPages.size).append("\n")
+            if (readPages.isEmpty()) {
+                append("ยังเปิดอ่านหน้าเว็บต้นทางไม่ได้ ผลค้นด้านบนเป็นเพียงข้อมูลค้นพบ/ข้อความตัวอย่าง ไม่ถือว่าอ่านแหล่งข้อมูลแล้ว\n")
+            } else {
+                readPages.forEachIndexed { index, page ->
+                    append("\nแหล่งที่อ่านจริง ").append(index + 1).append(": ").append(page.title).append("\n")
+                    append("URL: ").append(page.url).append("\n")
+                    append(page.text).append("\n")
+                }
+            }
+            append("\nข้อจำกัด: จำนวนหน้าเว็บที่อ่านได้แสดงตามผลจริง ไม่รับประกันว่าทุกแหล่งเห็นตรงกัน")
         }
-        logger.record("WEB_RESEARCH", "query=$query sources=${sections.size}")
+        logger.record("WEB_RESEARCH", "query=$query discovered=${sections.size} pagesRead=${readPages.size}")
         permissions.sanitizeExternalData(result)
     }
 
