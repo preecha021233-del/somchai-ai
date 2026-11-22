@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.somchai.ai"
     compileSdk = 35
+    ndkVersion = "29.0.13113456"
     defaultConfig {
         applicationId = "com.somchai.ai"
         minSdk = 26
@@ -14,6 +15,10 @@ android {
         versionCode = 9
         versionName = "1.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk { abiFilters += listOf("arm64-v8a") }
+        externalNativeBuild {
+            cmake { arguments += listOf("-DANDROID_STL=c++_shared", "-DANDROID_PLATFORM=android-26") }
+        }
     }
     signingConfigs {
         create("ownerRelease") {
@@ -33,13 +38,22 @@ android {
         }
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
     }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.31.6"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-    packaging { resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}") }
+    packaging {
+        jniLibs.useLegacyPackaging = true
+        resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}")
+    }
 }
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
