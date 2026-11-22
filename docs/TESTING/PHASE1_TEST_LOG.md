@@ -162,9 +162,9 @@ CI success is not a Phase 1 completion decision. The above device/model checks r
 
 ### Results
 - Source changes: ADDED; not yet accepted.
-- JVM tests: PENDING CI.
-- Native CMake/NDK build: PENDING CI.
-- Debug APK: PENDING CI.
+- Initial CI snapshot at commit `7f44bf85134de0a346aaa703fe0502c51e0c003f`: PASS — run #45035557468; JVM tests, native CMake/NDK ARM64 build and debug APK completed successfully.
+- Initial debug artifact: ID `14758979984`; ZIP SHA-256 `16b0dc071d541c5c8807b874e6ee5672aa71ec334a67f2b8cb6257151bcf7a45`.
+- Later branch updates added the reasoning-policy tests and stronger installed-model integrity checks after that CI snapshot; those latest changes still require a fresh CI run.
 - Model download and checksum verification on Android: NOT RUN.
 - Native model load and Thai generation on target device: NOT RUN.
 - RAM, latency, heat and battery benchmark: NOT RUN.
