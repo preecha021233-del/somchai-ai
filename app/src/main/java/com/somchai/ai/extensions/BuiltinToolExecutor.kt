@@ -45,8 +45,11 @@ class BuiltinToolExecutor(
                     }
                 }
             }
-            val result = ("ผลค้นหา DuckDuckGo Instant Answer (อาจไม่ครอบคลุมทุกแหล่ง):\n" + lines.joinToString("\n")).ifBlank {
+            val body = lines.joinToString("\n")
+            val result = if (body.isBlank()) {
                 "ไม่พบคำตอบแบบ Instant Answer สำหรับคำค้นนี้ ลองระบุคำค้นให้เฉพาะเจาะจงขึ้น"
+            } else {
+                "ผลค้นหา DuckDuckGo Instant Answer (อาจไม่ครอบคลุมทุกแหล่ง):\n$body"
             }
             logger.record("WEB_SEARCH", "query=$query")
             permissions.sanitizeExternalData(result)
