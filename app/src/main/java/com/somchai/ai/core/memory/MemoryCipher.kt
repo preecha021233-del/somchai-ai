@@ -40,7 +40,7 @@ class AndroidMemoryCipher(
     }
 
     override fun decrypt(ciphertext: ByteArray): ByteArray {
-        require(ciphertext.size > magic.size + 1 + 12 + 16) { "Encrypted memory file is truncated" }
+        require(ciphertext.size >= magic.size + 1 + 12 + 16) { "Encrypted memory file is truncated" }
         val buffer = ByteBuffer.wrap(ciphertext)
         val header = ByteArray(magic.size)
         buffer.get(header)
