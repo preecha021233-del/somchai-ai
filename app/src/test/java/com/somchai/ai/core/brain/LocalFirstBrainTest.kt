@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LocalFirstBrainTest {
-    @Test fun usesLoadedLocalModelWithoutRemoteProvider() = runBlocking {
+    @Test fun usesLoadedLocalModelWithoutRemoteProvider(): Unit = runBlocking {
         val engine = object : OnDeviceInferenceEngine {
             override val engineId = "test-local-model"
             override fun isModelLoaded() = true
@@ -19,7 +19,7 @@ class LocalFirstBrainTest {
         assertFalse(result.usedFallback)
     }
 
-    @Test fun fallsBackWhenLocalModelIsUnavailable() = runBlocking {
+    @Test fun fallsBackWhenLocalModelIsUnavailable(): Unit = runBlocking {
         val result = LocalFirstBrain(UnavailableOnDeviceInferenceEngine) { "คำตอบสำรอง" }
             .respond(BrainRequest("คำถาม"))
         assertEquals("คำตอบสำรอง", result.text)
@@ -27,7 +27,7 @@ class LocalFirstBrainTest {
         assertTrue(result.usedFallback)
     }
 
-    @Test fun fallsBackWhenLocalModelThrows() = runBlocking {
+    @Test fun fallsBackWhenLocalModelThrows(): Unit = runBlocking {
         val engine = object : OnDeviceInferenceEngine {
             override val engineId = "broken-local-model"
             override fun isModelLoaded() = true
@@ -39,7 +39,7 @@ class LocalFirstBrainTest {
         assertTrue(result.usedFallback)
     }
 
-    @Test fun rejectsBlankPrompt() = runBlocking {
+    @Test fun rejectsBlankPrompt(): Unit = runBlocking {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             runBlocking { LocalFirstBrain(UnavailableOnDeviceInferenceEngine) { "fallback" }.respond(BrainRequest(" ")) }
         }
