@@ -18,7 +18,7 @@ class CoreRuntime(context: Context) {
     val permissions = PermissionManager()
     val secrets = SecretStore(context.applicationContext)
     val resources = ResourceLimiter(context.applicationContext, paths)
-    val memory = LocalMemoryStore(paths, logger)
+    val memory = LocalMemoryStore(paths.memory) { event, detail -> logger.record(event, detail) }
     val planner = TaskPlanner()
     val processor = InternalProcessor(memory, planner)
     val plugins = PluginManager(paths, logger, permissions)
