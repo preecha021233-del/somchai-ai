@@ -7,6 +7,7 @@ import java.time.LocalDate
 class ResourceLimiter(context: Context, paths: CorePaths) {
     private val prefs = context.getSharedPreferences("resource_budget", Context.MODE_PRIVATE)
     private val root = paths.active.parentFile?.parentFile
+    private val modelDirectory = paths.models
 
     @Synchronized
     fun consumeRequest() {
@@ -19,8 +20,25 @@ class ResourceLimiter(context: Context, paths: CorePaths) {
         prefs.edit().putInt("count", count + 1).apply()
     }
 
+    /**
+     * The model weights are a separately managed asset (about 491 MB).
+     * Exclude that directory from the 50 MB operational-data budget so
+     * installing the local brain does not disable web tools or plugins.
+     */
     fun checkStorageBudget() {
-        val bytes = root?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
-        check(bytes < 50L * 1024L * 1024L) { "Somchai storage budget reached (50 MB)" }
+        val modelRoot = runCatching { modelDirectory.canonicalFile.toPath() }.getOrNull()
+        val bytes = root?.walkTopDown()
+            ?.filter { file ->
+                file.isFile && (modelRoot == null ||
+                    !runCatching { file.canonicalFile.toPath().startsWith(modelRoot) }.getOrDefault(true))
+            }
+            ?.sumOf { it.length() } ?: 0L
+        check(bytes < MAX_OPERATIONAL_STORAGE_BYTES) {
+            "Somchai operational storage budget reached (50 MB; model files are excluded)"
+        }
+    }
+
+    companion object {
+        private const val MAX_OPERATIONAL_STORAGE_BYTES = 50L * 1024L * 1024L
     }
 }
