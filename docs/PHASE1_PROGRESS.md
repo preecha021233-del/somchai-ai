@@ -75,3 +75,15 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 6. Verify Figma UI layout, top-right menu, keyboard collapse, chat scrolling, all response actions, memory export/import, plugin lifecycle, research and offline behavior.
 7. Fix any failures and repeat only the affected checks plus the full release gate.
 8. Close Phase 1 only when every acceptance gate has evidence.
+
+## Task lifecycle completion (2026-11-22)
+- Extended durable task-step states with FAILED and CANCELLED while preserving existing PENDING, IN_PROGRESS, and COMPLETED records.
+- Added explicit failure reasons, retry-to-pending, and cancellation transitions. Completed work cannot be cancelled; only active work can be marked complete or failed.
+- Added bounded task-store validation (record count, file size, step count, goal/title lengths, UUIDs, timestamps, duplicate IDs) and atomic temporary-file replacement.
+- Added a chat command adapter and routed `/task` commands from the chat UI:
+  - `/task list`, `/task show <id>`
+  - `/task start <id> <step>`, `/task complete <id> <step>`
+  - `/task fail <id> <step> | <reason>`, `/task retry <id> <step>`, `/task cancel <id> <step>`
+- Chat step numbers are 1-based. These commands track task state only; they do not claim to perform external work.
+- Added lifecycle and command-adapter regression tests. Execution/build verification remains a later completion gate after the implementation work is finished.
+
