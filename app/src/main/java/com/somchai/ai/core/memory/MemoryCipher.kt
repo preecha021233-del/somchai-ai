@@ -46,7 +46,7 @@ class AesGcmMemoryCipher(
         buffer.get(header)
         require(header.contentEquals(magic)) { "Unknown encrypted memory format" }
         val ivLength = buffer.get().toInt() and 0xff
-        require(ivLength == 12 && buffer.remaining() > ivLength + 16) { "Invalid memory encryption header" }
+        require(ivLength == 12 && buffer.remaining() >= ivLength + 16) { "Invalid memory encryption header" }
         val iv = ByteArray(ivLength)
         buffer.get(iv)
         val encrypted = ByteArray(buffer.remaining())
