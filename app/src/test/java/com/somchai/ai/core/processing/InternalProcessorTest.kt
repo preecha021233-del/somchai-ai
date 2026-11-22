@@ -26,6 +26,18 @@ class InternalProcessorTest {
         assertTrue(result.answer.contains("ออฟไลน์"))
     }
 
+    @Test fun answersSimpleThaiFactQuestionOffline() {
+        val result = processor().process("แมวมีกี่ขา")
+        assertTrue(result.intent == "knowledge.fact")
+        assertTrue(result.answer.contains("4 ขา"))
+    }
+
+    @Test fun leavesUnknownQuestionsHonest() {
+        val result = processor().process("ช่วยอธิบายทฤษฎีควอนตัม")
+        assertTrue(result.intent == "unsupported")
+        assertTrue(result.answer.contains("ยังไม่มีกฎภายใน"))
+    }
+
     @Test fun createsTaskPlanWithoutExecutingIt() {
         val result = processor().process("/plan พัฒนาแอป")
         assertTrue(result.intent == "task.plan")

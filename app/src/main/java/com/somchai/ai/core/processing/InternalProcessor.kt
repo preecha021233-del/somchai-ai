@@ -14,7 +14,8 @@ data class ProcessingResult(
  */
 class InternalProcessor(
     private val memory: LocalMemoryStore,
-    private val planner: TaskPlanner = TaskPlanner()
+    private val planner: TaskPlanner = TaskPlanner(),
+    private val knowledge: BasicKnowledgeEngine = BasicKnowledgeEngine()
 ) {
     fun process(input: String): ProcessingResult {
         val text = input.trim()
@@ -75,6 +76,10 @@ class InternalProcessor(
 
         if (containsAny(normalized, listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน"))) {
             return planResult(text)
+        }
+
+        knowledge.answer(text)?.let { answer ->
+            return ProcessingResult(answer, "knowledge.fact")
         }
 
         if (normalized.startsWith("จำไว้ว่า ") || normalized.startsWith("จำว่า ")) {
