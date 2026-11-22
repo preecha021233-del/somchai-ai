@@ -130,7 +130,8 @@ class LocalMemoryStore(
         val existingIds = current.map { it.id }.toSet()
         val merged = current + legacyEntries.filterNot { it.id in existingIds }
         rewrite(merged)
-        val verified = readEntries().map { it.id }.toSet()
+        val verified = runCatching { readEntries().map { it.id }.toSet() }.getOrNull()
+            ?: return@synchronized
         if (legacyEntries.all { it.id in verified }) {
             check(legacyFile.delete()) { "Could not retire migrated plaintext memory file" }
             log("MEMORY_ENCRYPTED_MIGRATION", "records=${legacyEntries.size}")
@@ -144,7 +145,8 @@ class LocalMemoryStore(
             .getOrNull() ?: return@synchronized
         if (notes.isEmpty()) return@synchronized
 
-        val existing = readEntries()
+        // If the Keystore key is unavailable, preserve legacy notes and avoid crashing startup.
+        val existing = runCatching { readEntries() }.getOrNull() ?: return@synchronized
         val existingNotes = existing.filter { it.category == "owner-note" }.map { it.content }.toSet()
         val missing = notes.distinct().filterNot { it in existingNotes }
         val availableSlots = (500 - existing.size).coerceAtLeast(0)
@@ -156,7 +158,9 @@ class LocalMemoryStore(
             rewrite(existing + imported)
         }
 
-        val verified = readEntries().filter { it.category == "owner-note" }.map { it.content }.toSet()
+        val verified = runCatching {
+            readEntries().filter { it.category == "owner-note" }.map { it.content }.toSet()
+        }.getOrNull() ?: return@synchronized
         if (notes.all { it in verified }) {
             check(notesFile.delete()) { "Could not retire migrated plaintext notes file" }
             log("MEMORY_LEGACY_NOTES_MIGRATED", "records=${notes.size}")
