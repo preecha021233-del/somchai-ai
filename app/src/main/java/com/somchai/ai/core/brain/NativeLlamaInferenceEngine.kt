@@ -16,7 +16,9 @@ class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
     override val engineId: String = "llama.cpp-android"
 
     fun loadModel(file: File, contextSize: Int = DEFAULT_CONTEXT_SIZE, threads: Int = 4) {
-        require(file.isFile && file.length() > 10_000_000L) { "ไม่พบไฟล์โมเดล GGUF ที่สมบูรณ์" }
+        require(GgufFileValidator.isVerifiedDefaultModel(file)) {
+            "ไฟล์โมเดลไม่ผ่านการตรวจสอบ GGUF หรือ SHA-256 ของโมเดลที่อนุมัติ"
+        }
         synchronized(lock) {
             unloadLocked()
             val capacity = contextSize.coerceIn(512, 4096)
