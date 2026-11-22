@@ -29,6 +29,37 @@ class OfflineReasoningEngine {
         return null
     }
 
+    /** Detects a small set of explicit contradictions without guessing at unstated facts. */
+    fun detectContradiction(input: String): String? {
+        val text = input.lowercase()
+        val weekdays = listOf("วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์", "วันอาทิตย์")
+            .filter { text.contains(it) }
+        if (weekdays.size > 1) {
+            return "ข้อมูลขัดแย้งกันครับ: ระบุวันในสัปดาห์มากกว่าหนึ่งวัน (${weekdays.joinToString(" และ ")}) สำหรับเหตุการณ์เดียวกัน กรุณาระบุวันที่หรือวันที่ถูกต้อง"
+        }
+        if (text.contains("เลขคู่") && text.contains("เลขคี่")) {
+            return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน"
+        }
+        if (text.contains("ไม่เคย") && text.contains("แต่เคย")) {
+            return "ข้อความมีข้อมูลขัดแย้งกันระหว่าง 'ไม่เคย' กับ 'แต่เคย' ครับ กรุณาระบุว่าข้อใดถูกต้อง"
+        }
+        return null
+    }
+
+    /** Asks for the specific inputs required by common calculations when they are absent. */
+    fun missingInformation(input: String): String? {
+        val text = input.lowercase()
+        if ((text.contains("ความเร็ว") || text.contains("อัตราเร็ว")) &&
+            (!text.contains("ระยะทาง") || !text.contains("เวลา"))) {
+            return "การคำนวณความเร็วต้องมีทั้งระยะทางและเวลาที่ใช้ครับ ตอนนี้ยังขาดข้อมูลอย่างน้อยหนึ่งอย่าง"
+        }
+        if ((text.contains("เงินทอน") || text.contains("ทอนเท่าไร") || text.contains("ทอนเท่าไหร่")) &&
+            (!text.contains("จ่าย") || !(text.contains("ราคา") || text.contains("ชิ้นละ") || text.contains("อันละ")))) {
+            return "การคำนวณเงินทอนต้องทราบยอดราคาสินค้ารวมและจำนวนเงินที่จ่ายครับ กรุณาระบุข้อมูลที่ยังขาด"
+        }
+        return null
+    }
+
     fun solveArithmetic(input: String): String? {
         solveChangeProblem(input)?.let { return it }
         solveBatteryProblem(input)?.let { return it }
