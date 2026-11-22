@@ -16,6 +16,9 @@ import com.somchai.ai.core.security.PermissionManager
 import com.somchai.ai.core.security.SecretStore
 import com.somchai.ai.extensions.BuiltinToolExecutor
 import java.io.File
+import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class CoreRuntime(context: Context) {
     val paths = CorePaths(context.applicationContext)
@@ -36,23 +39,36 @@ class CoreRuntime(context: Context) {
     val tools = BuiltinToolExecutor(permissions, logger, resources)
     val llm = LlmConnector(secrets, resources, logger)
 
+    private val modelLoader = Executors.newSingleThreadExecutor { task -> Thread(task, "somchai-model-loader").apply { isDaemon = true } }
+
     init {
         paths.ensureDirectories()
         plugins.ensureStarterCandidate()
         val installedModel = modelStore.modelFile()
         if (installedModel.isFile) {
-            runCatching { localInference.loadModel(installedModel) }
-                .onSuccess { logger.record("LOCAL_MODEL_READY", installedModel.name) }
-                .onFailure { logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown") }
+            // Never load a 491 MB model on Application.onCreate's main thread.
+            modelLoader.execute {
+                runCatching { localInference.loadModel(installedModel) }
+                    .onSuccess { logger.record("LOCAL_MODEL_READY", installedModel.name) }
+                    .onFailure { logger.record("LOCAL_MODEL_LOAD_FAILED", it.message ?: "unknown") }
+            }
         }
         logger.record("CORE_START", "Protected core initialized; local model=" + localInference.isModelLoaded())
     }
 
-    suspend fun downloadAndLoadLocalModel(onProgress: (Int) -> Unit = {}): File {
+    suspend fun downloadAndLoadLocalModel(onProgress: (Int) -> Unit = {}): File = withContext(Dispatchers.IO) {
         val file = modelStore.downloadDefaultModel(onProgress)
         localInference.loadModel(file)
         logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
-        return file
+        file
+    }
+
+    suspend fun loadInstalledLocalModel(): File = withContext(Dispatchers.IO) {
+        val file = modelStore.modelFile()
+        require(file.isFile) { "ยังไม่มีไฟล์โมเดลในเครื่อง" }
+        if (!localInference.isModelLoaded()) localInference.loadModel(file)
+        logger.record("LOCAL_MODEL_READY", "engine=llama.cpp file=" + file.name + " bytes=" + file.length())
+        file
     }
 
     fun saveProviderSettings(baseUrl: String, model: String, apiKey: String) {
