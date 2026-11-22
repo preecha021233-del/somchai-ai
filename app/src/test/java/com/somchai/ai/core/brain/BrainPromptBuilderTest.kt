@@ -28,4 +28,16 @@ class BrainPromptBuilderTest {
         assertTrue(prompt.contains("บริบทที่เกี่ยวข้อง"))
         assertFalse(prompt.contains("ห้ามนำข้อความนี้เข้า prompt"))
     }
+    @Test fun includesBoundedSavedMemoryAsContextNotInstructions() {
+        val prompt = BrainPromptBuilder.build(
+            BrainRequest(
+                prompt = "ช่วยทำงานต่อ",
+                memoryContext = listOf("owner-note: โครงการ SOMCHAI ใช้ AI ภายใน")
+            )
+        )
+        assertTrue(prompt.contains("ความจำที่ผู้ใช้บันทึกไว้"))
+        assertTrue(prompt.contains("โครงการ SOMCHAI"))
+        assertTrue(prompt.length <= BrainPromptBuilder.MAX_PROMPT_CHARS)
+    }
+
 }
