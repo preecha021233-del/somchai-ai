@@ -37,18 +37,19 @@ class LocalMemoryStoreTest {
         val legacy = org.json.JSONObject()
             .put("id", id).put("category", "skill")
             .put("content", "legacy memory").put("createdAt", timestamp)
-        java.io.File(directory, "memory.enc").writeText(legacy.toString() + "\n")
+        java.io.File(directory, "memory.jsonl").writeText(legacy.toString() + "\n")
 
         val store = LocalMemoryStore(directory)
         assertEquals("legacy memory", store.all().first().content)
-        val migrated = org.json.JSONObject(java.io.File(directory, "memory.jsonl").readLines().first())
+        assertFalse(java.io.File(directory, "memory.jsonl").exists())
+        val migrated = org.json.JSONObject(java.io.File(directory, "memory.enc").readLines().first())
         assertEquals(1, migrated.getInt("schemaVersion"))
     }
 
-    @Test fun importsLegacyOwnerNotesAndKeepsVerifiedArchive() {
+    @Test fun importsLegacyOwnerNotesIntoEncryptedMemory() {
         val directory = temporaryFolder.newFolder("legacy-notes")
         val legacyFile = java.io.File(directory, "notes.txt")
-        legacyFile.writeText("เจ้าของต้องการคำตอบกระชับ\\nวิธีสำรองข้อมูล\\n")
+        legacyFile.writeText("เจ้าของต้องการคำตอบกระชับ\nวิธีสำรองข้อมูล\n")
 
         val store = LocalMemoryStore(directory)
         val notes = store.all(500).filter { it.category == "owner-note" }
