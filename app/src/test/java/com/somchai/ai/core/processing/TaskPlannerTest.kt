@@ -36,6 +36,11 @@ class TaskPlannerTest {
         assertTrue(plan.steps.any { it.contains("อย่างน้อยสองแหล่ง") })
     }
 
+    @Test fun recognizesCommonThaiResearchRequests() {
+        assertEquals(TaskType.RESEARCH, planner.classify("ช่วยหาข้อมูลเปรียบเทียบโทรศัพท์"))
+        assertEquals(TaskType.RESEARCH, planner.classify("สืบค้นมาตรฐานความปลอดภัย"))
+    }
+
     @Test fun classifiesTroubleshootingAndWriting() {
         assertEquals(TaskType.TROUBLESHOOTING, planner.classify("แก้ปัญหาแอปเปิดไม่ได้"))
         assertEquals(TaskType.WRITING, planner.classify("เขียนรายงานผลการทดสอบ"))
@@ -44,6 +49,18 @@ class TaskPlannerTest {
     @Test fun rejectsBlankGoal() {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             planner.plan("   ")
+        }
+    }
+
+    @Test fun rejectsOversizedGoalInsteadOfSilentlyTruncatingIt() {
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            planner.plan("ก".repeat(1001))
+        }
+    }
+
+    @Test fun rejectsControlCharactersInGoal() {
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            planner.plan("วางแผน\u0000งาน")
         }
     }
 }
