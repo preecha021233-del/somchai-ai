@@ -14,21 +14,21 @@ interface MemoryCipher {
     fun decrypt(ciphertext: ByteArray): ByteArray
 }
 
-/** Plain codec used only by JVM unit tests. Production runtime injects AndroidMemoryCipher. */
+/** Plain codec used only by JVM unit tests that exercise store behavior without Android Keystore. */
 object PlaintextMemoryCipher : MemoryCipher {
     override fun encrypt(plaintext: ByteArray): ByteArray = plaintext
     override fun decrypt(ciphertext: ByteArray): ByteArray = ciphertext
 }
 
-/** AES-256-GCM with a non-exportable key held by Android Keystore. */
-class AndroidMemoryCipher(
-    private val alias: String = "somchai_local_memory_aes_gcm_v1"
+/** AES-GCM codec separated from key storage so its authentication behavior is unit-testable. */
+class AesGcmMemoryCipher(
+    private val keyProvider: () -> SecretKey
 ) : MemoryCipher {
     private val magic = byteArrayOf(0x53, 0x43, 0x4d, 0x31) // SCM1
 
     override fun encrypt(plaintext: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        cipher.init(Cipher.ENCRYPT_MODE, keyProvider())
         val iv = cipher.iv
         val encrypted = cipher.doFinal(plaintext)
         return ByteBuffer.allocate(magic.size + 1 + iv.size + encrypted.size)
@@ -53,9 +53,19 @@ class AndroidMemoryCipher(
         buffer.get(encrypted)
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
+        cipher.init(Cipher.DECRYPT_MODE, keyProvider(), GCMParameterSpec(128, iv))
         return cipher.doFinal(encrypted)
     }
+}
+
+/** AES-256-GCM with a non-exportable key held by Android Keystore. */
+class AndroidMemoryCipher(
+    private val alias: String = "somchai_local_memory_aes_gcm_v1"
+) : MemoryCipher {
+    private val delegate = AesGcmMemoryCipher { getOrCreateKey() }
+
+    override fun encrypt(plaintext: ByteArray): ByteArray = delegate.encrypt(plaintext)
+    override fun decrypt(ciphertext: ByteArray): ByteArray = delegate.decrypt(ciphertext)
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
