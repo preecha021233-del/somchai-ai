@@ -83,9 +83,7 @@ class LocalModelStore(private val directory: File) {
     }
 
     fun isVerifiedModel(file: File = modelFile()): Boolean =
-        file.isFile && file.length() in MIN_MODEL_BYTES..MAX_MODEL_BYTES &&
-            runCatching { GgufFileValidator.sha256(file) == EXPECTED_SHA256 && GgufFileValidator.isValid(file) }
-                .getOrDefault(false)
+        GgufFileValidator.isVerifiedDefaultModel(file)
 
     companion object {
         const val MODEL_FILE_NAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
@@ -99,6 +97,12 @@ class LocalModelStore(private val directory: File) {
 }
 
 object GgufFileValidator {
+    /** Accept only the pinned starter model; never load arbitrary or merely GGUF-shaped files. */
+    fun isVerifiedDefaultModel(file: File): Boolean =
+        file.isFile && file.length() in 400_000_000L..600_000_000L && isValid(file) &&
+            runCatching { sha256(file).equals(LocalModelStore.EXPECTED_SHA256, ignoreCase = true) }
+                .getOrDefault(false)
+
     fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
