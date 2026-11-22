@@ -236,6 +236,12 @@ private fun ChatPage(
                         }
                     }),
                     colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF17171B),
+                        unfocusedTextColor = Color(0xFF17171B),
+                        disabledTextColor = Color(0xFF77777D),
+                        cursorColor = Color(0xFF7438E8),
+                        focusedPlaceholderColor = Color(0xFF85858C),
+                        unfocusedPlaceholderColor = Color(0xFF85858C),
                         focusedContainerColor = Color(0xFFF0F0F2),
                         unfocusedContainerColor = Color(0xFFF0F0F2),
                         disabledContainerColor = Color(0xFFF0F0F2),
