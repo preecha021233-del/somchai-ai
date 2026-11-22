@@ -70,13 +70,16 @@ class TaskPlanner {
 
     fun classify(goal: String): TaskType {
         val text = goal.lowercase()
+        // More specific intents take priority. In Thai, "ทดสอบ" contains the
+        // substring "สอบ" but is not an exam-planning request.
+        val examText = text.replace("ทดสอบ", "")
         return when {
-            containsAny(text, listOf("สอบ", "ข้อสอบ", "ทบทวนบทเรียน", "exam", "test preparation")) -> TaskType.EXAM
+            containsAny(text, listOf("เขียนบทความ", "เขียนรายงาน", "ร่างเอกสาร", "เรียบเรียง", "write", "draft")) -> TaskType.WRITING
+            containsAny(text, listOf("แก้", "ซ่อม", "ปัญหา", "error", "fix", "troubleshoot")) -> TaskType.TROUBLESHOOTING
+            containsAny(examText, listOf("สอบ", "ข้อสอบ", "ทบทวนบทเรียน", "exam", "test preparation")) -> TaskType.EXAM
             containsAny(text, listOf("เดินทาง", "ท่องเที่ยว", "เที่ยว", "trip", "travel")) -> TaskType.TRAVEL
             containsAny(text, listOf("ค้นคว้า", "วิจัย", "research", "ศึกษา")) -> TaskType.RESEARCH
             containsAny(text, listOf("พัฒนา", "เขียนโค้ด", "โปรแกรม", "แอป", "build", "develop", "code")) -> TaskType.DEVELOPMENT
-            containsAny(text, listOf("แก้", "ซ่อม", "ปัญหา", "error", "fix", "troubleshoot")) -> TaskType.TROUBLESHOOTING
-            containsAny(text, listOf("เขียนบทความ", "เขียนรายงาน", "ร่างเอกสาร", "เรียบเรียง", "write", "draft")) -> TaskType.WRITING
             else -> TaskType.GENERAL
         }
     }
