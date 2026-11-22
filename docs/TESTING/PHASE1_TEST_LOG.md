@@ -137,3 +137,38 @@ Artifacts:
 - In-place installation of version 1.8.0 over the owner's current installed app. Do not uninstall or clear data to work around any failure.
 
 CI success is not a Phase 1 completion decision. The above device/model checks remain open.
+
+
+## Round 4 — 2026-11-22 — Native local Brain runtime implementation
+
+- Phase: Phase 1
+- Branch: `phase-1/local-brain-runtime`
+- Starting point: `phase-1/research-reader-brain-integration`
+- Test method: source review; native CI and real-device tests pending
+- Native engine: llama.cpp commit `8d60873dfb8619f2b5ed31adfbab07cccb40db5c`
+- Starter model: Qwen2.5-0.5B-Instruct-GGUF Q4_K_M
+- Model SHA-256: `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`
+
+### Changes added
+- JNI/CMake integration for real llama.cpp model loading and token generation.
+- Native inference adapter connected to LocalFirstBrain.
+- Explicit in-app download/install control for the 491 MB official Qwen GGUF model.
+- Model installer checks free storage, HTTPS response, bounded size, GGUF header and SHA-256 before installation.
+- Model stored in app-private storage; ordinary chat remains independent from the optional external provider.
+- Added GGUF file-validator JVM tests and a dedicated ARM64 native CI workflow.
+
+### Results
+- Source changes: ADDED; not yet accepted.
+- JVM tests: PENDING CI.
+- Native CMake/NDK build: PENDING CI.
+- Debug APK: PENDING CI.
+- Model download and checksum verification on Android: NOT RUN.
+- Native model load and Thai generation on target device: NOT RUN.
+- RAM, latency, heat and battery benchmark: NOT RUN.
+- Phase 1 acceptance: NOT ACCEPTED.
+
+### Follow-up
+- Fix all compile/native-link/runtime failures reported by CI.
+- Install the model on the target device and run P01–P12 plus P36–P39.
+- Do not claim that the starter 0.5B model has advanced reasoning ability without benchmark evidence.
+- Preserve the existing app ID, owner signing key and app data; do not ask the owner to uninstall or clear data.
