@@ -50,7 +50,7 @@ class OfflineReasoningEngine {
             }.toList()
         }.orEmpty()
 
-        val quantityPrice = Regex("""(\\d+)\\s*(?:ชิ้น|อัน|รายการ).*?(?:ชิ้นละ|อันละ)\\s*([\\d,]+(?:\\.\\d+)?)""")
+        val quantityPrice = Regex("""(\d+)\s*(?:ชิ้น|อัน|รายการ).*?(?:ชิ้นละ|อันละ)\s*([\d,]+(?:\.\d+)?)""")
             .find(input)
         val total: BigDecimal
         val calculation: String
@@ -72,8 +72,8 @@ class OfflineReasoningEngine {
         if (change.signum() < 0) {
             return "ยอดสินค้ารวม ${format(total)} บาท มากกว่าเงินที่จ่าย ${format(paid)} บาท จึงยังมีเงินไม่พอ"
         }
-        return "วิธีคำนวณ:\\nราคารวม = $calculation\\n" +
-            "เงินทอน = เงินที่จ่าย - ราคารวม\\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
+        return "วิธีคำนวณ:\nราคารวม = $calculation\n" +
+            "เงินทอน = เงินที่จ่าย - ราคารวม\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
     }
 
     private fun solveBatteryProblem(input: String): String? {
