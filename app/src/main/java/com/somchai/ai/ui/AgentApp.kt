@@ -44,6 +44,8 @@ import com.somchai.ai.core.skills.SkillTestCase
 import com.somchai.ai.core.plugins.PluginCandidate
 import com.somchai.ai.ui.theme.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private enum class Tab(val label: String) { CHAT("แชต"), PLUGINS("ปลั๊กอิน"), MEMORY("บันทึก"), SETTINGS("ตั้งค่า") }
 
@@ -258,8 +260,12 @@ fun AgentApp(runtime: CoreRuntime) {
                                             else -> null
                                         }
                                     }
+                                    val (approvedSkills, savedMemory) = withContext(Dispatchers.IO) {
+                                        runtime.skills.relevantFor(text) to
+                                            runtime.memory.relevantFor(text, 3).map { "${it.category}: ${it.content}" }
+                                    }
                                     val reply = runtime.brain.respond(
-                                        BrainRequest(text, history, runtime.skills.relevantFor(text))
+                                        BrainRequest(text, history, approvedSkills, savedMemory)
                                     )
                                     runtime.logger.record("BRAIN_ROUTE", "engine=${reply.engineId} fallback=${reply.usedFallback}")
                                     reply.text
