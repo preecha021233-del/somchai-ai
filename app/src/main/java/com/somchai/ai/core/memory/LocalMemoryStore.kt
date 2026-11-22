@@ -57,6 +57,30 @@ class LocalMemoryStore(
         true
     }
 
+    fun backup(): Boolean = synchronized(lock) {
+        if (!file.exists()) return@synchronized false
+        val backup = File(file.parentFile, "memory-backup.jsonl")
+        val temp = File(file.parentFile, "memory-backup.jsonl.tmp")
+        file.copyTo(temp, overwrite = true)
+        if (!temp.renameTo(backup)) {
+            temp.copyTo(backup, overwrite = true)
+            temp.delete()
+        }
+        log("MEMORY_BACKUP", "records=${readEntries().size}")
+        true
+    }
+
+    fun restoreBackup(): Int = synchronized(lock) {
+        val backup = File(file.parentFile, "memory-backup.jsonl")
+        require(backup.isFile) { "ไม่พบไฟล์สำรองความจำ" }
+        val restored = backup.readLines().filter { it.isNotBlank() }.map { decode(it) }
+        require(restored.size <= 500) { "ไฟล์สำรองมีจำนวนรายการเกินกำหนด" }
+        require(restored.map { it.id }.distinct().size == restored.size) { "ไฟล์สำรองมีรหัสซ้ำ" }
+        rewrite(restored)
+        log("MEMORY_RESTORE", "records=${restored.size}")
+        restored.size
+    }
+
     fun clear(): Int = synchronized(lock) {
         val count = readEntries().size
         rewrite(emptyList())
