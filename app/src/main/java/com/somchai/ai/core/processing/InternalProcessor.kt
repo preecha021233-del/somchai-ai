@@ -20,12 +20,12 @@ class InternalProcessor(
         if (normalized in listOf("/help", "help", "ช่วยเหลือ", "คำสั่ง")) return ProcessingResult(helpText(), "help")
         if (normalized.startsWith("/remember ")) {
             val entry = memory.add(text.removeRange(0, "/remember ".length).trim())
-            return ProcessingResult("บันทึกความจำในเครื่องแล้วครับ (รหัส ${entry.id.take(8)})", "memory.write")
+            return ProcessingResult("บันทึกความจำในเครื่องแล้วครับ (รหัส ${entry.id})", "memory.write")
         }
         if (normalized.startsWith("/recall")) {
             val entries = memory.search(text.drop("/recall".length).trim(), 8)
             val answer = if (entries.isEmpty()) "ยังไม่พบความจำที่ตรงกับคำค้นครับ"
-                else entries.joinToString("\n") { "• [${it.id.take(8)}] ${it.content}" }
+                else entries.joinToString("\n") { "• [${it.id}] ${it.content}" }
             return ProcessingResult(answer, "memory.read")
         }
         if (normalized.startsWith("/forget ")) {
