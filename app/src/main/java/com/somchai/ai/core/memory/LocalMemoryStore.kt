@@ -184,7 +184,7 @@ class LocalMemoryStore(
 
     private fun readEntries(): List<MemoryEntry> {
         if (!file.isFile) return emptyList()
-        require(file.length() in 1..MAX_FILE_BYTES.toLong()) { "ไฟล์ความจำมีขนาดไม่ถูกต้อง" }
+        require(file.length() in 0..MAX_FILE_BYTES.toLong()) { "ไฟล์ความจำมีขนาดไม่ถูกต้อง" }
         return decodeRecords(cipher.decrypt(file.readBytes()))
     }
 
