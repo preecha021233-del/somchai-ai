@@ -469,5 +469,5 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - The expected list now covers `/help`, `/plan`, `/planpersist`, `/tasks`, all `/task` lifecycle operations, memory commands, approved Web Search, plugin listing, explicitly owner-configured `/ai`, all learned-skill commands, and the capability hint.
 - This is a test-only change. No production behavior or command policy was changed.
 - Commit: `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`; file: `app/src/test/java/com/somchai/ai/core/processing/InternalProcessorTest.kt`.
-- CI verification: GitHub Actions run #240 (run ID `45110203889`) — **SUCCESS** for commit `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df**. [Run #240](https://github.com/preecha021233-del/somchai-ai/actions/runs/45110203889).
+- CI verification: GitHub Actions run #240 (run ID `45110203889`) — **SUCCESS** for commit `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`. [Run #240](https://github.com/preecha021233-del/somchai-ai/actions/runs/45110203889).
 - Chunk 2 is DONE: the exact `/help` assertion change is committed and the workflow completed successfully. This is not evidence that all P01–P08 criteria pass; the local-model 18/20 target-device quality gate remains BLOCKED.
