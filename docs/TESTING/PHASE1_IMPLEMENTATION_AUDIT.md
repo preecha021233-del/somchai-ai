@@ -113,3 +113,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 12. **P36 model download redirects:** removed automatic HTTP redirects. The model installer now follows at most five redirects manually, revalidates every redirect as HTTPS with no embedded credentials and standard HTTPS port, rejects local/private IP literals and local hostnames, resolves each hop and rejects non-public DNS answers, and only accepts HTTP 200. The download rejects oversized declared lengths, actual/declared size mismatches, truncated/out-of-range files, wrong SHA-256 and invalid GGUF headers before publishing the model.
 13. Added unit coverage for HTTP downgrade, credentials, unsafe ports, localhost/private IP destinations, relative HTTPS redirects, wrong hash, truncated size, invalid GGUF header, content-length mismatch and insufficient storage.
 14. These changes are committed on the Phase 1 branch. CI run #161 was pending at the time of this audit update; no test pass is claimed until it completes. DNS validation is defense-in-depth; device/network integration and model install/inference still require target-device evidence.
+
+
+## P33–P35 chat-routing integration — 2026-11-23
+
+15. Added a pure `ChatRoutePolicy` used by the actual `AgentApp` dispatcher. Ordinary Thai/English conversation is classified as `LOCAL_BRAIN`; only explicit `/ai <question>` is classified as `EXPLICIT_EXTERNAL_AI`. Task, skill, plugin, web-search, and internal commands each have separate routes.
+16. Added `ChatRoutePolicyTest` covering ordinary chat, explicit provider opt-in, unknown slash commands, and every built-in command family. Existing `LocalFirstBrainTest` continues to cover local inference, unavailable-model fallback, runtime failure fallback and double-failure safety.
+17. CI #161 failed before Kotlin unit tests or native compilation: CMake's FetchContent git clone of the pinned public `ggml-org/llama.cpp` commit returned HTTP 403 from GitHub. This is an upstream fetch/network failure, not a compiler diagnostic. The workflow was changed to run JVM unit tests as a separate first step and cache the pinned FetchContent source for later builds.
+18. CI #162 was superseded by subsequent commits and may be cancelled by the workflow's concurrency policy. The current routing/test commit requires a fresh CI result; no pass is claimed.
