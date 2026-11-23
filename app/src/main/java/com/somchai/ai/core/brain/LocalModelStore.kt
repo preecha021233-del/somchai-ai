@@ -84,10 +84,6 @@ class LocalModelStore(
         GgufFileValidator.isVerifiedDefaultModel(file)
 
     /**
-     * Follow redirects manually so every hop is checked. Automatic redirects could
-     * silently downgrade HTTPS or reach a private host before the model hash is checked.
-     */
-    /**
      * OkHttp's Dns contract supplies the exact validated addresses to its socket connector,
      * avoiding a second platform DNS lookup between validation and TCP connect.
      * Every redirect is handled manually and receives a fresh validated DNS result.
@@ -99,7 +95,6 @@ class LocalModelStore(
                 .dns(Dns { host -> resolvePublicAddresses(host) })
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(90, TimeUnit.SECONDS)
-                .callTimeout(2, TimeUnit.MINUTES)
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .retryOnConnectionFailure(false)
