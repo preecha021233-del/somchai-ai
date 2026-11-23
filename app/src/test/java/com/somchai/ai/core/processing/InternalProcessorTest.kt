@@ -144,6 +144,25 @@ class InternalProcessorTest {
         assertTrue(result.answer.contains("ขัดแย้ง"))
     }
 
+    @Test fun flagsNeverAndEverClaimsAboutTheSameActionAsContradictory() {
+        val result = processor().process("ฉันไม่เคยไปกรุงเทพ แต่เคยไปกรุงเทพ")
+        assertEquals("reasoning.contradiction", result.intent)
+        assertTrue(result.answer.contains("เรื่องเดียวกัน"))
+    }
+
+    @Test fun doesNotFlagDifferentDestinationsOrDifferentIntegersAsContradictory() {
+        val differentPlaces = processor().process("ฉันไม่เคยไปกรุงเทพ แต่เคยไปเชียงใหม่")
+        assertFalse(differentPlaces.intent == "reasoning.contradiction")
+
+        val differentIntegers = processor().process("จำนวนหนึ่งเป็นเลขคู่ แต่อีกจำนวนหนึ่งเป็นเลขคี่")
+        assertFalse(differentIntegers.intent == "reasoning.contradiction")
+    }
+
+    @Test fun flagsEvenAndOddOnlyWhenTheyReferToTheSameInteger() {
+        val result = processor().process("จำนวนเต็มเดียวกันเป็นทั้งเลขคู่และเลขคี่")
+        assertEquals("reasoning.contradiction", result.intent)
+    }
+
     @Test fun asksForMissingDistanceOrTimeWhenAskedForSpeed() {
         val result = processor().process("รถคันนี้มีความเร็วเท่าไร")
         assertTrue(result.intent == "reasoning.insufficient_information")
