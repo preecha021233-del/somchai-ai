@@ -52,7 +52,12 @@ class LocalMemoryStore(
         if (clean.isEmpty()) return all(limit)
         return synchronized(lock) {
             val entries = readEntries().asReversed()
-            val idMatches = entries.filter { it.id.trim().lowercase().startsWith(clean) }
+            // An exact UUID must win over shorter prefixes so /recall <ID>
+            // always returns one unambiguous record.
+            entries.firstOrNull { it.id.equals(clean, ignoreCase = true) }?.let {
+                return@synchronized listOf(it).take(limit.coerceIn(1, 200))
+            }
+            val idMatches = entries.filter { it.id.startsWith(clean, ignoreCase = true) }
             if (idMatches.isNotEmpty()) return@synchronized idMatches.take(limit.coerceIn(1, 200))
 
             // Thai queries are often typed without spaces. Compare a compact form first,
