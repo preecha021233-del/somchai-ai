@@ -230,7 +230,13 @@ class WebPageReader(
             val size = readAsciiLine(input, 128).substringBefore(';').trim().toLongOrNull(16)
                 ?: error("Chunk size ไม่ถูกต้อง")
             if (size == 0L) {
-                while (readAsciiLine(input, MAX_HEADER_BYTES).isNotEmpty()) { /* consume trailers */ }
+                var trailerBytes = 0
+                while (true) {
+                    val trailer = readAsciiLine(input, MAX_HEADER_BYTES - trailerBytes)
+                    trailerBytes += trailer.length + 2
+                    require(trailerBytes <= MAX_HEADER_BYTES) { "HTTP trailers มีขนาดเกินกำหนด" }
+                    if (trailer.isEmpty()) break
+                }
                 break
             }
             require(size <= maxBytes.toLong() && out.size() + size <= maxBytes) { "หน้าเว็บมีขนาดเกินขีดจำกัด" }
