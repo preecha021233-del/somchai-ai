@@ -299,3 +299,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - Centralized lifecycle-command classification in `ChatRoutePolicy.isTaskLifecycleCommand`; the UI now routes lifecycle/help commands to `TaskCommandProcessor` and new-task requests to `ChatOrchestrator`. Added regression coverage for all lifecycle actions, help, task-creation boundary and prefix collision.
 - CI #301 (run ID `45133546874`) passed full JVM unit tests, ARM64 native runtime build, Debug APK build/upload and instrumentation APK build/upload at code head `5e4b72e3596897d3c49d894118b087cb8fe29a39`.
 - The integration defect is closed at implementation/test level. Physical-device task workflow and process-restart checks remain owner-device acceptance work.
+
+
+## Gradle dependency mirror and latest full CI — run #322 (2026-11-23)
+
+- Root Gradle dependency resolution now includes the Google-hosted Maven Central mirror before `mavenCentral()` to reduce transient HTTP 429 failures.
+- Workflow path filters now include root Gradle settings/build files and `gradle/**`, ensuring dependency configuration changes trigger the Phase 1 workflow.
+- CI run #322 (`45134483236`) passed all steps on exact head `38b513ab0fc98757a6f48fa66f95164e319c32f9`: JVM unit tests, ARM64 llama.cpp native build, Debug APK build/upload, and instrumentation-test APK build/upload. [Run #322](https://github.com/preecha021233-del/somchai-ai/actions/runs/45134483236).
+- This verifies repository-level implementation/build integration only. No physical-device instrumentation, local model inference/Thai-quality benchmark, or in-place update acceptance is claimed.
