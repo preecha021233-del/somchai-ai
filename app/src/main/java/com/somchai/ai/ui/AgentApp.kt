@@ -177,7 +177,20 @@ fun AgentApp(runtime: CoreRuntime) {
                         scope.launch {
                             try {
                                 val route = ChatRoutePolicy.classify(text)
-                                val answer = if (route == ChatRoute.TASK_COMMAND) {
+                                val history = messages.dropLast(1).takeLast(12).mapNotNull {
+                                    when {
+                                        it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
+                                        it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
+                                        else -> null
+                                    }
+                                }
+                                val (approvedSkills, savedMemory) = withContext(Dispatchers.IO) {
+                                    runtime.skills.relevantFor(text) to
+                                        runtime.memory.relevantFor(text, 3).map { "\${it.category}: \${it.content}" }
+                                }
+                                val taskAction = text.trim().split(Regex("\\s+")).getOrNull(1)?.lowercase().orEmpty()
+                                val answer = if (route == ChatRoute.TASK_COMMAND &&
+                                    taskAction in setOf("list", "show", "start", "complete", "fail", "retry", "cancel")) {
                                     TaskCommandProcessor(runtime.tasks).execute(text)
                                 } else if (route == ChatRoute.SKILL_COMMAND) {
                                     val command = text.substringAfter(" ", "").trim()
@@ -259,45 +272,23 @@ fun AgentApp(runtime: CoreRuntime) {
                                         if (active.isEmpty() && candidates.isEmpty() && disabled.isEmpty()) append("ยังไม่มีปลั๊กอินในระบบ")
                                     }
                                 } else if (route == ChatRoute.WEB_SEARCH) {
-                                    check(runtime.plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }) {
-                                        "ต้องอนุมัติปลั๊กอิน Web Search ในหน้า Plugins ก่อน"
-                                    }
-                                    runtime.tools.search(text.substringAfter(' ').trim())
+                                    runtime.orchestrator.handle(text, history, approvedSkills, savedMemory).answer
                                 } else if (route == ChatRoute.EXPLICIT_EXTERNAL_AI) {
-                                    check(runtime.secrets.hasKey()) { "ยังไม่ได้ตั้งค่า LLM Provider ครับ ใช้คำสั่งภายในได้โดยไม่ต้องใช้ API" }
-                                    val history = messages.dropLast(1).takeLast(12).mapNotNull {
-                                        when {
-                                            it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
-                                            it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
-                                            else -> null
-                                        }
-                                    }
-                                    runtime.llm.ask(history, text.removeRange(0, 4).trim())
+                                    runtime.orchestrator.handle(text, history, approvedSkills, savedMemory).answer
                                 } else if (route == ChatRoute.INTERNAL_PROCESSOR) {
-                                    val result = runtime.processor.process(text)
-                                    runtime.logger.record("INTERNAL_PROCESS", "intent=${result.intent}")
-                                    if (result.intent == "task.plan") {
+                                    val turn = runtime.orchestrator.handle(text, history, approvedSkills, savedMemory)
+                                    if (turn.intent == "task.plan") {
                                         val goal = if (text.startsWith("/plan ", true)) text.substringAfter(' ').trim() else text
                                         pendingPlan = runtime.planner.plan(goal)
                                     }
-                                    result.answer
+                                    turn.answer
                                 } else {
-                                    val history = messages.dropLast(1).takeLast(12).mapNotNull {
-                                        when {
-                                            it.startsWith("คุณ: ") -> "user" to it.removePrefix("คุณ: ")
-                                            it.startsWith("SOMCHAI: ") -> "assistant" to it.removePrefix("SOMCHAI: ")
-                                            else -> null
-                                        }
-                                    }
-                                    val (approvedSkills, savedMemory) = withContext(Dispatchers.IO) {
-                                        runtime.skills.relevantFor(text) to
-                                            runtime.memory.relevantFor(text, 3).map { "${it.category}: ${it.content}" }
-                                    }
-                                    val reply = runtime.brain.respond(
-                                        BrainRequest(text, history, approvedSkills, savedMemory)
+                                    val turn = runtime.orchestrator.handle(text, history, approvedSkills, savedMemory)
+                                    runtime.logger.record(
+                                        "CHAT_ORCHESTRATOR_ROUTE",
+                                        "intent=\${turn.intent} engine=\${turn.engineId} fallback=\${turn.usedFallback}"
                                     )
-                                    runtime.logger.record("BRAIN_ROUTE", "engine=${reply.engineId} fallback=${reply.usedFallback}")
-                                    reply.text
+                                    turn.answer
                                 }
                                 messages = messages + "SOMCHAI: $answer"
                             } catch (e: Exception) {
