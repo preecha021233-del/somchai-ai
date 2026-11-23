@@ -36,7 +36,6 @@ class BuiltinToolExecutorTest {
     private fun executor(
         approved: Boolean,
         discovery: ResearchDiscoveryProvider,
-        reader: ResearchPageReader,
         onBudgetCheck: () -> Unit = {}
     ): BuiltinToolExecutor {
         val paths = CorePaths.forTesting(temporaryFolder.newFolder())
@@ -45,14 +44,9 @@ class BuiltinToolExecutorTest {
             permissions = PermissionManager(),
             logger = ActivityLogger(paths),
             checkStorageBudget = onBudgetCheck,
-            pageReader = WebPageReader(),
             discoveryProvider = discovery,
             isWebSearchApproved = { approved }
-        ).let { configured ->
-            // Inject the fake page reader through the discovery/report path in the
-            // test-specific constructor below; the production reader remains read-only.
-            configured
-        }
+        )
     }
 
     @Test fun unapprovedSearchIsBlockedBeforeDiscoveryOrNetworkWork() = runBlocking {
@@ -65,7 +59,6 @@ class BuiltinToolExecutorTest {
         val tool = executor(
             approved = false,
             discovery = FakeDiscovery(candidates) { discovered = true },
-            reader = FakeReader(),
             onBudgetCheck = { budgetChecked = true }
         )
         assertThrows(IllegalStateException::class.java) {
