@@ -1,6 +1,8 @@
 package com.somchai.ai.core.processing
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -78,5 +80,43 @@ class TaskExecutionStoreTest {
         assertThrows(IllegalArgumentException::class.java) { store.cancelStep(completedTask.id, 0) }
     }
 
+
+    @Test fun recordsAuditEventsForEveryPersistedTaskTransition() {
+        val events = mutableListOf<Pair<String, String>>()
+        val store = TaskExecutionStore(temporaryFolder.newFolder("audit")) { event, detail ->
+            events += event to detail
+        }
+        val task = store.create(TaskPlanner().plan("งานตรวจสอบ"))
+        store.startStep(task.id, 0)
+        store.failStep(task.id, 0, "ต้องแก้ข้อมูล")
+        store.retryStep(task.id, 0)
+        store.startStep(task.id, 0)
+        store.completeStep(task.id, 0)
+
+        assertEquals(
+            listOf(
+                "TASK_CREATED",
+                "TASK_STEP_STARTED",
+                "TASK_STEP_FAILED",
+                "TASK_STEP_RETRY_QUEUED",
+                "TASK_STEP_STARTED",
+                "TASK_STEP_COMPLETED"
+            ),
+            events.map { it.first }
+        )
+        assertTrue(events.all { it.second.contains("id=${task.id}") })
+        assertTrue(events.drop(1).all { it.second.contains("step=1") })
+        assertTrue(events.last().second.contains("status=COMPLETED"))
+        assertFalse(events.any { it.second.contains("งานตรวจสอบ") })
+    }
+
+    @Test fun auditFailureDoesNotUndoPersistedTaskTransition() {
+        val directory = temporaryFolder.newFolder("audit-failure")
+        val store = TaskExecutionStore(directory) { _, _ -> error("logger unavailable") }
+        val task = store.create(TaskPlanner().plan("งานยังต้องบันทึกได้"))
+        val started = store.startStep(task.id, 0)
+        assertEquals(TaskStepStatus.IN_PROGRESS, started.steps.first().status)
+        assertEquals(TaskStepStatus.IN_PROGRESS, TaskExecutionStore(directory).get(task.id)?.steps?.first()?.status)
+    }
 
 }
