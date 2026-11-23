@@ -5,17 +5,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.URI
-import java.net.URL
 import java.security.MessageDigest
+import okhttp3.Dns
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.util.concurrent.TimeUnit
 
 /**
  * Downloads the official Qwen GGUF asset into app-private storage.
  * The pinned SHA-256 is checked before the model is made visible to the runtime.
  */
-class LocalModelStore(private val directory: File) {
+class LocalModelStore(
+    private val directory: File,
+    private val dnsResolver: (String) -> Array<InetAddress> = InetAddress::getAllByName
+) {
     fun modelFile(): File = File(directory, MODEL_FILE_NAME)
 
     suspend fun downloadDefaultModel(onProgress: (Int) -> Unit = {}): File = withContext(Dispatchers.IO) {
@@ -32,15 +38,15 @@ class LocalModelStore(private val directory: File) {
         partial.delete()
         val connection = openVerifiedDownloadConnection()
         try {
-            val status = connection.responseCode
-            check(status == HttpURLConnection.HTTP_OK) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
-            val declared = connection.contentLengthLong
+            val status = connection.code
+            check(status == 200) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
+            val declared = connection.body?.contentLength() ?: -1L
             require(declared <= 0L || declared <= MAX_MODEL_BYTES) {
                 "ขนาดไฟล์โมเดลที่เซิร์ฟเวอร์แจ้งเกินขีดจำกัด"
             }
             val digest = MessageDigest.getInstance("SHA-256")
             var total = 0L
-            connection.inputStream.use { input ->
+            requireNotNull(connection.body) { "เซิร์ฟเวอร์ไม่ส่งข้อมูลโมเดล" }.byteStream().use { input ->
                 FileOutputStream(partial).use { output ->
                     val buffer = ByteArray(128 * 1024)
                     while (true) {
@@ -65,7 +71,7 @@ class LocalModelStore(private val directory: File) {
             partial.delete()
             throw error
         } finally {
-            connection.disconnect()
+            connection.close()
         }
     }
 
@@ -81,41 +87,54 @@ class LocalModelStore(private val directory: File) {
      * Follow redirects manually so every hop is checked. Automatic redirects could
      * silently downgrade HTTPS or reach a private host before the model hash is checked.
      */
-    private fun openVerifiedDownloadConnection(): HttpURLConnection {
+    /**
+     * OkHttp's Dns contract supplies the exact validated addresses to its socket connector,
+     * avoiding a second platform DNS lookup between validation and TCP connect.
+     * Every redirect is handled manually and receives a fresh validated DNS result.
+     */
+    private fun openVerifiedDownloadConnection(): Response {
         var address = validateDownloadUrl(MODEL_URL)
         for (redirect in 0..MAX_REDIRECTS) {
-            val target = URL(address)
-            assertPublicHost(target.host)
-            val connection = target.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 20_000
-            connection.readTimeout = 90_000
-            connection.instanceFollowRedirects = false
-            connection.setRequestProperty("User-Agent", "SOMCHAI-AI/1.9 local-model-installer")
-            connection.setRequestProperty("Accept-Encoding", "identity")
-            val status = connection.responseCode
-            if (status in 300..399) {
-                val location = connection.getHeaderField("Location")
-                connection.disconnect()
+            val client = OkHttpClient.Builder()
+                .dns(Dns { host -> resolvePublicAddresses(host) })
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(90, TimeUnit.SECONDS)
+                .callTimeout(2, TimeUnit.MINUTES)
+                .followRedirects(false)
+                .followSslRedirects(false)
+                .retryOnConnectionFailure(false)
+                .build()
+            val request = Request.Builder()
+                .url(address)
+                .get()
+                .header("User-Agent", "SOMCHAI-AI/1.9 local-model-installer")
+                .header("Accept-Encoding", "identity")
+                .build()
+            val response = client.newCall(request).execute()
+            if (response.code in 300..399) {
+                val location = response.header("Location")
+                response.close()
                 check(redirect < MAX_REDIRECTS) { "เซิร์ฟเวอร์เปลี่ยนเส้นทางเกินจำนวนที่อนุญาต" }
                 require(!location.isNullOrBlank()) { "Redirect ไม่มี Location" }
-                address = validateDownloadUrl(URL(target, location).toString())
+                address = validateDownloadUrl(java.net.URI(address).resolve(location).toString())
                 continue
             }
-            if (status != HttpURLConnection.HTTP_OK) {
-                connection.disconnect()
+            if (response.code != 200) {
+                val status = response.code
+                response.close()
                 throw IllegalStateException("ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)")
             }
-            return connection
+            return response
         }
         error("เซิร์ฟเวอร์เปลี่ยนเส้นทางเกินจำนวนที่อนุญาต")
     }
 
-    private fun assertPublicHost(host: String) {
-        val addresses = InetAddress.getAllByName(host)
+    internal fun resolvePublicAddresses(host: String): List<InetAddress> {
+        val addresses = dnsResolver(host).distinctBy { it.hostAddress }
         require(addresses.isNotEmpty() && addresses.all(::isPublicAddress)) {
             "ปลายทางดาวน์โหลดชี้ไปยังเครือข่ายภายในหรือ IP ที่ไม่ใช่สาธารณะ"
         }
+        return addresses
     }
 
     private fun isPublicAddress(address: InetAddress): Boolean {
