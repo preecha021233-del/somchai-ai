@@ -11,7 +11,7 @@ import org.junit.rules.TemporaryFolder
 
 class ChatOrchestratorTest {
     @get:Rule val temp=TemporaryFolder()
-    private fun fallback=object:Brain {
+    private val fallback=object:Brain {
         override suspend fun respond(request:BrainRequest)=BrainReply("fallback","offline-fallback",true)
     }
     private fun make(brain:Brain=fallback,approved:()->Boolean={false},search:suspend(String)->String={"found:"+it},

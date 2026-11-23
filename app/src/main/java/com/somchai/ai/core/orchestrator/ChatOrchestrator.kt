@@ -20,7 +20,7 @@ class ChatOrchestrator(
         require(text.length<=6000) { "ข้อความยาวเกินกำหนด" }
         val normalized=text.lowercase()
         if(normalized=="/ai" || normalized.startsWith("/ai ")) {
-            val prompt=text.substringAfter("/ai","").trim()
+            val prompt=text.drop(3).trim()
             if(prompt.isEmpty()) return ChatTurnResult("ใช้รูปแบบ: /ai ตามด้วยคำถาม","llm.help","policy",true)
             if(!remoteConfigured()) return ChatTurnResult("ยังไม่ได้ตั้งค่า LLM Provider ครับ","llm.not_configured","policy",true)
             return try {
@@ -33,7 +33,7 @@ class ChatOrchestrator(
             }
         }
         if(normalized=="/search" || normalized.startsWith("/search ")) {
-            val query=text.substringAfter("/search","").trim()
+            val query=text.drop(7).trim()
             if(query.isEmpty()) return ChatTurnResult("ใช้รูปแบบ: /search ตามด้วยคำค้น","research.help","policy",true)
             if(!searchApproved()) return ChatTurnResult("ปลั๊กอิน Web Search ยังไม่ได้รับอนุมัติ","research.plugin_required","policy",true)
             return try { ChatTurnResult(search(query),"research.search","research-tool",false) }

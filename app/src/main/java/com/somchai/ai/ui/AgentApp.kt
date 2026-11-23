@@ -186,7 +186,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                 }
                                 val (approvedSkills, savedMemory) = withContext(Dispatchers.IO) {
                                     runtime.skills.relevantFor(text) to
-                                        runtime.memory.relevantFor(text, 3).map { "\${it.category}: \${it.content}" }
+                                        runtime.memory.relevantFor(text, 3).map { "${it.category}: ${it.content}" }
                                 }
                                 val taskAction = text.trim().split(Regex("\\s+")).getOrNull(1)?.lowercase().orEmpty()
                                 val answer = if (route == ChatRoute.TASK_COMMAND &&

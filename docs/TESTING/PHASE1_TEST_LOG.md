@@ -378,7 +378,7 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 - Added ResearchResultVerifier labels READ_MULTI_SOURCE, READ_SINGLE_SOURCE, DISCOVERY_ONLY and NONE based on successfully read distinct URLs. Integrated the verifier into the existing bounded research pipeline without replacing URL validation, private-network protections, plugin approval checks, untrusted-data sanitization or citation validation.
 - Added ResultEvaluator for empty output, known unsupported side-effect claims and plan disclaimers.
 - Extended InternalProcessor with /planpersist and /tasks while preserving ambiguity-safe /forget.
-- UI wiring and full regression verification are tracked in the next integration commit.
+- AgentApp is now wired through runtime.orchestrator for normal chat, /search and /ai; skill, plugin-status and task lifecycle commands retain their existing dedicated handlers.
 - This is not device acceptance evidence. Phase 1 remains NOT CLOSED.
 
 ### Final device test sequence
