@@ -52,9 +52,12 @@ class OfflineReasoningEngine {
             .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
         val oddNumbers = Regex("""(?:เลข\s*)?(\d+)\s*(?:เป็น)?\s*เลขคี่""")
             .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
-        if ((evenNumbers intersect oddNumbers).isNotEmpty() ||
-            (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่"))) {
-            return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน"
+        val conflictingParityNumber = (evenNumbers intersect oddNumbers).firstOrNull()
+        if (conflictingParityNumber != null) {
+            return "ข้อมูลขัดแย้งกันครับ: เลข $conflictingParityNumber ถูกระบุว่าเป็นทั้งเลขคู่และเลขคี่ ซึ่งเป็นไปไม่ได้ กรุณาตรวจสอบตัวเลข"
+        }
+        if (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่")) {
+            return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน กรุณาระบุข้อมูลที่ถูกต้อง"
         }
         if (text.contains("ไม่เคย") && text.contains("แต่เคย")) {
             val neverTarget = text.substringAfter("ไม่เคย").substringBefore("แต่").trim()
@@ -90,6 +93,26 @@ class OfflineReasoningEngine {
             }
         }
         return null
+    }
+
+    /** Verify each displayed numeric equality before a deterministic answer is shown. */
+    fun verifyArithmeticAnswer(answer: String): Boolean {
+        val equationLines = answer.lines().filter { line ->
+            Regex("""=\\s*[+-]?\\d+(?:\\.\\d+)?\\s*(?:บาท|%)?\\s*$""").containsMatchIn(line)
+        }
+        if (equationLines.isEmpty()) return false
+        return equationLines.all { line ->
+            val expectedMatch = Regex("""=\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*(?:บาท|%)?\\s*$""")
+                .find(line) ?: return@all false
+            val expression = line.substring(0, expectedMatch.range.first)
+                .substringAfterLast('=')
+                .substringAfterLast(':')
+                .trim().replace("×", "*").replace("÷", "/")
+            val actual = runCatching { ExpressionParser(expression).parse() }.getOrNull()
+                ?: return@all false
+            val expected = expectedMatch.groupValues[1].toBigDecimalOrNull() ?: return@all false
+            actual.compareTo(expected) == 0
+        }
     }
 
     fun solveArithmetic(input: String): String? {
@@ -141,7 +164,8 @@ class OfflineReasoningEngine {
             .find(input)?.groupValues?.getOrNull(1)?.replace(",", "")?.toBigDecimalOrNull() ?: return null
         val change = paid.subtract(total)
         if (change.signum() < 0) {
-            return "ยอดสินค้ารวม ${format(total)} บาท มากกว่าเงินที่จ่าย ${format(paid)} บาท จึงยังมีเงินไม่พอ"
+            return "วิธีคำนวณ:\nราคารวม = $calculation\n" +
+                "ยอดสินค้ารวม ${format(total)} บาท มากกว่าเงินที่จ่าย ${format(paid)} บาท จึงยังมีเงินไม่พอ"
         }
         return "วิธีคำนวณ:\nราคารวม = $calculation\n" +
             "เงินทอน = เงินที่จ่าย - ราคารวม\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
@@ -173,7 +197,12 @@ class OfflineReasoningEngine {
         val spent = subtotals.fold(BigDecimal.ZERO, BigDecimal::add)
         val remaining = initial.subtract(spent)
         if (remaining.signum() < 0) {
-            return "ยอดใช้รวม ${format(spent)} บาท มากกว่าเงินเริ่มต้น ${format(initial)} บาท จึงมีเงินไม่พอ"
+            val details = purchases.mapIndexed { index, (quantity, price) ->
+                "รายการที่ ${index + 1}: ${format(quantity)} × ${format(price)} = ${format(subtotals[index])} บาท"
+            }
+            return "วิธีคำนวณ:\n" + details.joinToString("\n") +
+                "\nยอดใช้รวม = ${subtotals.joinToString(" + ") { format(it) }} = ${format(spent)} บาท" +
+                "\nยอดใช้รวม ${format(spent)} บาท มากกว่าเงินเริ่มต้น ${format(initial)} บาท จึงมีเงินไม่พอ"
         }
         val details = purchases.mapIndexed { index, (quantity, price) ->
             "รายการที่ ${index + 1}: ${format(quantity)} × ${format(price)} = ${format(subtotals[index])} บาท"
