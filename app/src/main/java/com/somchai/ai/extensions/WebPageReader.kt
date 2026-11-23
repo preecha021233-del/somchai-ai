@@ -38,7 +38,7 @@ class WebPageReader(
             if (response.status in 300..399) {
                 check(redirectCount < MAX_REDIRECTS) { "หน้าเว็บเปลี่ยนเส้นทางเกินจำนวนที่อนุญาต" }
                 val location = response.headers["location"] ?: error("Redirect ไม่มี Location")
-                current = validateUrl(uri.resolve(location).toString())
+                current = validateRedirect(uri, location)
                 continue
             }
             check(response.status in 200..299) { "หน้าเว็บตอบกลับ HTTP \${response.status}" }
@@ -77,6 +77,9 @@ class WebPageReader(
         }
         return uri.toASCIIString()
     }
+
+    internal fun validateRedirect(base: URI, location: String): String =
+        validateUrl(base.resolve(location).toString())
 
     /** Exactly one DNS resolver call per hop. Reject the whole set if any answer is unsafe. */
     internal fun resolvePublicAddresses(host: String): List<InetAddress> {
@@ -127,11 +130,7 @@ class WebPageReader(
             connectPinnedSocket(raw, pinnedIp, 443, CONNECT_TIMEOUT_MS, socketConnector)
             raw.soTimeout = READ_TIMEOUT_MS
             tls = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(raw, host, 443, true) as SSLSocket
-            val parameters = tls.sslParameters
-            val ipv4Literal = host.count { it == '.' } == 3 && host.all { it.isDigit() || it == '.' }
-            if (!host.contains(':') && !ipv4Literal) parameters.serverNames = listOf(SNIHostName(host))
-            parameters.endpointIdentificationAlgorithm = "HTTPS"
-            tls.sslParameters = parameters
+            tls.sslParameters = configureTlsParameters(tls.sslParameters, host)
             tls.startHandshake()
 
             val path = (uri.rawPath.takeIf { it.isNotEmpty() } ?: "/") + (uri.rawQuery?.let { "?$it" } ?: "")
