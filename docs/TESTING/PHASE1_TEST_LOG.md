@@ -344,3 +344,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - CI #213 failed during Kotlin test-source compilation at `OfflineReasoningEngineTest.kt:38`: the newly appended test file ended with literal backslash-n characters, producing a top-level syntax error.
 - This was a test-file formatting defect; the workflow did not reach the unit-test execution/native build stages. Removed the stray characters and queued a fresh full workflow.
 - No test pass is claimed for the new arithmetic, IPv6, skill-integrity or source-deduplication changes until the new run completes.
+
+
+## Test-source correction committed — 2026-11-23
+
+- Fix commit: `04f276245abb0bcd8b8903d7e0d6d9665a604f14`.
+- Removed the literal trailing escape sequence from `OfflineReasoningEngineTest.kt`.
+- CI #214 was superseded/cancelled; fresh full workflow #215 is queued for the corrected head. Results remain pending.

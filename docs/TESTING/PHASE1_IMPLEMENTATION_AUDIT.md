@@ -245,3 +245,6 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 ## CI #213 repair note
 
 - CI #213 stopped at test-source compilation because the appended `OfflineReasoningEngineTest.kt` contained literal trailing backslash-n characters. This is being corrected in the test file; no unit-test or native-build pass is claimed from that run.
+
+
+- Test-source syntax correction committed as `04f276245abb0bcd8b8903d7e0d6d9665a604f14`; CI #215 queued. Acceptance remains pending.
