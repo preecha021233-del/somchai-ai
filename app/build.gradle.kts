@@ -32,7 +32,8 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // Keep release behavior aligned with debug until shrinker rules are fully validated.
+            isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("ownerRelease")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
