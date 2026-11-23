@@ -33,6 +33,20 @@ class ChatOrchestrator(
                 ChatTurnResult("เรียก AI ภายนอกไม่สำเร็จ ("+e.javaClass.simpleName+")","llm.error","remote-provider",true)
             }
         }
+        // Owner-invoked diagnostic route bypasses deterministic rule processing.
+        if(normalized=="/model-test" || normalized.startsWith("/model-test ")) {
+            val prompt=text.substringAfter(' ', "").trim()
+            if(prompt.isEmpty()) return ChatTurnResult("ใช้รูปแบบ: /model-test ตามด้วยคำถาม เพื่อทดสอบโมเดลภายในโดยตรง","model_test.help","policy",true)
+            return try {
+                val reply=brain.respond(BrainRequest(prompt,history,approvedSkills,memoryContext))
+                safeAudit("LOCAL_MODEL_TEST","engine="+reply.engineId+" fallback="+reply.usedFallback+" reason="+(reply.failureReason ?: "none"))
+                if(reply.usedFallback) ChatTurnResult("ทดสอบโมเดลภายในไม่ผ่าน: "+(reply.failureReason ?: "ระบบใช้คำตอบสำรอง")+"\n\nคำตอบสำรอง: "+reply.text,"model_test.failed",reply.engineId,true)
+                else ChatTurnResult(reply.text,"model_test.passed",reply.engineId,false)
+            } catch(e:Exception) {
+                safeAudit("LOCAL_MODEL_TEST_ERROR",e.javaClass.simpleName+": "+e.message.orEmpty().take(200))
+                ChatTurnResult("ทดสอบโมเดลภายในไม่สำเร็จ: "+e.javaClass.simpleName+": "+e.message.orEmpty().take(200),"model_test.error","local-model",true)
+            }
+        }
         if(normalized=="/search" || normalized.startsWith("/search ")) {
             val query=text.drop(7).trim()
             if(query.isEmpty()) return ChatTurnResult("ใช้รูปแบบ: /search ตามด้วยคำค้น","research.help","policy",true)
@@ -85,7 +99,7 @@ class ChatOrchestrator(
             val reply=brain.respond(BrainRequest(text,history,approvedSkills,selectedMemory))
             val result=if(reply.usedFallback) deterministic else ProcessingResult(reply.text,"brain.local")
             val checked=evaluator.evaluate(result)
-            safeAudit("CHAT_TURN","intent="+checked.intent+" engine="+reply.engineId+" fallback="+reply.usedFallback+" safe="+checked.safe)
+            safeAudit("CHAT_TURN","intent="+checked.intent+" engine="+reply.engineId+" fallback="+reply.usedFallback+" failure="+(reply.failureReason ?: "none")+" safe="+checked.safe)
             ChatTurnResult(checked.text,checked.intent,reply.engineId,reply.usedFallback,result.plan)
         } catch(e:Exception) {
             safeAudit("CHAT_BRAIN_ERROR",e.javaClass.simpleName)
