@@ -426,5 +426,5 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 
 - Earlier CI run #233 (run ID 45102529619), commit 3a18b57d087115052400cde7f28f32a59efc5150, failed at JVM compilation. The compiler reported that the custom SSLSocketFactory omitted an abstract overload and the HTML extractor contained an unsupported escape sequence. That implementation was subsequently replaced with direct pinned socket transport, removing the custom SSLSocketFactory and fixing the extractor.
 - CI run #237 (run ID 45103440086), commit e274cf6dbf9d0fb7690ed5267ce8187d4ca74a6e, failed compilation because the TLS configuration helper had not yet been inserted at the call site. This was corrected in the following commit.
-- CI run #238 (run ID 45103601911), commit 014e0f6583ebd692ee3b2b911c2e5bcfaff02a9f, is the current validation run. At the time of this log update, its JVM unit-test step is still running; do not infer success until the run completes.
+- CI run #238 (run ID 45103601911), commit 014e0f6583ebd692ee3b2b911c2e5bcfaff02a9f: the JVM unit-test step completed successfully. ARM64 native runtime and Debug APK assembly are still running; do not infer full CI success until artifact upload and the workflow complete.
 - Device TLS handshake, live DNS rebinding and actual Android behavior remain required even after CI passes.
