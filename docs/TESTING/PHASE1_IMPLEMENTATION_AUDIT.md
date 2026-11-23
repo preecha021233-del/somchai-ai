@@ -152,3 +152,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 33. Startup recovers the rollback file if the process stopped between renames; stale temporary files are cleaned up. A failed candidate verification removes the temporary file and preserves the original encrypted store.
 34. Import and backup restore use the same transactional rewrite path. Import no longer performs a redundant post-commit read after rollback has been retired.
 35. Regression tests cover candidate verification failure preserving existing data and startup recovery after an interrupted replacement. CI verification is pending.
+
+## P16/P43 transactional task and learned-skill persistence — 2026-11-23
+
+36. Task state writes now stage and parse the candidate JSON, preserve the previous file as a rollback copy, atomically rename the candidate, and read back the committed task records before retiring rollback. Startup restores a rollback file after an interrupted replacement.
+37. Learned-skill storage now validates persisted UUIDs, names, trigger counts/lengths, procedure sizes, test/result cardinality, approval invariants, output bounds, timestamps, and duplicate IDs.
+38. Learned-skill encrypted writes now decrypt and validate the staged candidate, retain rollback until read-back verification, and recover interrupted replacements on startup. Empty or oversized skill-retrieval queries return no skills.
+39. Regression tests cover task-state crash recovery, encrypted-skill crash recovery, malformed persisted skill rejection, and empty-query retrieval. CI verification is pending.
