@@ -60,7 +60,14 @@ class ChatOrchestrator(
             safeAudit("CHAT_TASK_CREATED","id="+record.id+" type="+plan.type)
             return ChatTurnResult(answer,"task.create","task-store",true,plan.steps)
         }
-        val deterministic=processor.process(text)
+        val deterministic = if (text.length <= 4000) {
+            processor.process(text)
+        } else {
+            ProcessingResult(
+                "ข้อความยาวเกินขีดจำกัดของระบบประมวลผลสำรอง 4,000 ตัวอักษร โมเดลภายในอาจยังประมวลผลได้",
+                "unsupported"
+            )
+        }
         if(deterministic.intent!="unsupported") {
             val checked=evaluator.evaluate(deterministic)
             safeAudit("CHAT_TURN","intent="+checked.intent+" engine=internal-rule safe="+checked.safe)

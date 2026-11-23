@@ -99,7 +99,10 @@ class InternalProcessor(
 
     private fun planResult(task: String, persist: Boolean = false): ProcessingResult {
         val plan = planner.plan(task)
-        val persistedId = if (persist && tasks != null) runCatching { tasks.create(plan).id.take(8) }.getOrNull() else null
+        val persistedId = if (persist) {
+            val taskStore = tasks ?: throw IllegalStateException("Task storage is not available")
+            taskStore.create(plan).id.take(8)
+        } else null
         val answer = buildString {
             if (persistedId != null) append("บันทึกแผนเป็นงานรหัส ").append(persistedId).append(" แล้ว\n")
             append("แผนดำเนินงานสำหรับ: ").append(plan.goal).append("\n")
