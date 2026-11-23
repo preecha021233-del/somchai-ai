@@ -31,11 +31,72 @@ void throwJava(JNIEnv * env, const char * message) {
 }
 std::string fromJava(JNIEnv * env, jstring value) {
     if (!value) return {};
-    const char * chars = env->GetStringUTFChars(value, nullptr);
+    const jsize length = env->GetStringLength(value);
+    const jchar * chars = env->GetStringChars(value, nullptr);
     if (!chars) return {};
-    std::string result(chars);
-    env->ReleaseStringUTFChars(value, chars);
+    std::string result;
+    result.reserve(static_cast<size_t>(length) * 3);
+    auto appendCodePoint = [&result](uint32_t cp) {
+        if (cp <= 0x7f) {
+            result.push_back(static_cast<char>(cp));
+        } else if (cp <= 0x7ff) {
+            result.push_back(static_cast<char>(0xc0 | (cp >> 6)));
+            result.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else if (cp <= 0xffff) {
+            result.push_back(static_cast<char>(0xe0 | (cp >> 12)));
+            result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            result.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else {
+            result.push_back(static_cast<char>(0xf0 | (cp >> 18)));
+            result.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3f)));
+            result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            result.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        }
+    };
+    for (jsize i = 0; i < length; ++i) {
+        uint32_t cp = chars[i];
+        if (cp >= 0xd800 && cp <= 0xdbff) {
+            if (i + 1 < length && chars[i + 1] >= 0xdc00 && chars[i + 1] <= 0xdfff) {
+                cp = 0x10000 + ((cp - 0xd800) << 10) + (chars[++i] - 0xdc00);
+            } else {
+                cp = 0xfffd;
+            }
+        } else if (cp >= 0xdc00 && cp <= 0xdfff) {
+            cp = 0xfffd;
+        }
+        appendCodePoint(cp);
+    }
+    env->ReleaseStringChars(value, chars);
     return result;
+}
+
+void truncateToValidUtf8(std::string & value) {
+    size_t i = 0;
+    size_t valid = 0;
+    while (i < value.size()) {
+        const auto lead = static_cast<unsigned char>(value[i]);
+        size_t count = 0;
+        if (lead <= 0x7f) count = 1;
+        else if (lead >= 0xc2 && lead <= 0xdf) count = 2;
+        else if (lead >= 0xe0 && lead <= 0xef) count = 3;
+        else if (lead >= 0xf0 && lead <= 0xf4) count = 4;
+        else break;
+        if (i + count > value.size()) break;
+        bool validSequence = true;
+        for (size_t j = 1; j < count; ++j) {
+            const auto next = static_cast<unsigned char>(value[i + j]);
+            if ((next & 0xc0) != 0x80) validSequence = false;
+        }
+        if (count >= 3) {
+            const auto second = static_cast<unsigned char>(value[i + 1]);
+            if ((lead == 0xe0 && second < 0xa0) || (lead == 0xed && second > 0x9f) ||
+                (lead == 0xf0 && second < 0x90) || (lead == 0xf4 && second > 0x8f)) validSequence = false;
+        }
+        if (!validSequence) break;
+        i += count;
+        valid = i;
+    }
+    value.resize(valid);
 }
 }
 
@@ -183,6 +244,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
             llama_batch next = llama_batch_get_one(const_cast<llama_token *>(&token), 1);
             if (llama_decode(engine->context, next) != 0) break;
         }
+        truncateToValidUtf8(output);
         if (output.empty()) {
             throwJava(env, "โมเดลไม่สร้างคำตอบ กรุณาลองใหม่");
             return nullptr;
