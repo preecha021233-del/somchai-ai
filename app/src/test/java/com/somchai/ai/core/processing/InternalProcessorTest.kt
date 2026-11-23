@@ -157,11 +157,24 @@ class InternalProcessorTest {
 
         val differentIntegers = subject.process("จำนวนหนึ่งเป็นเลขคู่ แต่อีกจำนวนหนึ่งเป็นเลขคี่")
         assertFalse(differentIntegers.intent == "reasoning.contradiction")
+
+        val differentDays = subject.process("วันนี้เป็นวันจันทร์ และพรุ่งนี้เป็นวันอังคาร")
+        assertFalse(differentDays.intent == "reasoning.contradiction")
+
+        val insufficientFacts = subject.process("วันนี้เป็นวันอะไร")
+        assertFalse(insufficientFacts.intent == "reasoning.contradiction")
     }
 
     @Test fun flagsEvenAndOddOnlyWhenTheyReferToTheSameInteger() {
-        val result = processor().process("จำนวนเต็มเดียวกันเป็นทั้งเลขคู่และเลขคี่")
-        assertEquals("reasoning.contradiction", result.intent)
+        val subject = processor()
+        val explicitSameInteger = subject.process("จำนวนเต็มเดียวกันเป็นทั้งเลขคู่และเลขคี่")
+        assertEquals("reasoning.contradiction", explicitSameInteger.intent)
+
+        val sameNumber = subject.process("เลข 4 เป็นเลขคู่ แต่เลข 4 เป็นเลขคี่")
+        assertEquals("reasoning.contradiction", sameNumber.intent)
+
+        val differentNumbers = subject.process("เลข 4 เป็นเลขคู่ และเลข 5 เป็นเลขคี่")
+        assertFalse(differentNumbers.intent == "reasoning.contradiction")
     }
 
     @Test fun asksForMissingDistanceOrTimeWhenAskedForSpeed() {
