@@ -100,3 +100,8 @@ These changes are committed on the branch. Their CI result is pending; no test p
 9. Added regression tests for exact-ID precedence and uppercase `/RECALL` using the stable ID displayed by `/remember`.
 
 The code and tests are committed. CI has not yet been confirmed for these latest commits; this correction is not marked test-passed until the workflow result is available.
+
+
+## Plugin disable transition hardening — 2026-11-23
+
+10. The previous disable path copied an active manifest into the disabled-backup directory and then deleted the active copy. A failure between those operations could leave the same plugin reported as both active and disabled. The manager now prefers a same-filesystem rename for an atomic move; when rename is unavailable it writes and verifies a temporary backup before deleting the active copy. It validates the moved manifest and attempts rollback if validation fails. Existing lifecycle tests cover approve → disable → re-enable; CI for this change remains unconfirmed.
