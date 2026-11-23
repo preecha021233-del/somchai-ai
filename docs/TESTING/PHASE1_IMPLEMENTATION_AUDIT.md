@@ -291,3 +291,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - CI run #299 (`45132531059`) passed all workflow steps: JVM unit tests, ARM64 llama.cpp native build, Android Debug APK build, Debug APK upload, and Android instrumentation-test APK build/upload.
 - The CI run validates the OkHttp DNS-interface correction for both model downloads and optional external-provider calls, plus the regression tests. The prior failed compile attempt is superseded by this successful run; its root cause was using a lambda for OkHttp's non-SAM `Dns` interface, corrected with explicit implementations.
 - This is implementation/build evidence only. Instrumentation was not executed on the owner's phone; network behavior, model installation/inference, Thai quality/performance, process restart, and in-place update/data retention still require owner-device acceptance.
+
+
+## Cross-system chat/task routing correction — 2026-11-23
+
+- Review of `AgentApp` against `ChatRoutePolicy` and `ChatOrchestrator` found a real integration gap: the UI dispatched task lifecycle commands to `TaskCommandProcessor`, but new-task requests such as `/task พัฒนาแอป` fell through to ordinary chat even though `ChatOrchestrator` implemented durable task creation.
+- Centralized lifecycle-command classification in `ChatRoutePolicy.isTaskLifecycleCommand`; the UI now routes lifecycle/help commands to `TaskCommandProcessor` and new-task requests to `ChatOrchestrator`. Added regression coverage for all lifecycle actions, help, task-creation boundary and prefix collision.
+- CI #301 (run ID `45133546874`) passed full JVM unit tests, ARM64 native runtime build, Debug APK build/upload and instrumentation APK build/upload at code head `5e4b72e3596897d3c49d894118b087cb8fe29a39`.
+- The integration defect is closed at implementation/test level. Physical-device task workflow and process-restart checks remain owner-device acceptance work.
