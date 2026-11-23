@@ -118,7 +118,11 @@ private fun isPublicProviderAddress(address: InetAddress): Boolean {
         val globalUnicast = bytes[0] in 0x20..0x3f
         val documentation = bytes[0] == 0x20 && bytes[1] == 0x01 &&
             bytes[2] == 0x0d && bytes[3] == 0xb8
-        return globalUnicast && !documentation
+        val protocolAssignments = bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] in 0x00..0x01
+        val sixToFour = bytes[0] == 0x20 && bytes[1] == 0x02
+        val documentation3fff = bytes[0] == 0x3f && (bytes[1] and 0xf0) == 0xf0
+        return globalUnicast && !documentation && !protocolAssignments &&
+            !sixToFour && !documentation3fff
     }
     return false
 }
