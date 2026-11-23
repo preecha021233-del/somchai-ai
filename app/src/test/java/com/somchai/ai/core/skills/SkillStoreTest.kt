@@ -237,4 +237,62 @@ class SkillStoreTest {
     }
 
 
+    @Test fun rejectsSingleCharacterTriggersAndDuplicateTestInputs() {
+        val dir = createTempDir()
+        try {
+            val store = newStore(dir)
+            val distinctTests = listOf(
+                SkillTestCase("input one", "result"),
+                SkillTestCase("input two", "result")
+            )
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                store.propose("bad trigger", listOf("x"), "procedure", distinctTests)
+            }
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                store.propose(
+                    "duplicate tests", listOf("valid trigger"), "procedure",
+                    listOf(SkillTestCase("same input", "one"), SkillTestCase(" same input ", "two"))
+                )
+            }
+        } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun staleConcurrentSkillEvaluationCannotOverwriteNewerResults() = runBlocking {
+        val dir = createTempDir()
+        try {
+            val store = newStore(dir)
+            val skill = store.propose(
+                "ตรวจสอบผล",
+                listOf("ตรวจสอบผล"),
+                "ทำตามขั้นตอน",
+                listOf(SkillTestCase("input one", "ok"), SkillTestCase("input two", "ok"))
+            )
+            val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val release = kotlinx.coroutines.CompletableDeferred<String>()
+            val slowEngine = object : OnDeviceInferenceEngine {
+                override val engineId = "slow-test-engine"
+                override fun isModelLoaded() = true
+                override suspend fun generate(request: BrainRequest): String {
+                    entered.complete(Unit)
+                    return release.await()
+                }
+            }
+            val staleEvaluation = kotlinx.coroutines.async(kotlin.coroutines.coroutineContext) {
+                store.evaluate(skill.id, slowEngine)
+            }
+            entered.await()
+            val fresh = store.evaluate(skill.id, FakeEngine { "ok" })
+            assertTrue(fresh.all { it.passed })
+            release.complete("outdated result")
+            var rejected = false
+            try {
+                staleEvaluation.await()
+            } catch (_: IllegalArgumentException) {
+                rejected = true
+            }
+            assertTrue(rejected)
+            assertTrue(store.get(skill.id)!!.results.all { it.passed })
+        } finally { dir.deleteRecursively() }
+    }
+
 }

@@ -47,10 +47,13 @@ class SkillStore(
         val cleanTriggers = triggers.map { it.trim().lowercase() }.filter { it.isNotBlank() }.distinct()
         require(cleanName.isNotEmpty() && cleanName.length <= 80) { "ชื่อทักษะไม่ถูกต้อง" }
         require(cleanProcedure.isNotEmpty() && cleanProcedure.length <= 4000) { "ขั้นตอนทักษะไม่ถูกต้อง" }
-        require(cleanTriggers.isNotEmpty() && cleanTriggers.size <= 10 && cleanTriggers.all { it.length <= 60 }) {
+        require(cleanTriggers.isNotEmpty() && cleanTriggers.size <= 10 && cleanTriggers.all { it.length in 2..60 }) {
             "คำกระตุ้นทักษะต้องมี 1–10 รายการ"
         }
         require(tests.size in 2..10) { "ทักษะต้องมีกรณีทดสอบ 2–10 กรณี" }
+        require(tests.map { it.input.trim().lowercase() }.distinct().size == tests.size) {
+            "กรณีทดสอบต้องใช้ข้อมูลนำเข้าที่ไม่ซ้ำกัน"
+        }
         tests.forEach {
             require(it.input.isNotBlank() && it.input.length <= 1000) { "ข้อมูลทดสอบไม่ถูกต้อง" }
             require(it.expectedContains.isNotBlank() && it.expectedContains.length <= 200) { "ผลลัพธ์คาดหวังไม่ถูกต้อง" }
@@ -126,6 +129,7 @@ class SkillStore(
             val current = readAll()
             val index = current.indexOfFirst { it.id == id }
             require(index >= 0) { "ทักษะถูกลบระหว่างทดสอบ" }
+            require(current[index] == skill) { "ทักษะเปลี่ยนแปลงระหว่างทดสอบ กรุณาทดสอบใหม่" }
             val updated = current.toMutableList()
             updated[index] = current[index].copy(results = evaluated, approved = false)
             rewrite(updated)
@@ -207,13 +211,16 @@ class SkillStore(
             require(runCatching { UUID.fromString(skill.id) }.isSuccess) { "Invalid skill ID" }
             require(skill.name.isNotBlank() && skill.name.length <= 80) { "Invalid skill name" }
             require(skill.procedure.isNotBlank() && skill.procedure.length <= 4000) { "Invalid skill procedure" }
-            require(skill.triggers.size in 1..10 && skill.triggers.all { it.isNotBlank() && it.length <= 60 }) {
+            require(skill.triggers.size in 1..10 && skill.triggers.all { it.length in 2..60 }) {
                 "Invalid skill triggers"
             }
             require(skill.tests.size in 2..10 && skill.tests.all {
                 it.input.isNotBlank() && it.input.length <= 1000 &&
                     it.expectedContains.isNotBlank() && it.expectedContains.length <= 200
             }) { "Invalid skill test cases" }
+            require(skill.tests.map { it.input.trim().lowercase() }.distinct().size == skill.tests.size) {
+                "Duplicate skill test inputs"
+            }
             require(skill.results.isEmpty() || skill.results.size == skill.tests.size) {
                 "Skill evaluation result count does not match test count"
             }
