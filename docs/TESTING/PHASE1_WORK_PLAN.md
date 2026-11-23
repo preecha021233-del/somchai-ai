@@ -33,7 +33,7 @@
 |---:|---|---|---|---|---|---|---|
 | 1 | Internal brain | P01–P08 | Compare Thai understanding criteria with current implementation and existing evidence; record only genuine gaps | DONE | 2026-11-23 | `PHASE1_TEST_LOG.md` — Phase 1 / Chunk 1 gap assessment; source/test SHA references recorded there | Code/test review complete. P01/P03–P08 have matching implementation/tests; P02 exact-help-list assertion is incomplete. Local-model 18/20 rubric remains BLOCKED pending model/device evidence. |
 | 2 | Internal brain | P01–P08 | Fill verified Thai language-understanding gaps | DONE | 2026-11-23 | `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`; CI run #240 SUCCESS | Exact ordered `/help` command-list assertion passes in CI. This closes the Chunk 2 test-coverage deliverable only; it does not accept P01–P08 or the local-model 18/20 gate. |
-| 3 | Internal brain | P01–P08 | Improve intent and context extraction where evidence shows gaps | NOT_STARTED | — | — | |
+| 3 | Internal brain | P01–P08 | Improve intent and context extraction where evidence shows gaps | IN_PROGRESS | — | b7b196848971392400e0db21769abf7f838fcb41; tests e0574ad1a375cf49c85ede01495759a4bbbeafd7, corrected in 11c68bec872a4545d38a6876cc2e8ad4474ac2d3 | Fixes question-vs-command precedence and prevents explicitly negated statements from being labeled as commands; CI verification pending. |
 | 4 | Internal brain | P01–P08 | Handle ambiguous and incomplete questions appropriately | NOT_STARTED | — | — | |
 | 5 | Reasoning | P09–P12 | Improve fact analysis for identified failing cases | NOT_STARTED | — | — | |
 | 6 | Reasoning | P09–P12 | Improve contradiction detection for identified failing cases | NOT_STARTED | — | — | |
