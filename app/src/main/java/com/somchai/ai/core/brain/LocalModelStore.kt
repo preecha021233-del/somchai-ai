@@ -6,6 +6,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
+import java.net.InetAddress
+import java.net.URI
 import java.net.URL
 import java.security.MessageDigest
 
@@ -31,17 +33,14 @@ class LocalModelStore(private val directory: File) {
 
         val partial = File(directory, "$MODEL_FILE_NAME.part")
         partial.delete()
-        val connection = (URL(MODEL_URL).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 20_000
-            readTimeout = 90_000
-            instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "SOMCHAI-AI/1.9 local-model-installer")
-        }
+        val connection = openVerifiedDownloadConnection()
         try {
             val status = connection.responseCode
-            check(status in 200..299) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
+            check(status == HttpURLConnection.HTTP_OK) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
             val declared = connection.contentLengthLong
+            require(declared <= 0L || declared <= MAX_MODEL_BYTES) {
+                "ขนาดไฟล์โมเดลที่เซิร์ฟเวอร์แจ้งเกินขีดจำกัด"
+            }
             val digest = MessageDigest.getInstance("SHA-256")
             var total = 0L
             connection.inputStream.use { input ->
@@ -85,7 +84,113 @@ class LocalModelStore(private val directory: File) {
     fun isVerifiedModel(file: File = modelFile()): Boolean =
         GgufFileValidator.isVerifiedDefaultModel(file)
 
+    /**
+     * Follow redirects manually so every hop is checked. Automatic redirects could
+     * silently downgrade HTTPS or reach a private host before the model hash is checked.
+     */
+    private fun openVerifiedDownloadConnection(): HttpURLConnection {
+        var address = validateDownloadUrl(MODEL_URL)
+        for (redirect in 0..MAX_REDIRECTS) {
+            val target = URL(address)
+            assertPublicHost(target.host)
+            val connection = target.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 20_000
+            connection.readTimeout = 90_000
+            connection.instanceFollowRedirects = false
+            connection.setRequestProperty("User-Agent", "SOMCHAI-AI/1.9 local-model-installer")
+            connection.setRequestProperty("Accept-Encoding", "identity")
+            val status = connection.responseCode
+            if (status in 300..399) {
+                val location = connection.getHeaderField("Location")
+                connection.disconnect()
+                check(redirect < MAX_REDIRECTS) { "เซิร์ฟเวอร์เปลี่ยนเส้นทางเกินจำนวนที่อนุญาต" }
+                require(!location.isNullOrBlank()) { "Redirect ไม่มี Location" }
+                address = validateDownloadUrl(URL(target, location).toString())
+                continue
+            }
+            if (status != HttpURLConnection.HTTP_OK) {
+                connection.disconnect()
+                throw IllegalStateException("ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)")
+            }
+            return connection
+        }
+        error("เซิร์ฟเวอร์เปลี่ยนเส้นทางเกินจำนวนที่อนุญาต")
+    }
+
+    private fun assertPublicHost(host: String) {
+        val addresses = InetAddress.getAllByName(host)
+        require(addresses.isNotEmpty() && addresses.all(::isPublicAddress)) {
+            "ปลายทางดาวน์โหลดชี้ไปยังเครือข่ายภายในหรือ IP ที่ไม่ใช่สาธารณะ"
+        }
+    }
+
+    private fun isPublicAddress(address: InetAddress): Boolean {
+        if (address.isAnyLocalAddress || address.isLoopbackAddress ||
+            address.isLinkLocalAddress || address.isSiteLocalAddress || address.isMulticastAddress) return false
+        val bytes = address.address.map { it.toInt() and 0xff }
+        if (bytes.size == 4) {
+            val a = bytes[0]; val b = bytes[1]; val c = bytes[2]
+            if (a == 0 || a == 10 || a == 127 || a >= 224) return false
+            if (a == 169 && b == 254) return false
+            if (a == 172 && b in 16..31) return false
+            if (a == 192 && b == 168) return false
+            if (a == 100 && b in 64..127) return false
+            if (a == 192 && b == 0 && c in listOf(0, 2)) return false
+            if (a == 198 && b in 18..19) return false
+            if (a == 198 && b == 51 && c == 100) return false
+            if (a == 203 && b == 0 && c == 113) return false
+            return true
+        }
+        if (bytes.size == 16) {
+            val globalUnicast = bytes[0] in 0x20..0x3f
+            val documentation = bytes[0] == 0x20 && bytes[1] == 0x01 &&
+                bytes[2] == 0x0d && bytes[3] == 0xb8
+            return globalUnicast && !documentation
+        }
+        return false
+    }
+
     companion object {
+        private const val MAX_REDIRECTS = 5
+
+        internal fun validateDownloadUrl(address: String): String {
+            val uri = URI(address).normalize()
+            require(uri.scheme.equals("https", ignoreCase = true)) { "อนุญาตเฉพาะ URL ดาวน์โหลด HTTPS" }
+            require(uri.userInfo == null) { "ไม่อนุญาต URL ดาวน์โหลดที่ฝังข้อมูลบัญชีผู้ใช้" }
+            require(uri.port == -1 || uri.port == 443) { "ไม่อนุญาตพอร์ตดาวน์โหลดที่ไม่ใช่ HTTPS มาตรฐาน" }
+            val host = uri.host?.lowercase()?.trimEnd('.')
+                ?: throw IllegalArgumentException("URL ดาวน์โหลดไม่มีชื่อโฮสต์ที่ถูกต้อง")
+            require(host != "localhost" && !host.endsWith(".localhost") &&
+                !host.endsWith(".local") && !host.endsWith(".internal") && !host.endsWith(".lan")) {
+                "ไม่อนุญาตปลายทางดาวน์โหลดเครือข่ายภายใน"
+            }
+            val ipLiteral = host.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}""")) || host.contains(":")
+            if (ipLiteral) {
+                val literal = host.removePrefix("[").removeSuffix("]")
+                require(isPublicAddressLiteral(InetAddress.getByName(literal))) {
+                    "ไม่อนุญาต IP ดาวน์โหลดภายในหรือ IP ที่ไม่ใช่สาธารณะ"
+                }
+            }
+            return uri.toASCIIString()
+        }
+
+        private fun isPublicAddressLiteral(address: InetAddress): Boolean {
+            if (address.isAnyLocalAddress || address.isLoopbackAddress ||
+                address.isLinkLocalAddress || address.isSiteLocalAddress || address.isMulticastAddress) return false
+            val bytes = address.address.map { it.toInt() and 0xff }
+            if (bytes.size == 4) {
+                val a = bytes[0]; val b = bytes[1]; val c = bytes[2]
+                if (a == 0 || a == 10 || a == 127 || a >= 224 || (a == 169 && b == 254) ||
+                    (a == 172 && b in 16..31) || (a == 192 && b == 168) ||
+                    (a == 100 && b in 64..127) || (a == 192 && b == 0 && c in listOf(0, 2)) ||
+                    (a == 198 && b in 18..19) || (a == 198 && b == 51 && c == 100) ||
+                    (a == 203 && b == 0 && c == 113)) return false
+                return true
+            }
+            return bytes.size == 16 && bytes[0] in 0x20..0x3f &&
+                !(bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x0d && bytes[3] == 0xb8)
+        }
         const val MODEL_FILE_NAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
         const val MODEL_URL = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
         const val EXPECTED_BYTES = 514_000_000L // Approximate progress denominator only.
