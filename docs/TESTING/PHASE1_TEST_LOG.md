@@ -705,3 +705,16 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Expanded `.github/workflows/phase1-local-brain.yml` path filters to trigger on root `settings.gradle.kts`, `build.gradle.kts`, and `gradle/**` changes, so root dependency configuration is covered by CI.
 - CI run #322 (run ID `45134483236`) passed all steps on exact head `38b513ab0fc98757a6f48fa66f95164e319c32f9`: JVM unit tests, ARM64 llama.cpp native build, Android Debug APK build/upload, and Android instrumentation-test APK build/upload. [Run #322](https://github.com/preecha021233-del/somchai-ai/actions/runs/45134483236).
 - Instrumentation APK was built/uploaded only; it was not executed on the owner's physical phone. Device acceptance items remain blocked and Phase 1 is not yet accepted.
+
+
+## Device incident log — 2026-11-23 (Round 2)
+
+- Local model install was reported complete by the owner.
+- `/model-test` returned Thai text, but the response did not answer the requested self-introduction/capability prompt. This is partial evidence that the command returned generated text only; it is not a model-quality PASS and is not sufficient for P38.
+- P01 prompt sent: `สวัสดีสมชาย คุณเป็นใคร และมีหน้าที่อะไร`.
+- Owner reported that the app immediately crashed/exited after sending the prompt.
+- After reopening, the chat screen showed only `สมอง AI ภายในพร้อมทำงานครับ`; the previous conversation history was not visible.
+- P01 is recorded as BLOCKED because the app crash prevented completion of the acceptance check. The history issue is recorded as an unresolved persistence/display incident; there is not yet evidence to distinguish deleted data from a load/UI failure.
+- Safety: do not uninstall the app, clear app data, or overwrite its local storage. Do not repeat inference tests until crash logs and chat persistence are inspected.
+- Required next actions before resuming device acceptance: collect Android crash/logcat evidence for the crash window; inspect chat storage/read path and startup initialization; determine whether prior messages remain in app-private storage; preserve any recoverable data; then fix and retest only the affected gates.
+- Phase 1 remains NOT ACCEPTED. No PASS is awarded for P01 or P38 from these observations.
