@@ -6,6 +6,48 @@ import org.junit.Test
 import java.net.URL
 
 class LocalModelDownloadSecurityTest {
+    @Test fun rejectsInsufficientFreeStorage() {
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelStore.requireSufficientStorage(649_999_999L)
+        }
+        LocalModelStore.requireSufficientStorage(650_000_000L)
+    }
+
+    @Test fun rejectsTruncatedModelDownload() {
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelStore.validateDownloadedModel(
+                totalBytes = 399_999_999L,
+                declaredBytes = 500_000_000L,
+                actualSha256 = LocalModelStore.EXPECTED_SHA256,
+                validGgufHeader = true
+            )
+        }
+    }
+
+    @Test fun rejectsWrongModelSha256() {
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelStore.validateDownloadedModel(
+                totalBytes = 500_000_000L,
+                declaredBytes = 500_000_000L,
+                actualSha256 = "0".repeat(64),
+                validGgufHeader = true
+            )
+        }
+    }
+
+    @Test fun rejectsInvalidGgufHeaderAndMismatchedContentLength() {
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelStore.validateDownloadedModel(
+                500_000_000L, 500_000_000L, LocalModelStore.EXPECTED_SHA256, false
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelStore.validateDownloadedModel(
+                500_000_000L, 510_000_000L, LocalModelStore.EXPECTED_SHA256, true
+            )
+        }
+    }
+
     @Test fun acceptsPinnedHttpsModelHost() {
         val validated = LocalModelStore.validateDownloadUrl(LocalModelStore.MODEL_URL)
         assertEquals(LocalModelStore.MODEL_URL, validated)
