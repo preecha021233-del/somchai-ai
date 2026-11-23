@@ -61,6 +61,48 @@ For every item, record **Result: PASS / FAIL / BLOCKED**, **Evidence** (screensh
 | C11 | Verify redirects are not automatically followed by an HTTP library | BLOCKED | | Reader handles each redirect itself |
 | C12 | Verify timeouts, response byte cap, header cap and HTML/XHTML/plain-text content-type allowlist | BLOCKED | | Oversize/unsupported content must fail safely |
 
+
+## Set D — Local model installation, inference and Thai quality
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| D01 | From Settings, download and install the pinned Qwen2.5 0.5B GGUF model | BLOCKED | | Record progress, final status, file size and SHA-256 verification; do not sideload an unverified model |
+| D02 | Force-stop and relaunch the app without clearing data; verify the installed model is revalidated and loaded off the main thread | BLOCKED | | Record cold-start/load time and model status |
+| D03 | Disable network and run ordinary Thai chat; verify local engine status and no automatic external-provider request | BLOCKED | | Pair with B06/B07 and 35B network evidence |
+| D04 | Run the unchanged P01–P12 Thai quality rubric using exact prompts and scoring rules | BLOCKED | | Required threshold remains at least 18/20; attach exact prompts, outputs and scoring |
+| D05 | Measure first-token/total response latency, peak RAM, temperature and battery impact during the fixed prompt set | BLOCKED | | Record device model, Android build, ambient conditions and test duration |
+| D06 | Exercise long Thai input/context trimming and verify an honest bounded response or clear limit error | BLOCKED | | Do not claim model quality based on short greeting only |
+
+## Set E — Learned skills on the running app
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| E01 | Use `/skill learn` with a real successful experience and at least two distinct test cases | BLOCKED | | Must create a draft only; no automatic activation |
+| E02 | Run `/skill test <id>` with passing and failing cases | BLOCKED | | Record each case; any failed case must prevent approval |
+| E03 | Explicitly approve a skill only after every test passes; verify matching trigger retrieves it in ordinary local chat | BLOCKED | | Confirm unrelated prompts do not retrieve the skill |
+| E04 | Delete the approved skill and verify it is no longer retrieved; inspect lifecycle audit events | BLOCKED | | Do not include private procedure/test payloads in audit output |
+| E05 | Restart the app and verify encrypted skill persistence, approval state and retrieval boundary | BLOCKED | | Same app installation/Keystore key; do not clear data |
+
+## Set F — Security acceptance mapping for P26B–P32B
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| F01 / P26B | Attempt an operation without its declared permission and verify denial plus expected audit event | BLOCKED | | Use a harmless controlled test operation |
+| F02 / P27B | Verify pending, rejected and disabled plugins cannot execute; verify only the approved active manifest is executable | BLOCKED | | Use a harmless test plugin; no arbitrary downloaded code |
+| F03 / P28B | Read a benign controlled page containing prompt-injection instructions and verify those instructions remain untrusted data | BLOCKED | | Do not expose secrets or permit side effects |
+| F04 / P29B–P30B | Export a real encrypted backup, restore a known-good copy and verify exact record count, IDs and contents | BLOCKED | | Keep an untouched backup copy; never overwrite the only valid backup |
+| F05 / P31B | Tamper with a duplicate test backup and verify import rejection without changing existing memory | BLOCKED | | Never tamper with the only valid backup |
+| F06 / P32B | Run safe HTTPS and controlled unsafe URL/redirect cases; verify only safe visible text is read | BLOCKED | | Use controlled endpoints and capture sanitized evidence |
+
+## Blocked work mapping
+
+- **24B:** B02–B05 — live approved research, at least two distinct pages actually read, correct evidence level and citations.
+- **35B:** A03, B06–B07, D03 — prove ordinary chat stays local and only explicit `/ai` can contact the configured provider.
+- **40–41:** D01–D06 — real model installation, inference, Thai quality and resource measurements.
+- **47B:** E01–E05 — model-backed skill lifecycle in the running app.
+- **P26B–P32B:** F01–F06, with C01–C12 for network/URL/DNS protections.
+- **52:** A01–A02 — owner-signed in-place update over the existing app and data-retention verification. Never uninstall or clear data.
+
 ## Acceptance summary
 
 - Set A: ___ PASS / ___ FAIL / ___ BLOCKED
