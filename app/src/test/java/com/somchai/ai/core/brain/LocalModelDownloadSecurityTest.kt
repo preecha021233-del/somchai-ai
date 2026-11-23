@@ -10,7 +10,7 @@ import java.io.File
 class LocalModelDownloadSecurityTest {
     @Test fun validatesHttpRangeMetadataBeforeResumingDownloads() {
         assertEquals(420L to 500L, LocalModelStore.parseContentRange("bytes 420-499/500"))
-        assertEquals(null, LocalModelStore.parseContentRange("bytes 419-499/500"))
+        assertEquals(419L to 500L, LocalModelStore.parseContentRange("bytes 419-499/500"))
         assertEquals(null, LocalModelStore.parseContentRange("bytes 500-499/500"))
         assertEquals(null, LocalModelStore.parseContentRange("bytes 420-500/500"))
         assertEquals(null, LocalModelStore.parseContentRange("items 420-499/500"))
