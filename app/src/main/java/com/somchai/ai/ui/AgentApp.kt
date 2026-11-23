@@ -277,7 +277,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                     runtime.orchestrator.handle(text, history, approvedSkills, savedMemory).answer
                                 } else if (route == ChatRoute.INTERNAL_PROCESSOR) {
                                     val turn = runtime.orchestrator.handle(text, history, approvedSkills, savedMemory)
-                                    if (turn.intent == "task.plan") {
+                                    if (turn.intent == "task.plan" && text.startsWith("/plan ", true)) {
                                         val goal = if (text.startsWith("/plan ", true)) text.substringAfter(' ').trim() else text
                                         pendingPlan = runtime.planner.plan(goal)
                                     }

@@ -15,7 +15,7 @@ class ChatOrchestratorTest {
         override suspend fun respond(request:BrainRequest)=BrainReply("fallback","offline-fallback",true)
     }
     private fun make(brain:Brain=fallback,approved:()->Boolean={false},search:suspend(String)->String={"found:"+it},
-        configured:()->Boolean={false},remote:suspend(List<Pair<String,String>>,String)->String={"remote"}):Pair<ChatOrchestrator,TaskExecutionStore> {
+        configured:()->Boolean={false},remote: suspend (List<Pair<String, String>>, String) -> String={"remote"}):Pair<ChatOrchestrator,TaskExecutionStore> {
         val tasks=TaskExecutionStore(temp.newFolder("tasks"+System.nanoTime()))
         val planner=TaskPlanner()
         val memory=LocalMemoryStore(temp.newFolder("memory"+System.nanoTime()))
