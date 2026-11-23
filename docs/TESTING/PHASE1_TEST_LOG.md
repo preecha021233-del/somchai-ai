@@ -253,3 +253,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Exact full task UUIDs now resolve deterministically even if another task shares the prefix. Ambiguous short prefixes are still rejected.
 - Added regression test for exact IDs and an ambiguous shared prefix.
 - CI: pending. Device acceptance: NOT RUN. P16 and Phase 1 remain NOT ACCEPTED.
+
+## Round 19 — 2026-11-23 — P17–P21 memory input bounds
+
+- Commits: `9b7dd9921349ae236c2cc8655234ab7543feffd6`, `5c010a7757dff19eed58d2113d62774fdd4b8c2f`, `93471e704d0698b1898e00768d36b393b020b40d`.
+- Memory reads now enforce a 1 MiB encrypted/decrypted limit, maximum 500 records, unique UUIDs, and an 8 KiB record bound.
+- Backup restore and legacy migrations check input size/count before reading; oversized legacy sources remain untouched.
+- Added oversized-store and duplicate-import regression tests. CI: pending. Device acceptance: NOT RUN. Phase 1 remains NOT ACCEPTED.
