@@ -37,6 +37,10 @@ class SkillStore(
     private val lock = Any()
     private val externalDataPolicy = PermissionManager()
 
+    init {
+        recoverInterruptedRewrite()
+    }
+
     fun propose(name: String, triggers: List<String>, procedure: String, tests: List<SkillTestCase>): LearnedSkill {
         val cleanName = name.trim()
         val cleanProcedure = procedure.trim()
@@ -151,7 +155,8 @@ class SkillStore(
     fun all(): List<LearnedSkill> = synchronized(lock) { readAll().asReversed() }
 
     fun relevantFor(query: String, limit: Int = 3): List<String> {
-        val normalized = query.lowercase()
+        val normalized = query.trim().lowercase()
+        if (normalized.isEmpty() || normalized.length > 2000) return emptyList()
         return synchronized(lock) {
             readAll().filter { skill ->
                 skill.approved && skill.triggers.any { trigger -> normalized.contains(trigger) }
@@ -173,13 +178,17 @@ class SkillStore(
         if (!file.isFile) return emptyList()
         val bytes = file.readBytes()
         require(bytes.size <= MAX_FILE_BYTES) { "ไฟล์ทักษะมีขนาดเกินกำหนด" }
-        val root = JSONArray(String(cipher.decrypt(bytes), Charsets.UTF_8))
+        return decodeSkills(cipher.decrypt(bytes))
+    }
+
+    private fun decodeSkills(bytes: ByteArray): List<LearnedSkill> {
+        val root = JSONArray(String(bytes, Charsets.UTF_8))
         require(root.length() <= MAX_SKILLS) { "ไฟล์ทักษะมีจำนวนรายการเกินกำหนด" }
-        return (0 until root.length()).map { index ->
+        val skills = (0 until root.length()).map { index ->
             val item = root.getJSONObject(index)
             val testsJson = item.getJSONArray("tests")
             val resultsJson = item.getJSONArray("results")
-            LearnedSkill(
+            val skill = LearnedSkill(
                 id = item.getString("id"),
                 name = item.getString("name"),
                 triggers = item.getJSONArray("triggers").toStringList(),
@@ -195,7 +204,28 @@ class SkillStore(
                 approved = item.getBoolean("approved"),
                 createdAt = item.getString("createdAt")
             )
+            require(runCatching { UUID.fromString(skill.id) }.isSuccess) { "Invalid skill ID" }
+            require(skill.name.isNotBlank() && skill.name.length <= 80) { "Invalid skill name" }
+            require(skill.procedure.isNotBlank() && skill.procedure.length <= 4000) { "Invalid skill procedure" }
+            require(skill.triggers.size in 1..10 && skill.triggers.all { it.isNotBlank() && it.length <= 60 }) {
+                "Invalid skill triggers"
+            }
+            require(skill.tests.size in 2..10 && skill.tests.all {
+                it.input.isNotBlank() && it.input.length <= 1000 &&
+                    it.expectedContains.isNotBlank() && it.expectedContains.length <= 200
+            }) { "Invalid skill test cases" }
+            require(skill.results.isEmpty() || skill.results.size == skill.tests.size) {
+                "Skill evaluation result count does not match test count"
+            }
+            require(skill.results.all { it.output.length <= 2000 }) { "Skill evaluation output is too long" }
+            require(!skill.approved || (skill.results.size == skill.tests.size && skill.results.all { it.passed })) {
+                "An approved skill must have passed every test"
+            }
+            require(runCatching { Instant.parse(skill.createdAt) }.isSuccess) { "Invalid skill timestamp" }
+            skill
         }
+        require(skills.map { it.id }.distinct().size == skills.size) { "Duplicate skill IDs" }
+        return skills
     }
 
     private fun rewrite(skills: List<LearnedSkill>) {
@@ -224,12 +254,37 @@ class SkillStore(
         require(encoded.size <= MAX_FILE_BYTES) { "ไฟล์ทักษะมีขนาดเกินกำหนด" }
         check(directory.exists() || directory.mkdirs()) { "สร้างโฟลเดอร์ทักษะไม่สำเร็จ" }
         val temporary = File(directory, "skills.enc.tmp")
+        val rollback = File(directory, "skills.enc.rollback")
         temporary.writeBytes(encoded)
-        check(temporary.renameTo(file) || run {
-            temporary.copyTo(file, overwrite = true)
+        val candidate = decodeSkills(cipher.decrypt(temporary.readBytes()))
+        check(candidate == skills) { "ตรวจสอบไฟล์ทักษะชั่วคราวไม่สำเร็จ" }
+
+        rollback.delete()
+        if (file.exists()) check(file.renameTo(rollback)) { "สำรองไฟล์ทักษะเดิมไม่สำเร็จ" }
+        try {
+            check(temporary.renameTo(file)) { "แทนที่ไฟล์ทักษะไม่สำเร็จ" }
+            check(readAll() == skills) { "ตรวจสอบไฟล์ทักษะหลังบันทึกไม่สำเร็จ" }
+            rollback.delete()
+        } catch (failure: Exception) {
+            file.delete()
+            if (rollback.exists()) {
+                check(rollback.renameTo(file)) { "กู้คืนไฟล์ทักษะเดิมไม่สำเร็จ" }
+            }
             temporary.delete()
-            true
-        }) { "บันทึกทักษะไม่สำเร็จ" }
+            throw failure
+        }
+    }
+
+    private fun recoverInterruptedRewrite() {
+        check(directory.exists() || directory.mkdirs()) { "สร้างโฟลเดอร์ทักษะไม่สำเร็จ" }
+        val rollback = File(directory, "skills.enc.rollback")
+        val temporary = File(directory, "skills.enc.tmp")
+        if (!file.exists() && rollback.isFile) {
+            check(rollback.renameTo(file)) { "กู้คืนไฟล์ทักษะหลังการเขียนที่หยุดกลางคันไม่สำเร็จ" }
+        } else if (file.isFile) {
+            rollback.delete()
+        }
+        temporary.delete()
     }
 
     private fun escapePromptData(value: String): String = value
