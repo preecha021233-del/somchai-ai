@@ -138,7 +138,7 @@ class PluginManager(
             }
         }
         try {
-            val disabledManifest = validator.validate(target.readText())
+            val disabledManifest = validator.validate(readBoundedText(target))
             check(disabledManifest.id == id) { "Disabled plugin identity mismatch" }
             logger.record("PLUGIN_DISABLED", "$id backup=${target.name}")
             return true
