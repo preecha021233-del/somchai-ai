@@ -32,6 +32,7 @@ jobs:
       - name: Assemble debug APK
         run: gradle assembleDebug
       - name: Build owner-signed release APK when signing secrets are configured
+        id: owner-signing
         env:
           SOMCHAI_SIGNING_KEYSTORE_BASE64: ${{ secrets.SOMCHAI_SIGNING_KEYSTORE_BASE64 }}
           SOMCHAI_SIGNING_STORE_PASSWORD: ${{ secrets.SOMCHAI_SIGNING_STORE_PASSWORD }}
@@ -42,10 +43,13 @@ jobs:
             echo "$SOMCHAI_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/somchai-release.jks"
             export SOMCHAI_SIGNING_KEYSTORE="$RUNNER_TEMP/somchai-release.jks"
             gradle assembleRelease
+            echo "configured=true" >> "$GITHUB_OUTPUT"
           else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Owner signing secrets are not configured; no update-capable release APK was produced."
           fi
       - name: Verify package identity, version increment and signing certificate continuity
+        if: steps.owner-signing.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -76,7 +80,7 @@ jobs:
           name: somchai-debug-apk
           path: app/build/outputs/apk/debug/*.apk
       - name: Upload owner-signed release APK when present
-        if: success()
+        if: success() && steps.owner-signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: somchai-owner-signed-release-apk
