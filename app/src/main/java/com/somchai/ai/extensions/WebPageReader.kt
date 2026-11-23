@@ -99,10 +99,6 @@ class WebPageReader(
             host != "lan" && !host.endsWith(".lan")) {
             "ไม่อนุญาตที่อยู่เครือข่ายภายใน"
         }
-        if (isIpLiteral(host)) {
-            val literal = InetAddress.getByName(host)
-            require(isPublicAddress(literal)) { "ไม่อนุญาต IP ภายในหรือ IP ที่ไม่ใช่สาธารณะ" }
-        }
         return uri.toASCIIString()
     }
 
@@ -179,7 +175,10 @@ internal class PinnedIpSslSocketFactory(
     private val pinnedIp: InetAddress,
     private val tlsHost: String,
     private val connectTimeoutMs: Int,
-    private val delegate: SSLSocketFactory
+    private val delegate: SSLSocketFactory,
+    private val socketConnector: (Socket, InetSocketAddress, Int) -> Unit = { socket, destination, timeout ->
+        socket.connect(destination, timeout)
+    }
 ) : SSLSocketFactory() {
     override fun getDefaultCipherSuites(): Array<String> = delegate.defaultCipherSuites
     override fun getSupportedCipherSuites(): Array<String> = delegate.supportedCipherSuites
@@ -191,13 +190,18 @@ internal class PinnedIpSslSocketFactory(
     override fun createSocket(address: java.net.InetAddress, port: Int, localAddress: java.net.InetAddress, localPort: Int): Socket =
         connectPinned(port, localAddress, localPort)
 
+    internal fun connectRawSocket(raw: Socket, port: Int) {
+        require(port == 443) { "อนุญาตเฉพาะ HTTPS port 443" }
+        socketConnector(raw, InetSocketAddress(pinnedIp, port), connectTimeoutMs)
+    }
+
     private fun connectPinned(port: Int, localAddress: InetAddress? = null, localPort: Int = 0): Socket {
         require(port == 443) { "อนุญาตเฉพาะ HTTPS port 443" }
         val raw = Socket()
         try {
             if (localAddress != null) raw.bind(InetSocketAddress(localAddress, localPort))
             // This is the only TCP destination: no hostname lookup occurs here.
-            raw.connect(InetSocketAddress(pinnedIp, port), connectTimeoutMs)
+            connectRawSocket(raw, port)
             val tls = delegate.createSocket(raw, tlsHost, port, true) as SSLSocket
             val parameters = tls.sslParameters
             parameters.serverNames = listOf(SNIHostName(tlsHost))
