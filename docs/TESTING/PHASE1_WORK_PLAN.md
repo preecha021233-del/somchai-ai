@@ -22,10 +22,10 @@
 | Metric | Count |
 |---|---:|
 | Total chunks | 53 |
-| Done | 12 |
+| Done | 17 |
 | In progress | 0 |
 | Blocked | 0 |
-| Not started | 41 |
+| Not started | 36 |
 
 ## Work tracker
 
@@ -43,11 +43,11 @@
 | 10 | Planning | P13–P16 | Improve task decomposition and prioritization | DONE | 2026-11-23 | `TaskPlannerTest.decomposesDevelopmentWorkIntoVerifiableSteps` and `prioritizesDevelopmentOverTheExamSubstringInsideTesting`; CI #263 SUCCESS | Verified requirements, implementation and testing steps; added regression that “ทดสอบ” inside a development goal is not misclassified as an exam task. |
 | 11 | Planning | P13–P16 | Complete task status tracking and failure handling | DONE | 2026-11-23 | `TaskExecutionStoreTest` lifecycle/audit/reopen tests; `ChatOrchestratorTest.taskStartPersistsFirstStepAndAuditWithoutClaimingExternalExecution`; CI #263 SUCCESS | Covers sequential start/complete, fail/retry/cancel, audit events, audit failure isolation, atomic recovery, and persistence of completed/cancelled states after store reopen. P16 integration verifies task creation, first-step IN_PROGRESS, audit events, and honest no-external-execution wording. |
 | 12 | Internal brain | P01–P16 | Close only remaining gaps and run focused acceptance tests for P01–P16 | DONE | 2026-11-23 | CI #263 SUCCESS (run ID `45114439357`), head `1b83168cef7c507993ac2d305fde062a2b9b1eaf`; focused P13–P16 tests plus full `testDebugUnitTest` | Focused planning/task tests and full JVM unit-test suite pass; ARM64 native build and APK packaging pass. This is a work-plan/test deliverable, not final P01–P16 acceptance: P01–P08 local-model 18/20 quality and real-device/process-restart evidence remain outstanding. |
-| 13 | Memory | P17–P21 | Review memory save/recall behavior against existing evidence | NOT_STARTED | — | — | |
-| 14 | Memory | P17–P21 | Complete relevance-based memory search/selection where needed | NOT_STARTED | — | — | |
-| 15 | Memory | P17–P21 | Complete memory edit/delete lifecycle where needed | NOT_STARTED | — | — | |
-| 16 | Memory | P17–P21 | Complete encryption, backup, and restore behavior where needed | NOT_STARTED | — | — | |
-| 17 | Memory | P17–P21 | Test memory lifecycle and close verified gaps | NOT_STARTED | — | — | |
+| 13 | Memory | P17–P21 | Review memory save/recall behavior against existing evidence | DONE | 2026-11-23 | `InternalProcessorTest.rememberReturnsFullStableUuidAndRecallByItReturnsOnlyThatEntry`; `AgentAppInstrumentedTest.encryptedMemorySurvivesCoreRuntimeRecreation`; CI #277 SUCCESS | Stable full UUID returned; exact-ID recall returns only the selected entry. Instrumentation test covers CoreRuntime recreation against the same app-private directory and Keystore key; actual process-kill/device run remains outstanding. |
+| 14 | Memory | P17–P21 | Complete relevance-based memory search/selection where needed | DONE | 2026-11-23 | `LocalMemoryStoreTest.searchesThaiTextWithoutDependingOnWhitespace`; `retrievesOnlyRelevantMemoriesWithBoundedResults`; CI #277 SUCCESS | Thai search matches `สอบวันที่ 30` when queried as `สอบวันที่30`; relevant-context selection is bounded to a small ranked set. |
+| 15 | Memory | P17–P21 | Complete memory edit/delete lifecycle where needed | DONE | 2026-11-23 | `InternalProcessorTest.editMemoryByStableIdPreservesIdentityAndReplacesContent`; `forgetRejectsAmbiguousShortIdsAndHonorsExactFullId`; `LocalMemoryStoreTest.updatesMemoryContentWithoutChangingStableIdentityOrMetadata`; CI #277 SUCCESS | `/edit` preserves stable ID and created timestamp; ambiguous short IDs are rejected; exact ID deletes only the selected record. |
+| 16 | Memory | P17–P21 | Complete encryption, backup, and restore behavior where needed | DONE | 2026-11-23 | `LocalMemoryStoreTest.authenticatedExportImportPreservesExactIdsCategoriesAndContents`; `rejectsTamperedImportWithoutReplacingExistingMemory`; `encryptsMemoryAndBackupThroughInjectedCipher`; CI #277 SUCCESS | Authenticated export/import preserves exact IDs, categories and contents; tampered payload is rejected without replacing current memory; backup/restore and rollback recovery have regression coverage. |
+| 17 | Memory | P17–P21 | Test memory lifecycle and close verified gaps | DONE | 2026-11-23 | CI #277 (run ID `45115580134`) SUCCESS, head `eab2c0554a9cf4671e444e39e2d04082cdee68cd`; `testDebugUnitTest`, ARM64 native runtime, Debug APK and Android instrumentation APK build steps all SUCCESS | Full JVM test workflow passed; instrumentation APK was built/uploaded but not executed on a physical device. P20 real app/process close-and-reopen evidence remains a device acceptance item, not a claimed PASS. |
 | 18 | Research | P22–P25 | Review internet search behavior against acceptance evidence | NOT_STARTED | — | — | |
 | 19 | Research | P22–P25 | Complete source selection and filtering where needed | NOT_STARTED | — | — | |
 | 20 | Research | P22–P25 | Complete actual webpage reading behavior | NOT_STARTED | — | — | |
