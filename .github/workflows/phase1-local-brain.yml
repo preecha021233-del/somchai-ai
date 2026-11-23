@@ -13,6 +13,8 @@ on:
     branches: [phase-1/local-brain-runtime]
     paths:
       - "app/**"
+      - "docs/TESTING/**"
+      - "docs/LOCAL_BRAIN_RUNTIME.md"
       - ".github/workflows/phase1-local-brain.yml"
 
 concurrency:
