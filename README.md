@@ -27,16 +27,16 @@ The current JSON plugin system selects a finite set of operations already implem
 
 Published updates must install directly over the existing SOMCHAI AI installation. Keep the application ID `com.somchai.ai` and the exact same owner-controlled signing keystore/certificate for every release. Increase `versionCode` with every published update. Do not uninstall the old app or clear its data to work around a signing mismatch.
 
-The release build uses these protected environment variables / GitHub Actions secrets:
-- `SOMCHAI_SIGNING_KEYSTORE` (local keystore file path; in CI the workflow creates it from the base64 secret)
-- `SOMCHAI_SIGNING_KEYSTORE_BASE64` (GitHub Actions only)
+The owner-signed release workflow is manual-only and requires these GitHub Actions secrets:
+- `SOMCHAI_SIGNING_KEYSTORE_BASE64` — base64-encoded original owner keystore file
 - `SOMCHAI_SIGNING_STORE_PASSWORD`
 - `SOMCHAI_SIGNING_KEY_ALIAS`
 - `SOMCHAI_SIGNING_KEY_PASSWORD`
+- `SOMCHAI_SIGNING_CERT_SHA256` — SHA-256 fingerprint of the original installed/release app signing certificate (hex, colons optional)
 
-Never commit the keystore or passwords. CI produces an owner-signed release APK only when all required secrets are configured. Debug APKs are development builds and are not the supported production update channel.
+Never commit the keystore or passwords, and never paste them into chat or logs. The workflow restores the keystore only on the ephemeral runner, builds a Release APK, and verifies the package ID, expected versionCode and certificate fingerprint before uploading `somchai-owner-signed-release`. If a required secret is missing or the certificate differs, the release job fails closed. Debug APKs use a different application ID and are not a supported update channel.
 
-Before publishing an update, verify the application ID, increasing version code and signing-certificate SHA-256 against the previous owner-signed release, then test installing over the existing app while preserving user data. A signature or application-ID mismatch blocks release. Never replace the owner's signing key as an update workaround.
+Before installing/publishing an update, verify the installed app's actual versionCode and signing certificate, then test installing the owner-signed APK over the existing app on the target device while preserving user data. A signature or application-ID mismatch blocks release. Never replace the owner's signing key as an update workaround.
 
 ## Security boundary
 
@@ -44,7 +44,7 @@ The current agent does not execute arbitrary downloaded Kotlin, shell commands, 
 
 ## Build
 
-GitHub Actions installs Gradle 8.9 and JDK 17, runs `testDebugUnitTest` and `assembleDebug`, then uploads the debug APK. If owner signing secrets are configured, it also builds and uploads an owner-signed release APK. Android SDK API 35 is used.
+GitHub Actions runs JVM tests and builds the ARM64 Debug and instrumentation APKs on normal CI events. A manual workflow dispatch also runs the owner-signed Release build, but only when the original signing secrets above are configured and validated. The release artifact is not considered device-accepted until an in-place update test confirms the existing app's data is preserved. Android SDK API 35 is used.
 
 For local Android Studio use, open the repository as a Gradle project and use a locally installed Gradle 8.9 or generate a wrapper with: `gradle wrapper --gradle-version 8.9`.
 
