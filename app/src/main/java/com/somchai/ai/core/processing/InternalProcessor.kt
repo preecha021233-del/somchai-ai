@@ -87,7 +87,7 @@ class InternalProcessor(
         if (normalized.startsWith("จำไว้ว่า ") || normalized.startsWith("จำว่า ")) {
             val value = text.removePrefix("จำไว้ว่า ").removePrefix("จำว่า ").trim()
             val entry = memory.add(value, "owner-note")
-            return ProcessingResult("บันทึกไว้ในความจำภายในแล้วครับ (รหัส ${entry.id.take(8)})", "memory.write")
+            return ProcessingResult("บันทึกไว้ในความจำภายในแล้วครับ (รหัส ${entry.id})", "memory.write")
         }
         return ProcessingResult(
             "ผมรับคำสั่งแล้วครับ แต่ยังไม่มีกฎภายในที่ตรงกับคำขอนี้\n" +
