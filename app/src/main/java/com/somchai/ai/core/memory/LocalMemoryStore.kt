@@ -213,8 +213,13 @@ class LocalMemoryStore(
         val rollback = File(parent, "memory.enc.rollback")
         temp.writeBytes(encrypted)
 
-        val candidate = decodeRecords(cipher.decrypt(temp.readBytes()))
-        check(candidate == expected) { "ตรวจสอบไฟล์ความจำชั่วคราวไม่สำเร็จ" }
+        try {
+            val candidate = decodeRecords(cipher.decrypt(temp.readBytes()))
+            check(candidate == expected) { "ตรวจสอบไฟล์ความจำชั่วคราวไม่สำเร็จ" }
+        } catch (failure: Exception) {
+            temp.delete()
+            throw failure
+        }
 
         rollback.delete()
         if (file.exists()) check(file.renameTo(rollback)) { "สำรองไฟล์ความจำเดิมก่อนเขียนไม่สำเร็จ" }
