@@ -23,9 +23,9 @@
 |---|---:|
 | Total work items | 63 |
 | Done | 32 |
-| In progress | 13 |
-| Blocked | 12 |
-| Not started | 6 |
+| In progress | 17 |
+| Blocked | 13 |
+| Not started | 1 |
 
 ## Work tracker
 
@@ -80,11 +80,11 @@
 | 46 | Learned skills implementation (A) | P40–P43 | Complete context-matched retrieval of approved skills | IN_PROGRESS | — | `SkillStore.relevantFor`; `SkillStoreTest` | Retrieval is restricted to approved, matching skills; empty/oversized query and deletion revocation are covered; latest CI is not yet confirmed. |
 | 47 | Learned skills implementation (A) | P40–P43 | Verify skill lifecycle, audit history, and acceptance evidence | IN_PROGRESS | — | `SkillStore`, `ActivityLogger`; `SkillStoreTest`, `SkillStoreEncryptionTest`, `ActivityLoggerTest` | Encrypted persistence, lifecycle audit and rollback recovery are implemented; latest CI is not yet confirmed. |
 | 47B | Learned skills device acceptance (B) | P40–P43 | Run model-backed skill extraction, evaluation, explicit approval, matching retrieval and deletion in the running app | BLOCKED | — | Awaiting owner-device model-backed workflow evidence | Verify 2–10 test cases, failed-case rejection, approval gate, retrieval boundary and audit events on device. |
-| 48 | Integration | P01–P43 | Resolve cross-system integration defects found during implementation | NOT_STARTED | — | — | |
-| 49 | Integration | P01–P43 | Run focused and integration acceptance tests across P01–P43 | NOT_STARTED | — | — | Reuse valid existing evidence; do not repeat unaffected checks |
-| 50 | Integration | P01–P43 | Fix integration-test failures and record targeted regression evidence | NOT_STARTED | — | — | |
-| 51 | Build | P01–P43 | Build and verify the intended APK artifact and record hashes/build evidence | NOT_STARTED | — | — | Owner signing credentials remain private |
-| 52 | Device acceptance | P01–P43 | Install/update in place and verify data retention plus device checklist without uninstall/clear-data | NOT_STARTED | — | — | Requires owner device and owner action |
+| 48 | Integration | P01–P43 | Resolve cross-system integration defects found during implementation | IN_PROGRESS | — | Current implementation audit and route-boundary correction `4c7b76b`; test-log record `afecc999` | Cross-system review is underway; no blanket acceptance claim. Any new defect will be fixed with a focused regression test. |
+| 49 | Integration | P01–P43 | Run focused and integration acceptance tests across P01–P43 | IN_PROGRESS | — | Prior CI #281 plus named test mappings in `PHASE1_TEST_LOG.md`; latest-branch CI still unconfirmed | Reuse valid earlier evidence, but require a fresh latest-branch CI run before closing this row. Physical-device checks remain separate. |
+| 50 | Integration | P01–P43 | Fix integration-test failures and record targeted regression evidence | IN_PROGRESS | — | Brain-route prefix regression fix `4c7b76b`; tests `db05372d` | One route-boundary defect was fixed and recorded; current-branch test execution is pending. Continue only for verified failures. |
+| 51 | Build | P01–P43 | Build and verify the intended APK artifact and record hashes/build evidence | IN_PROGRESS | — | Prior CI #281 built Debug APK and Android instrumentation APK; artifacts recorded in test log | Fresh latest-branch build is still required. Owner-signed release certificate continuity remains owner-controlled and must not be bypassed. |
+| 52 | Device acceptance (B) | P01–P43 | Install/update in place and verify data retention plus device checklist without uninstall/clear-data | BLOCKED | — | Awaiting owner device, existing app installation and owner-signed release APK | Requires owner device and owner action. Never uninstall or clear app data; use `PHASE1_DEVICE_FINAL_CHECKLIST.md`. |
 | 24B | Testing / device acceptance | P22–P25 | Run P24 against the running app after owner approval: issue a real query, open/read at least two distinct real pages, verify summary and traceable citations, and record full device/run evidence | BLOCKED | — | No live app/device evidence yet; CI #279 covers automated mock-provider tests only | This is an acceptance test, not an implementation task. Keep BLOCKED until a real approved Web Search run in the app proves two distinct source pages were actually opened/read; if fewer than two are readable, record PARTIAL/FAIL under the unchanged P24 threshold. |
 | P26B | Security device acceptance (B) | P26 | On the running app/device, verify undeclared permission requests are denied and the denial is reflected in the expected audit/evidence path without granting access | BLOCKED | — | Awaiting owner-device run; CI #281 is implementation-side only | Use a controlled test manifest/action; do not change production permissions or grant extra access. Record app/build/device details and observable denial. |
 | P27B | Security device acceptance (B) | P27 | Verify an inactive, disabled, or unapproved plugin cannot execute from the running app; verify approved/disabled lifecycle behavior and audit evidence | BLOCKED | — | Awaiting owner-device run; CI #281 covers automated lifecycle tests only | Use a harmless test plugin/action. Do not install arbitrary executable code or grant new permissions. |
