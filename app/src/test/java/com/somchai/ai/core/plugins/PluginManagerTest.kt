@@ -14,13 +14,18 @@ import java.io.File
 class PluginManagerTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private data class Fixture(val paths: CorePaths, val manager: PluginManager)
+    private data class Fixture(
+        val paths: CorePaths,
+        val logger: ActivityLogger,
+        val manager: PluginManager
+    )
 
     private fun fixture(): Fixture {
         val paths = CorePaths.forTesting(temporaryFolder.newFolder("somchai"))
         paths.ensureDirectories()
-        val manager = PluginManager(paths, ActivityLogger(paths), PermissionManager())
-        return Fixture(paths, manager)
+        val logger = ActivityLogger(paths)
+        val manager = PluginManager(paths, logger, PermissionManager())
+        return Fixture(paths, logger, manager)
     }
 
     @Test fun pluginMustBeApprovedBeforeActivationAndCanBeDisabledAndReenabled() {
@@ -40,6 +45,10 @@ class PluginManagerTest {
         assertTrue(fixture.manager.enable(candidate.manifest.id))
         assertEquals(candidate.manifest.id, fixture.manager.activePlugins().single().id)
         assertTrue(fixture.manager.disabledPlugins().isEmpty())
+
+        val audit = fixture.logger.recent(20).joinToString("\n")
+        listOf("PLUGIN_CANDIDATE_CREATED", "PLUGIN_APPROVED", "PLUGIN_DISABLED", "PLUGIN_ENABLED")
+            .forEach { event -> assertTrue("Missing audit event $event", audit.contains(event)) }
     }
 
     @Test fun approvalRejectsCandidateChangedAfterOwnerReview() {
@@ -52,9 +61,14 @@ class PluginManagerTest {
             fixture.manager.approve(candidate.manifest.id, candidate.hash)
         }
         assertTrue(fixture.manager.activePlugins().isEmpty())
+        assertFalseAuditApproval(fixture.logger)
     }
 
-    @Test fun rejectionRemovesOnlyAValidPluginIdentity() {
+    private fun assertFalseAuditApproval(logger: ActivityLogger) {
+        assertTrue(logger.recent(20).none { it.contains("PLUGIN_APPROVED") })
+    }
+
+    @Test fun rejectionRemovesOnlyAValidPluginIdentityAndRecordsIt() {
         val fixture = fixture()
         fixture.manager.ensureStarterCandidate()
 
@@ -65,6 +79,7 @@ class PluginManagerTest {
 
         fixture.manager.reject("web-search")
         assertTrue(fixture.manager.candidates().isEmpty())
+        assertTrue(fixture.logger.recent(20).any { it.contains("PLUGIN_REJECTED") })
     }
 
     @Test fun ignoresAndRejectsOversizedPluginManifestsBeforeReadingThem() {
@@ -79,13 +94,11 @@ class PluginManagerTest {
         assertTrue(fixture.manager.activePlugins().isEmpty())
     }
 
-
-
     @Test fun reportsPendingActiveAndDisabledManifestsInTheirCorrectLifecycleBuckets() {
         val fixture = fixture()
         fixture.manager.ensureStarterCandidate()
         val pending = fixture.manager.candidates().single()
-        assertEquals(pending.manifest.id, "web-search")
+        assertEquals("web-search", pending.manifest.id)
         assertTrue(fixture.manager.activePlugins().isEmpty())
         assertTrue(fixture.manager.disabledPlugins().isEmpty())
 
@@ -98,5 +111,4 @@ class PluginManagerTest {
         assertEquals(listOf("web-search"), fixture.manager.disabledPlugins().map { it.id })
         assertTrue(fixture.manager.candidates().isEmpty())
     }
-
 }
