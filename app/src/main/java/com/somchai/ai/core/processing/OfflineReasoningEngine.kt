@@ -21,11 +21,17 @@ class OfflineReasoningEngine {
         if (value.isEmpty()) return null
         if (listOf("ควร", "แนะนำ", "ดีไหม", "อย่างไหนดี", "เลือกอะไร").any(value::contains))
             return "คำขอคำแนะนำ" to "ผู้ส่งต้องการข้อเสนอหรือแนวทางช่วยตัดสินใจ"
-        if (listOf("บันทึก", "ลบ", "เปิด", "ปิด", "สร้าง", "ส่ง", "คำนวณ", "ช่วยทำ").any(value::contains) &&
-            !value.endsWith("?") && !value.contains("ไหม"))
-            return "คำสั่ง" to "ข้อความระบุให้ดำเนินการหรือทำบางสิ่ง"
-        if (value.endsWith("?") || listOf("ไหม", "หรือไม่", "อย่างไร", "เท่าไร", "อะไร", "ที่ไหน", "เมื่อไร", "กี่").any(value::contains))
+        // Check interrogative intent before action keywords: e.g. "การบันทึกข้อมูลมีข้อดีอย่างไร"
+        // asks for information; the substring "บันทึก" must not turn it into a command.
+        if (value.endsWith("?") || listOf(
+                "ไหม", "หรือไม่", "หรือเปล่า", "อย่างไร", "เท่าไร", "เท่าไหร่",
+                "อะไร", "ที่ไหน", "เมื่อไร", "เมื่อไหร่", "กี่", "ทำไม", "เพราะอะไร"
+            ).any(value::contains))
             return "คำถาม" to "ข้อความต้องการข้อมูลหรือคำตอบ"
+        val explicitNegation = listOf("ไม่ต้องการ", "ไม่อยาก", "ไม่ให้", "อย่า").any(value::contains)
+        if (!explicitNegation &&
+            listOf("บันทึก", "ลบ", "เปิด", "ปิด", "สร้าง", "ส่ง", "คำนวณ", "ช่วยทำ").any(value::contains))
+            return "คำสั่ง" to "ข้อความระบุให้ดำเนินการหรือทำบางสิ่ง"
         return null
     }
 
