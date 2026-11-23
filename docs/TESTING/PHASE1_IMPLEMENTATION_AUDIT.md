@@ -145,3 +145,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 29. Fixed `/forget` so an exact full UUID takes precedence over shorter prefixes. If a short prefix matches multiple memory records, deletion is refused and the user is asked to supply the full ID; no arbitrary first match is deleted.
 30. Added a regression test that migrates two legacy records with deliberately colliding eight-character prefixes, verifies the short ID is rejected without deleting either record, then verifies the exact full ID deletes only the intended record.
 31. CI verification is pending for commits `8a5da39` and `64389bd`; no pass is claimed.
+
+## P20 transactional memory replacement and crash recovery — 2026-11-23
+
+32. Memory rewrites now encrypt and validate a staged candidate before touching the live file, then retain a same-directory rollback copy until the committed file is read back and validated.
+33. Startup recovers the rollback file if the process stopped between renames; stale temporary files are cleaned up. A failed candidate verification removes the temporary file and preserves the original encrypted store.
+34. Import and backup restore use the same transactional rewrite path. Import no longer performs a redundant post-commit read after rollback has been retired.
+35. Regression tests cover candidate verification failure preserving existing data and startup recovery after an interrupted replacement. CI verification is pending.
