@@ -66,6 +66,33 @@ class InternalProcessorTest {
         assertTrue(result.plan.isNotEmpty())
         assertTrue(result.answer.contains("ยังไม่ได้ลงมือทำ"))
     }
+    @Test fun planningCommandsCoverExamTravelAndAndroidDevelopmentAcceptanceCases() {
+        val subject = processor()
+
+        val exam = subject.process("/plan สอบปลายภาค")
+        assertEquals("task.plan", exam.intent)
+        assertTrue(exam.answer.contains("ทบทวนบทเรียน"))
+        assertTrue(exam.answer.contains("ข้อสอบเก่า"))
+        assertTrue(exam.answer.contains("ข้อผิดพลาด"))
+        assertTrue(exam.answer.contains("พักผ่อน"))
+        assertTrue(exam.answer.contains("ยังไม่ได้ลงมือทำ"))
+
+        val travel = subject.process("/plan เดินทางไปเชียงใหม่")
+        assertEquals("task.plan", travel.intent)
+        assertTrue(travel.answer.contains("เส้นทาง"))
+        assertTrue(travel.answer.contains("จองการเดินทาง"))
+        assertTrue(travel.answer.contains("สัมภาระ"))
+        assertTrue(travel.answer.contains("ออกเดินทาง"))
+        assertTrue(travel.answer.contains("ยังไม่ได้ลงมือทำ"))
+
+        val development = subject.process("/plan พัฒนาแอป Android")
+        assertEquals("task.plan", development.intent)
+        assertTrue(development.answer.contains("ข้อกำหนด"))
+        assertTrue(development.answer.contains("พัฒนา"))
+        assertTrue(development.answer.contains("ทดสอบ"))
+        assertTrue(development.answer.contains("ยังไม่ได้ลงมือทำ"))
+    }
+
     @Test fun recallsExactMemoryByIdAndAcceptsUppercaseCommand() {
         val subject = processor()
         val stored = subject.process("/remember ข้อมูลทดสอบรหัสความจำ")
