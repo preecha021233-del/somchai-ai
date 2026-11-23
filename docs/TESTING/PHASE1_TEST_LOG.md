@@ -471,3 +471,15 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Commit: `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`; file: `app/src/test/java/com/somchai/ai/core/processing/InternalProcessorTest.kt`.
 - CI verification: GitHub Actions run #240 (run ID `45110203889`) — **SUCCESS** for commit `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`. [Run #240](https://github.com/preecha021233-del/somchai-ai/actions/runs/45110203889).
 - Chunk 2 is DONE: the exact `/help` assertion change is committed and the workflow completed successfully. This is not evidence that all P01–P08 criteria pass; the local-model 18/20 target-device quality gate remains BLOCKED.
+
+
+## Phase 1 — Chunk 3: Thai intent extraction precedence (2026-11-23)
+
+- Evidence-based gap: the deterministic classifier checked action-word substrings before interrogative cues. For example, "การบันทึกข้อมูลมีข้อดีอย่างไร" contains "บันทึก" and was incorrectly classified as a command rather than a question.
+- Updated OfflineReasoningEngine.classify to recognize interrogative forms before action keywords, including "อย่างไร", "เท่าไร/เท่าไหร่", "อะไร", "ที่ไหน", "เมื่อไร/เมื่อไหร่", "กี่", "ทำไม", and "เพราะอะไร".
+- Added a guard so explicit negative intent ("ไม่ต้องการ", "ไม่อยาก", "ไม่ให้", "อย่า") is not mislabeled as an executable command.
+- Added regression tests for a question containing an action keyword, a negated delete statement, and additional Thai question forms.
+- Production commit: b7b196848971392400e0db21769abf7f838fcb41.
+- Test commits: e0574ad1a375cf49c85ede01495759a4bbbeafd7 and newline-literal correction 11c68bec872a4545d38a6876cc2e8ad4474ac2d3.
+- CI: pending on the corrected test head. The earlier run triggered for the intermediate test commit was superseded/cancelled; no test pass is claimed yet.
+- Chunk 3 remains IN_PROGRESS until the latest CI run completes successfully.
