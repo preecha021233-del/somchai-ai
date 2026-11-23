@@ -113,6 +113,11 @@ class WebPageReader(
             return true
         }
         if (bytes.size == 16) {
+            val nat64Prefix = listOf(0x00, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0)
+            if (bytes.take(12) == nat64Prefix) {
+                val embeddedIpv4 = InetAddress.getByAddress(bytes.takeLast(4).map { it.toByte() }.toByteArray())
+                return isPublicAddress(embeddedIpv4)
+            }
             val globalUnicast = bytes[0] in 0x20..0x3f
             val documentation = bytes[0] == 0x20 && bytes[1] == 0x01 &&
                 bytes[2] == 0x0d && bytes[3] == 0xb8
