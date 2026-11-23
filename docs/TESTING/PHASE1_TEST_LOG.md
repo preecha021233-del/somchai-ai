@@ -238,3 +238,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Learned-skill store validates persisted structure and approval invariants, uses verified encrypted replacement with rollback/recovery, and refuses empty/oversized retrieval queries.
 - Added regression coverage for task and skill crash recovery, malformed skill records, and empty skill retrieval.
 - CI: pending for this batch. Device acceptance: NOT RUN. P16/P43 and Phase 1 remain NOT ACCEPTED.
+
+## Round 17 — 2026-11-23 — P26 provider-network and audit-log hardening
+
+- Commits: `453d354d432ef3ae2c133c623aaeb23a3382544c`, `f4afdb94eedf75099213358e5497b50b42e8224f`, `9f0c6fd6b14585271a2b56fe5b250be19e84d4f6`, `dc215337185031554107a23ad7bb5063128ffa14`, `860855e48fe2d7b24afcb3290b712a4a67602ea6`.
+- Optional provider calls now enforce public DNS resolution, disallow redirects, validate user prompt length, and bound response bodies.
+- ActivityLogger now rotates at 1 MB, retains 1,500 lines, and reads only a bounded tail for oversized legacy logs.
+- Added provider-host and audit-log retention regression tests.
+- DNS resolution is not socket-pinned, so DNS rebinding protection is not claimed. CI/device verification pending.
