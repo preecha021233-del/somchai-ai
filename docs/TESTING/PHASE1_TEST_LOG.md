@@ -622,3 +622,12 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Tightened both routes to accept only the exact command or the command followed by a space. Added regression tests proving the lookalike prefixes route to the internal unknown-command handler.
 - Commits: `4c7b76b45437c85a3454168b5c57332f717a1a1b` (route fix), `db05372d8ac5ecab3b1f42cf78565c14c5444540` (tests).
 - CI status: not yet available for this commit. Do not mark this regression test as passed until a workflow result is recorded.
+
+
+## P36 DNS pinning correction — 2026-11-23
+
+- Replaced `HttpURLConnection` in `LocalModelStore` with OkHttp using a custom `Dns` resolver. The resolver validates every returned address and supplies that same validated address list to OkHttp for the TCP connection, closing the prior validate-then-resolve-again DNS TOCTOU gap.
+- Redirects remain manual, HTTPS-only, limited to five hops, and each new host is independently resolved/validated. TLS hostname verification remains provided by OkHttp; model bytes remain streamed to the `.part` file and are published only after size, GGUF-header and pinned SHA-256 checks.
+- Added regression coverage for one-resolution behavior, mixed public/private DNS answers, and reserved/transition IPv6 DNS answers. Added OkHttp 4.12.0 dependency.
+- Commits: `bfd2c9d` (pinned DNS transport), `55b73f8` (dependency), `23457db` and `77240a6` (DNS regression tests), `a91b234` (IPv6 DNS policy).
+- CI run #293 (`45131804903`) was queued/pending at the time of this entry. No test pass is claimed until CI completes. Device download/install/inference evidence remains outstanding.
