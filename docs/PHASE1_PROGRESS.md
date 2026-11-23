@@ -1,6 +1,6 @@
 # Phase 1 — Baby SOMCHAI Progress
 
-Updated: 2026-11-22
+Updated: 2026-11-23
 
 ## Implementation status
 
@@ -27,7 +27,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
 - Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
 - JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
-- Application ID remains `com.somchai.ai`. Current development build is versionCode 12 and versionName 1.9.2 (verified against `app/build.gradle.kts`). Owner signing configuration is unchanged.
+- Application ID remains `com.somchai.ai`. Current candidate build is versionCode 12 and versionName 1.9.2 (verified against `app/build.gradle.kts`); release artifact and in-place device update are pending. Owner signing configuration is unchanged.
 
 ## Local model integration added on `phase-1/local-brain-runtime`
 
@@ -207,3 +207,13 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added explicit `/model-test` command to bypass deterministic InternalProcessor routing and invoke Brain directly. A fallback response is explicitly reported as a failed model test; this route does not call a remote provider.
 - Native sampler uses fixed seed 42 for improved repeatability; temperature remains 0.70, so exact repeatability and output quality still require device validation.
 - CI and Android-device validation are pending. No Phase 1 acceptance item is marked PASS by these code changes.
+
+
+## Pre-device-test corrective batch — 2026-11-23 (continued)
+- JNI now converts Kotlin UTF-16 input into standard UTF-8 explicitly (including surrogate pairs), returns model output as UTF-8 bytes, and trims incomplete/invalid trailing UTF-8 sequences at the token limit. This avoids modified-UTF-8 assumptions for Thai and emoji on both sides of the JNI boundary.
+- Added direct `/model-test` routing and JVM coverage proving it bypasses deterministic rule handling, calls only the local Brain, isolates the prompt from history/memory, and treats fallback as a failed model test.
+- Added failure-diagnostic assertions for native model and fallback exceptions. Coroutine cancellation is propagated rather than swallowed by the diagnostic route.
+- Safe public destinations using the well-known NAT64 prefix are now accepted only when the embedded IPv4 address is public; private translated destinations remain blocked. Added allow/deny tests.
+- Successful GGUF SHA-256 verification is cached by canonical path, file size and modification time so the same unchanged model is not hashed again during the immediate load path. Failed checks are never cached.
+- Candidate version incremented to versionCode 12 / versionName 1.9.2 so it can update an installed 1.9.1 app in place. Application ID and owner signing configuration remain unchanged.
+- GitHub Actions run #45175799639 (run 346) is building this candidate. No CI success, device acceptance, or Phase 1 PASS is claimed until evidence is returned.
