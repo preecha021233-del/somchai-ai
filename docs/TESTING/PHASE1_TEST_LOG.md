@@ -368,3 +368,29 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 
 
 - Citation regex corrected to match literal `[S1]` / `[S2]` source IDs using Kotlin raw-regex escaping. CI remains pending.
+
+
+## Phase 1 Gap-Fill integration — 2026-11-23
+
+The supplied gap-fill package was merged selectively. Existing protected research, plugin, memory, model and task implementations were retained; security-sensitive replacement examples were not copied over them.
+
+- Added ChatOrchestrator for ordinary local chat, explicit /search, explicit /ai and /task goal creation.
+- Added ResearchResultVerifier labels READ_MULTI_SOURCE, READ_SINGLE_SOURCE, DISCOVERY_ONLY and NONE based on successfully read distinct URLs. Integrated the verifier into the existing bounded research pipeline without replacing URL validation, private-network protections, plugin approval checks, untrusted-data sanitization or citation validation.
+- Added ResultEvaluator for empty output, known unsupported side-effect claims and plan disclaimers.
+- Extended InternalProcessor with /planpersist and /tasks while preserving ambiguity-safe /forget.
+- UI wiring and full regression verification are tracked in the next integration commit.
+- This is not device acceptance evidence. Phase 1 remains NOT CLOSED.
+
+### Final device test sequence
+
+1. Install the owner-signed update over the existing app without uninstalling or clearing data.
+2. Disable Wi-Fi and mobile data; test สวัสดี and คุณทำอะไรได้บ้าง.
+3. Test /plan พัฒนาแอป SOMCHAI and verify the not-executed disclaimer.
+4. Test /task พัฒนาแอป SOMCHAI and /task list; verify persisted task and step 1 in progress.
+5. Test /remember, /recall, /forget, backup/restore and encrypted export/import.
+6. Before approving Web Search, test /search Kotlin and confirm it is blocked. Approve web-search, retry, and verify evidence label plus two distinct pages actually read.
+7. Test /ai hello without provider configuration; confirm it is blocked. If configured, verify only explicit /ai calls the provider.
+8. Test task lifecycle commands and plugin approve/reject/disable/enable/rollback.
+9. Test copy, feedback, Thai TTS and Android share actions.
+
+**Phase 1 close decision: NOT CLOSED.** Device evidence, owner-signed update compatibility and P01–P43 acceptance results remain required.

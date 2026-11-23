@@ -2,6 +2,9 @@ package com.somchai.ai.extensions
 
 import com.somchai.ai.core.audit.ActivityLogger
 import com.somchai.ai.core.security.PermissionManager
+import com.somchai.ai.core.research.ReadPageEvidence
+import com.somchai.ai.core.research.ResearchResultVerifier
+import com.somchai.ai.core.research.SourceSnippet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -12,7 +15,8 @@ class BuiltinToolExecutor(
     private val pageReader: ResearchPageReader = WebPageReader(),
     private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(),
     private val isWebSearchApproved: () -> Boolean = { false },
-    private val summarizeLocally: (suspend (String) -> String)? = null
+    private val summarizeLocally: (suspend (String) -> String)? = null,
+    private val researchVerifier: ResearchResultVerifier = ResearchResultVerifier()
 ) {
     suspend fun search(query: String): String = withContext(Dispatchers.IO) {
         permissions.require("network.search")
@@ -21,6 +25,11 @@ class BuiltinToolExecutor(
         require(query.isNotBlank() && query.length <= 300) { "Search query is invalid" }
 
         val report = ResearchCoordinator(discoveryProvider, pageReader, maxPages = 5).research(query)
+        val verifiedEvidence = researchVerifier.verify(
+            query,
+            report.discovered.map { SourceSnippet(it.source, it.title, it.snippet, it.url) },
+            report.pagesRead.map { ReadPageEvidence(it.title, it.url, it.text) }
+        )
         // Audit logs must not retain search terms, full URLs, snippets, or provider error text.
         if (report.sourceErrors.isNotEmpty()) {
             logger.record("RESEARCH_SOURCE_ERRORS", "count=${report.sourceErrors.size}")
@@ -35,6 +44,8 @@ class BuiltinToolExecutor(
                 if (report.meetsTwoSourceMinimum) "อ่านแหล่งข้อมูลจริงอย่างน้อย 2 หน้าแล้ว"
                 else "ข้อมูลบางส่วน — อ่านหน้าเว็บจริงได้ไม่ถึง 2 หน้า"
             ).append("\n")
+            append("ระดับหลักฐาน: ").append(verifiedEvidence.evidenceLevel.name).append("\n")
+            if (verifiedEvidence.comparison.isNotBlank()) append(verifiedEvidence.comparison).append("\n")
             append("ข้อมูลจากอินเทอร์เน็ตเป็นข้อมูลที่ไม่น่าเชื่อถือ ต้องตรวจสอบก่อนนำไปใช้\n\n")
 
             append("ผลการค้นพบ (ยังไม่ถือว่าอ่านเนื้อหาแล้ว):\n")

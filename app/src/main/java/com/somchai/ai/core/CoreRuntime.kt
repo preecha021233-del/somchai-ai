@@ -11,6 +11,8 @@ import com.somchai.ai.core.memory.AndroidMemoryCipher
 import com.somchai.ai.core.memory.LocalMemoryStore
 import com.somchai.ai.core.plugins.PluginManager
 import com.somchai.ai.core.processing.InternalProcessor
+import com.somchai.ai.core.processing.ResultEvaluator
+import com.somchai.ai.core.orchestrator.ChatOrchestrator
 import com.somchai.ai.core.processing.TaskPlanner
 import com.somchai.ai.core.resources.ResourceLimiter
 import com.somchai.ai.core.security.PermissionManager
@@ -39,7 +41,7 @@ class CoreRuntime(context: Context) {
     val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core) { event, detail ->
         logger.record(event, detail)
     }
-    val processor = InternalProcessor(memory, planner)
+    val processor = InternalProcessor(memory, planner, tasks = tasks)
     val modelStore = LocalModelStore(paths.models)
     val localInference = NativeLlamaInferenceEngine()
     private val mutableLocalModelStatus = MutableStateFlow(
@@ -60,6 +62,18 @@ class CoreRuntime(context: Context) {
         }
     )
     val llm = LlmConnector(secrets, resources, logger)
+    val orchestrator = ChatOrchestrator(
+        brain = brain,
+        processor = processor,
+        searchApproved = { plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" } },
+        search = { query -> tools.search(query) },
+        remoteConfigured = { secrets.hasKey() },
+        remoteAsk = { history, prompt -> llm.ask(history, prompt) },
+        tasks = tasks,
+        planner = planner,
+        audit = { event, detail -> logger.record(event, detail) },
+        evaluator = ResultEvaluator()
+    )
 
     private val modelLoader = Executors.newSingleThreadExecutor { task -> Thread(task, "somchai-model-loader").apply { isDaemon = true } }
 

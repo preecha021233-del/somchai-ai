@@ -23,8 +23,8 @@ object ChatRoutePolicy {
             text.equals("/plugins", ignoreCase = true) ||
                 text.equals("ตรวจสอบปลั๊กอิน", ignoreCase = true) ||
                 text.equals("รายการปลั๊กอิน", ignoreCase = true) -> ChatRoute.PLUGIN_STATUS
-            text.startsWith("/search ", ignoreCase = true) -> ChatRoute.WEB_SEARCH
-            text.startsWith("/ai ", ignoreCase = true) -> ChatRoute.EXPLICIT_EXTERNAL_AI
+            text.equals("/search", ignoreCase = true) || text.startsWith("/search ", ignoreCase = true) -> ChatRoute.WEB_SEARCH
+            text.equals("/ai", ignoreCase = true) || text.startsWith("/ai ", ignoreCase = true) -> ChatRoute.EXPLICIT_EXTERNAL_AI
             text.startsWith("/") ||
                 text.startsWith("จำไว้ว่า ") ||
                 text.startsWith("จำว่า ") ||

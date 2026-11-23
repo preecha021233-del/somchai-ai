@@ -9,7 +9,8 @@ class InternalProcessor(
     private val memory: LocalMemoryStore,
     private val planner: TaskPlanner = TaskPlanner(),
     private val knowledge: BasicKnowledgeEngine = BasicKnowledgeEngine(),
-    private val reasoning: OfflineReasoningEngine = OfflineReasoningEngine()
+    private val reasoning: OfflineReasoningEngine = OfflineReasoningEngine(),
+    private val tasks: TaskExecutionStore? = null
 ) {
     fun process(input: String): ProcessingResult {
         val text = input.trim()
@@ -42,7 +43,18 @@ class InternalProcessor(
             val deleted = memory.delete(matches.single().id)
             return ProcessingResult(if (deleted) "ลบความจำรายการนั้นแล้วครับ" else "ลบความจำไม่สำเร็จครับ", "memory.delete")
         }
+        if (normalized.startsWith("/planpersist ")) return planResult(text.removeRange(0, "/planpersist ".length), persist = true)
         if (normalized.startsWith("/plan ")) return planResult(text.removeRange(0, "/plan ".length))
+        if (normalized == "/tasks" || normalized == "/tasks list") {
+            val records = tasks?.all().orEmpty().take(20)
+            if (records.isEmpty()) return ProcessingResult("ยังไม่มีงานที่บันทึกไว้ ใช้ /task ตามด้วยเป้าหมายเพื่อสร้างงาน", "task.list")
+            val body = records.joinToString("\n\n") { record ->
+                val completed = record.steps.count { it.status == TaskStepStatus.COMPLETED }
+                "• " + record.id.take(8) + " [" + record.type + "] " + record.goal +
+                    "\n  สำเร็จ " + completed + "/" + record.steps.size + " ขั้นตอน"
+            }
+            return ProcessingResult("งานล่าสุด:\n" + body, "task.list")
+        }
         if (isGreeting(normalized)) return ProcessingResult(
             "สวัสดีครับ ผม SOMCHAI ระบบประมวลผลภายในพร้อมทำงานพื้นฐานครับ พิมพ์ /help เพื่อดูคำสั่งที่รองรับ", "greeting"
         )
@@ -85,9 +97,11 @@ class InternalProcessor(
         )
     }
 
-    private fun planResult(task: String): ProcessingResult {
+    private fun planResult(task: String, persist: Boolean = false): ProcessingResult {
         val plan = planner.plan(task)
+        val persistedId = if (persist && tasks != null) runCatching { tasks.create(plan).id.take(8) }.getOrNull() else null
         val answer = buildString {
+            if (persistedId != null) append("บันทึกแผนเป็นงานรหัส ").append(persistedId).append(" แล้ว\n")
             append("แผนดำเนินงานสำหรับ: ").append(plan.goal).append("\n")
             plan.steps.forEachIndexed { index, step -> append(index + 1).append(". ").append(step).append("\n") }
             append("หมายเหตุ: นี่คือแผนจากกฎภายใน ยังไม่ได้ลงมือทำขั้นตอนเหล่านี้")
@@ -101,6 +115,8 @@ class InternalProcessor(
         "คำสั่งภายในที่รองรับ:\n" +
             "/help — แสดงคำสั่ง\n" +
             "/plan งาน — แยกงานเป็นขั้นตอน\n" +
+            "/planpersist งาน — แยกงานและบันทึกเป็น task\n" +
+            "/tasks — แสดงงานที่บันทึกไว้\n" +
             "/task list|show|start|complete|fail|retry|cancel — จัดการสถานะงาน\n" +
             "/remember ข้อความ — บันทึกความจำในเครื่อง\n" +
             "/recall คำค้นหรือรหัส — ค้นคืนความจำ\n" +
