@@ -1,0 +1,29 @@
+package com.somchai.ai.core.brain
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class ChatRoutePolicyTest {
+    @Test fun ordinaryThaiAndEnglishConversationAlwaysUsesLocalBrain() {
+        listOf("สวัสดี", "ช่วยอธิบายเรื่องนี้", "What is artificial intelligence?", "ช่วยคิดเรื่องโครงการ").forEach {
+            assertEquals(ChatRoute.LOCAL_BRAIN, ChatRoutePolicy.classify(it))
+        }
+    }
+
+    @Test fun externalProviderRequiresExplicitAiCommand() {
+        assertEquals(ChatRoute.EXPLICIT_EXTERNAL_AI, ChatRoutePolicy.classify("/ai ช่วยอธิบาย"))
+        assertEquals(ChatRoute.EXPLICIT_EXTERNAL_AI, ChatRoutePolicy.classify("/AI explain this"))
+        assertEquals(ChatRoute.LOCAL_BRAIN, ChatRoutePolicy.classify("ช่วยใช้ AI อธิบายเรื่องนี้"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/unknown command"))
+    }
+
+    @Test fun builtInCommandsCannotFallThroughToExternalProvider() {
+        assertEquals(ChatRoute.TASK_COMMAND, ChatRoutePolicy.classify("/task list"))
+        assertEquals(ChatRoute.SKILL_COMMAND, ChatRoutePolicy.classify("/skill list"))
+        assertEquals(ChatRoute.PLUGIN_STATUS, ChatRoutePolicy.classify("/plugins"))
+        assertEquals(ChatRoute.WEB_SEARCH, ChatRoutePolicy.classify("/search หาข้อมูล"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/help"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/plan สอบปลายภาค"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("จำไว้ว่า นัดหมายพรุ่งนี้"))
+    }
+}
