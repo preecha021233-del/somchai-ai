@@ -246,3 +246,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - ActivityLogger now rotates at 1 MB, retains 1,500 lines, and reads only a bounded tail for oversized legacy logs.
 - Added provider-host and audit-log retention regression tests.
 - DNS resolution is not socket-pinned, so DNS rebinding protection is not claimed. CI/device verification pending.
+
+## Round 18 — 2026-11-23 — P16 exact task-ID lookup
+
+- Commits: `b14b987178acc15bf1431fe04bdac9a9ba445b5f`, `b547f63d28cdc04bfb30de7c40363c38192e5c71`.
+- Exact full task UUIDs now resolve deterministically even if another task shares the prefix. Ambiguous short prefixes are still rejected.
+- Added regression test for exact IDs and an ambiguous shared prefix.
+- CI: pending. Device acceptance: NOT RUN. P16 and Phase 1 remain NOT ACCEPTED.
