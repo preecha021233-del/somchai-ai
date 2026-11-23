@@ -254,7 +254,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                     check(runtime.plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }) {
                                         "ต้องอนุมัติปลั๊กอิน Web Search ในหน้า Plugins ก่อน"
                                     }
-                                    runtime.tools.search(text.removePrefix("/search").trim())
+                                    runtime.tools.search(text.substringAfter(' ').trim())
                                 } else if (text.startsWith("/ai ", true)) {
                                     check(runtime.secrets.hasKey()) { "ยังไม่ได้ตั้งค่า LLM Provider ครับ ใช้คำสั่งภายในได้โดยไม่ต้องใช้ API" }
                                     val history = messages.dropLast(1).takeLast(12).mapNotNull {
