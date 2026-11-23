@@ -1,6 +1,6 @@
 package com.somchai.ai
 
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -18,10 +18,10 @@ class AgentAppInstrumentedTest {
 
     @Test
     fun launcherRendersChatAndTopRightMenuOpensNavigation() {
-        composeRule.onNodeWithText("SOMCHAI AI").assertExists()
+        composeRule.onNodeWithText("SOMCHAI AI").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("เปิดเมนู").performClick()
-        composeRule.onNodeWithText("ตั้งค่า").assertExists()
-        composeRule.onNodeWithText("ปลั๊กอิน").assertExists()
-        composeRule.onNodeWithText("บันทึก").assertExists()
+        composeRule.onNodeWithText("ตั้งค่า").assertIsDisplayed()
+        composeRule.onNodeWithText("ปลั๊กอิน").assertIsDisplayed()
+        composeRule.onNodeWithText("บันทึก").assertIsDisplayed()
     }
 }
