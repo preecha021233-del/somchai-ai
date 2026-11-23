@@ -230,3 +230,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Candidate ciphertext is decrypted and schema-validated before replacing the live file. A rollback file is retained until committed bytes are read back successfully.
 - Startup recovers interrupted replacements; tests cover candidate verification failure and interrupted rename recovery.
 - CI: pending. Device acceptance: NOT RUN. P20 and Phase 1 remain NOT ACCEPTED.
+
+## Round 16 — 2026-11-23 — P16/P43 task and skill persistence hardening
+
+- Commits: `4dfd52d0a0c2a4aa0150af2afc57d3c74f1d6a58`, `8a48b8bce489fc1d5825b78cbd2079e39336555c`, `ea016c76a0152444ac67ad2426fdf17ab8872182`, `058c21a3b43be6a54b1918554d307c19a9a2f111`, `c9d20c4a09a4e09eb33ee2a6d7ec74925d904188`, `a13f22e6f7ad432c9efeab743e3795918febeb1a`, `3bf5871ffc32923919833064bed248d6bb0e8a9c`.
+- Task store now uses staged JSON validation, rollback, read-back verification, and startup crash recovery.
+- Learned-skill store validates persisted structure and approval invariants, uses verified encrypted replacement with rollback/recovery, and refuses empty/oversized retrieval queries.
+- Added regression coverage for task and skill crash recovery, malformed skill records, and empty skill retrieval.
+- CI: pending for this batch. Device acceptance: NOT RUN. P16/P43 and Phase 1 remain NOT ACCEPTED.
