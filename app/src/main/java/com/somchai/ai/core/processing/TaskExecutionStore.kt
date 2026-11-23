@@ -24,7 +24,10 @@ data class TaskRecord(
  * Durable task lifecycle tracking. This store records execution state only;
  * it never performs external side effects or marks work complete by itself.
  */
-class TaskExecutionStore(private val directory: File) {
+class TaskExecutionStore(
+    private val directory: File,
+    private val audit: (String, String) -> Unit = { _, _ -> }
+) {
     private val file = File(directory, "tasks.json")
     private val lock = Any()
 
@@ -39,6 +42,7 @@ class TaskExecutionStore(private val directory: File) {
             java.time.Instant.now().toString()
         )
         write(readAll() + record)
+        recordAudit("TASK_CREATED", "id=${record.id} type=${record.type} steps=${record.steps.size}")
         record
     }
 
@@ -48,7 +52,7 @@ class TaskExecutionStore(private val directory: File) {
 
     fun all(): List<TaskRecord> = synchronized(lock) { readAll().asReversed() }
 
-    fun startStep(id: String, index: Int): TaskRecord = updateTask(id) { current ->
+    fun startStep(id: String, index: Int): TaskRecord = updateTask(id, "TASK_STEP_STARTED", index) { current ->
         require(index in current.steps.indices) { "Task step index out of range" }
         require(current.steps[index].status == TaskStepStatus.PENDING) { "Task step is not pending" }
         require(current.steps.take(index).all { it.status == TaskStepStatus.COMPLETED }) {
@@ -62,7 +66,7 @@ class TaskExecutionStore(private val directory: File) {
         })
     }
 
-    fun completeStep(id: String, index: Int): TaskRecord = updateTask(id) { current ->
+    fun completeStep(id: String, index: Int): TaskRecord = updateTask(id, "TASK_STEP_COMPLETED", index) { current ->
         require(index in current.steps.indices) { "Task step index out of range" }
         require(current.steps[index].status == TaskStepStatus.IN_PROGRESS) {
             "Only an in-progress step can be completed"
@@ -73,7 +77,7 @@ class TaskExecutionStore(private val directory: File) {
     }
 
     /** Records a failure without silently completing or deleting the task. */
-    fun failStep(id: String, index: Int, reason: String): TaskRecord = updateTask(id) { current ->
+    fun failStep(id: String, index: Int, reason: String): TaskRecord = updateTask(id, "TASK_STEP_FAILED", index) { current ->
         require(index in current.steps.indices) { "Task step index out of range" }
         require(current.steps[index].status == TaskStepStatus.IN_PROGRESS) {
             "Only an in-progress step can fail"
@@ -85,7 +89,7 @@ class TaskExecutionStore(private val directory: File) {
     }
 
     /** Makes a failed step eligible for a deliberate retry. */
-    fun retryStep(id: String, index: Int): TaskRecord = updateTask(id) { current ->
+    fun retryStep(id: String, index: Int): TaskRecord = updateTask(id, "TASK_STEP_RETRY_QUEUED", index) { current ->
         require(index in current.steps.indices) { "Task step index out of range" }
         require(current.steps[index].status == TaskStepStatus.FAILED) { "Only a failed step can be retried" }
         require(current.steps.take(index).all { it.status == TaskStepStatus.COMPLETED }) {
@@ -97,7 +101,7 @@ class TaskExecutionStore(private val directory: File) {
     }
 
     /** Cancels a pending or active step; completed work is immutable. */
-    fun cancelStep(id: String, index: Int): TaskRecord = updateTask(id) { current ->
+    fun cancelStep(id: String, index: Int): TaskRecord = updateTask(id, "TASK_STEP_CANCELLED", index) { current ->
         require(index in current.steps.indices) { "Task step index out of range" }
         val status = current.steps[index].status
         require(status == TaskStepStatus.PENDING || status == TaskStepStatus.IN_PROGRESS) {
@@ -113,14 +117,25 @@ class TaskExecutionStore(private val directory: File) {
         })
     }
 
-    private fun updateTask(id: String, transform: (TaskRecord) -> TaskRecord): TaskRecord = synchronized(lock) {
+    private fun updateTask(
+        id: String,
+        event: String,
+        stepIndex: Int,
+        transform: (TaskRecord) -> TaskRecord
+    ): TaskRecord = synchronized(lock) {
         val records = readAll().toMutableList()
         val matched = findById(records, id) ?: throw IllegalArgumentException("Task not found")
         val position = records.indexOfFirst { it.id == matched.id }
         val updated = transform(records[position])
         records[position] = updated
         write(records)
+        recordAudit(event, "id=${updated.id} step=${stepIndex + 1} status=${updated.steps[stepIndex].status}")
         updated
+    }
+
+    private fun recordAudit(event: String, detail: String) {
+        // Audit logging must never turn a successfully persisted task transition into a failure.
+        runCatching { audit(event, detail) }
     }
 
     private fun findById(records: List<TaskRecord>, id: String): TaskRecord? {
