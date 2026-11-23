@@ -29,9 +29,17 @@ class InternalProcessor(
         }
         if (normalized.startsWith("/forget ")) {
             val id = text.removeRange(0, "/forget ".length).trim()
-            val match = memory.all(500).firstOrNull { it.id == id || it.id.startsWith(id) }
-                ?: return ProcessingResult("ไม่พบรหัสความจำนี้ครับ", "memory.delete")
-            val deleted = memory.delete(match.id)
+            if (id.isBlank()) return ProcessingResult("กรุณาระบุรหัสความจำที่ต้องการลบครับ", "memory.delete")
+            val entries = memory.all(500)
+            val exact = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            val matches = if (exact != null) listOf(exact)
+                else entries.filter { it.id.startsWith(id, ignoreCase = true) }
+            if (matches.isEmpty()) return ProcessingResult("ไม่พบรหัสความจำนี้ครับ", "memory.delete")
+            if (matches.size > 1) return ProcessingResult(
+                "รหัสย่อนี้ตรงกับความจำหลายรายการ เพื่อป้องกันการลบผิด กรุณาใช้รหัสเต็มครับ",
+                "memory.delete.ambiguous"
+            )
+            val deleted = memory.delete(matches.single().id)
             return ProcessingResult(if (deleted) "ลบความจำรายการนั้นแล้วครับ" else "ลบความจำไม่สำเร็จครับ", "memory.delete")
         }
         if (normalized.startsWith("/plan ")) return planResult(text.removeRange(0, "/plan ".length))
