@@ -173,3 +173,18 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added regression coverage proving the obfuscated phrase is neutralized and ordinary text is joined safely after zero-width removal.
 - Commits: `03cc75d5122702f4a8ae961832fd36a76c8718c4`, `b4847e5604866dcedc8b32cba026ff9f3fd6e85f`.
 - CI result is pending; this is not marked passed until the workflow completes.
+
+
+## Full-system audit and corrective batch — 2026-11-23
+- Audited the local brain prompt path, research summarization, learned-skill extraction/evaluation, native inference lifecycle, Thai cash-change parsing, task/memory/plugin components, and the Phase 1 acceptance checklist.
+- Fixed research prompt injection exposure: external page titles, URLs, and page text are sanitized and escaped before local-model summarization, with explicit untrusted-source boundaries.
+- Fixed research output formatting where escaped newline sequences were emitted as literal text instead of line breaks.
+- Added RAII cleanup and null-allocation handling for the native llama.cpp sampler so exceptions cannot leak the sampler.
+- Hardened learned-skill extraction and evaluation prompts: experience text, skill procedures, and test inputs are sanitized, escaped, and enclosed as data; approved skills are escaped and bounded in the main brain prompt.
+- Fixed Thai change calculation when the payment verb is “ชำระ” rather than “จ่าย”.
+- Added regression coverage for research prompt boundaries, skill prompt injection, approved-skill boundaries, and the payment-verb variant.
+- Added PluginManager lifecycle tests for owner approval, disable/re-enable, hash-bound candidate integrity, and path-traversal rejection.
+- CI #138 failed because a new test captured the last evaluation prompt while the malicious input was in the first test case. The test now captures and checks the first prompt. This was a test assertion defect; the run compiled Kotlin and native C++ successfully before unit tests reported 1 failure.
+- Corrective commit: `6d3093923317fce5439775fed3c955e5a277dc4c`.
+- CI #139: PENDING at the time of this entry. Do not mark this batch passed until the workflow completes.
+- Phase 1 remains NOT ACCEPTED until CI and all Android device acceptance gates pass.

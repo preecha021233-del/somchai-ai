@@ -171,3 +171,15 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Root cause 2: unknown task lookup used Kotlin `error()`, which throws `IllegalStateException`; the API/test contract expects `IllegalArgumentException`. Changed the explicit exception type.
 - Regression coverage: the existing tests assert null for incomplete change requests and `IllegalArgumentException` for unknown task IDs.
 - CI for the repair: PENDING. Phase 1 acceptance: NOT ACCEPTED.
+
+
+## Round 10 — 2026-11-23 — Full-system prompt hardening and plugin lifecycle coverage
+- Commits: `a0d44240e537f2ab983755773ba85b4059a8421f`, `f2925916aa98c9ea2a94a9bab50a90e73ec52f2d`, `6a67541ce32800f9cae9045af85ce220c9e6bc83`, `6d3093923317fce5439775fed3c955e5a277dc4c`.
+- Corrected research summarization so untrusted webpage data is sanitized, escaped, and enclosed before local-model processing; corrected literal-newline formatting.
+- Added RAII cleanup for the native llama.cpp sampler.
+- Hardened learned-skill extraction/evaluation and approved-skill prompt boundaries.
+- Fixed cash-change parsing for the Thai payment verb “ชำระ”.
+- Added PluginManager tests for approval, disable/re-enable, changed-candidate hash rejection, and path traversal.
+- CI #138: FAILED on one new regression-test assertion (the test inspected the second evaluation prompt although the hostile input was in the first). Native C++ and Kotlin compilation completed; 121 tests ran, 1 failed.
+- The test now records all evaluation prompts and checks the first one. CI #139 is PENDING; result must be updated after completion.
+- Android device inference, Thai quality/performance, real web-source acceptance, and release/update-signature gates remain NOT RUN. Phase 1 acceptance: NOT ACCEPTED.
