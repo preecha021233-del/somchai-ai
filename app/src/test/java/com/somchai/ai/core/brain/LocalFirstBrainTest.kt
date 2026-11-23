@@ -37,6 +37,7 @@ class LocalFirstBrainTest {
             .respond(BrainRequest("คำถาม"))
         assertEquals("fallback after runtime error", result.text)
         assertTrue(result.usedFallback)
+        assertTrue(result.failureReason.orEmpty().contains("native runtime error"))
     }
 
     @Test fun returnsSafeMessageWhenBothModelAndFallbackFail(): Unit = runBlocking {
@@ -44,6 +45,7 @@ class LocalFirstBrainTest {
             error("fallback processor failed")
         }.respond(BrainRequest("คำถาม"))
         assertTrue(result.usedFallback)
+        assertTrue(result.failureReason.orEmpty().contains("fallback processor failed"))
         assertTrue(result.text.contains("ระบบสำรองยังไม่มีคำตอบ"))
     }
 
