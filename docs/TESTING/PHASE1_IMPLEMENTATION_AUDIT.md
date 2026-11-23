@@ -169,3 +169,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 ## P16 exact task-ID lookup correction — 2026-11-23
 
 43. Task lookup previously treated every full ID as a prefix. A full UUID could be rejected as ambiguous if another record shared its first characters. Exact UUID matches now take precedence; short prefixes remain supported only when unique. Added a regression case with deliberately colliding UUID prefixes. CI verification is pending.
+
+## P17–P21 memory input and storage bounds — 2026-11-23
+
+44. Encrypted memory-store reads now reject files larger than 1 MiB before loading them; decrypted payloads are bounded to 1 MiB and 500 records, duplicate IDs are rejected, and individual record lines are capped at 8 KiB.
+45. Backup restore and legacy plaintext migration now check file size/count limits before reading; oversized legacy files are preserved rather than consumed or deleted.
+46. Added tests for oversized store rejection and duplicate-ID encrypted import while preserving existing memory. CI verification is pending.
