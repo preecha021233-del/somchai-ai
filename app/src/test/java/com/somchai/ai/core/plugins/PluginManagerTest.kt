@@ -66,4 +66,18 @@ class PluginManagerTest {
         fixture.manager.reject("web-search")
         assertTrue(fixture.manager.candidates().isEmpty())
     }
+
+    @Test fun ignoresAndRejectsOversizedPluginManifestsBeforeReadingThem() {
+        val fixture = fixture()
+        val huge = File(fixture.paths.staging, "oversized.json")
+        huge.writeText(" ".repeat(16_385))
+
+        assertTrue(fixture.manager.candidates().isEmpty())
+        assertThrows(IllegalArgumentException::class.java) {
+            fixture.manager.approve("oversized", "0".repeat(64))
+        }
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+    }
+
+
 }
