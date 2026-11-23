@@ -28,7 +28,22 @@ read -s -p "Key password: " SOMCHAI_SIGNING_KEY_PASSWORD; echo
 export SOMCHAI_SIGNING_KEY_PASSWORD
 ~~~
 
-Windows PowerShell: set the same four environment variables in the current session only. Do not save them in scripts or tracked files. Use a secure local password prompt/helper that supplies the actual password text to Gradle; do not pass a serialized SecureString as the Gradle password.
+Windows PowerShell (current session only; the helper places the secret in the process environment and does not print it):
+
+~~~powershell
+$env:SOMCHAI_SIGNING_KEYSTORE = "D:\AndroidSigning\current-owner-release.jks"
+$env:SOMCHAI_SIGNING_KEY_ALIAS = Read-Host "Key alias"
+function Set-SecretEnvironmentVariable([string]$Name, [string]$Prompt) {
+  $secure = Read-Host $Prompt -AsSecureString
+  $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+  try { [Environment]::SetEnvironmentVariable($Name, [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer), "Process") }
+  finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
+}
+Set-SecretEnvironmentVariable "SOMCHAI_SIGNING_STORE_PASSWORD" "Keystore password"
+Set-SecretEnvironmentVariable "SOMCHAI_SIGNING_KEY_PASSWORD" "Key password"
+~~~
+
+Do not save this helper in a tracked script; paste it into the current terminal session only.
 
 ## 3. Check versionCode before building
 
