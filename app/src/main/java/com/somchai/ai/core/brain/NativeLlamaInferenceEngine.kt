@@ -66,7 +66,7 @@ class NativeLlamaInferenceEngine : OnDeviceInferenceEngine, AutoCloseable {
             check(tokenCount <= maxInputTokens) {
                 "คำถามยาวเกินขีดจำกัดโทเค็นของโมเดล กรุณาย่อคำถาม"
             }
-            NativeLlamaBindings.nativeGenerate(current, prompt, MAX_GENERATION_TOKENS).trim()
+            String(NativeLlamaBindings.nativeGenerate(current, prompt, MAX_GENERATION_TOKENS), Charsets.UTF_8).trim()
         }
     }
 
