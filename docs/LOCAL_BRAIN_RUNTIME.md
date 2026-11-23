@@ -60,3 +60,12 @@ The model download is explicit and user initiated. It is approximately 491 MB; W
 - Record first-token latency, total generation time, peak memory, heat, battery impact and crash behavior.
 - Verify ordinary chat produces no remote provider network request.
 - Re-run the complete Phase 1 acceptance suite. Keep all previous thresholds unchanged.
+
+
+## Download and research network reliability — 2026-11-23
+- Interrupted model downloads retain a partial file in app-private storage and retry using HTTP Range.
+- A resumed response must be HTTP 206 with a valid Content-Range beginning at the exact local partial-file length. If the server rejects a stale range with HTTP 416, the installer restarts from byte zero.
+- A partial file is never promoted to the installed model until the complete file passes size, GGUF and pinned SHA-256 verification. A complete already-verified partial file can be promoted without downloading it again.
+- The research page reader requests gzip when supported and applies a strict size limit after decompression. It retains HTTPS-only access, pinned public-IP connections, redirect revalidation and untrusted-page handling.
+- NAT64 is permitted only for the well-known prefix when its embedded IPv4 destination is public; private translated destinations remain blocked.
+- Automated tests have been added for gzip decoding, range metadata validation and public/private NAT64 handling. The latest combined CI result is pending.
