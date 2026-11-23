@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.net.InetAddress
 import java.net.URI
 import java.security.MessageDigest
@@ -35,40 +36,49 @@ class LocalModelStore(
         requireSufficientStorage(StatFs(directory.absolutePath).availableBytes)
 
         val partial = File(directory, "$MODEL_FILE_NAME.part")
-        partial.delete()
-        val connection = openVerifiedDownloadConnection()
+        val resumeFrom = partial.takeIf { it.isFile && it.length() > 0L && it.length() < MAX_MODEL_BYTES }?.length() ?: 0L
+        if (resumeFrom == 0L) partial.delete()
+        requireSufficientStorage(StatFs(directory.absolutePath).availableBytes + resumeFrom)
+        val connection = openVerifiedDownloadConnection(resumeFrom)
         try {
             val status = connection.code
-            check(status == 200) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
-            val declared = connection.body?.contentLength() ?: -1L
+            val append = status == 206 && resumeFrom > 0L
+            val declared = if (append) {
+                val range = parseContentRange(connection.header("Content-Range"))
+                    ?: error("เซิร์ฟเวอร์ส่ง Content-Range ไม่ถูกต้อง")
+                require(range.first == resumeFrom) { "ช่วงข้อมูลที่ดาวน์โหลดต่อไม่ตรงกับไฟล์เดิม" }
+                range.second
+            } else {
+                check(status == 200) { "ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)" }
+                connection.body?.contentLength() ?: -1L
+            }
             require(declared <= 0L || declared <= MAX_MODEL_BYTES) {
                 "ขนาดไฟล์โมเดลที่เซิร์ฟเวอร์แจ้งเกินขีดจำกัด"
             }
-            val digest = MessageDigest.getInstance("SHA-256")
-            var total = 0L
+            var total = if (append) resumeFrom else 0L
             requireNotNull(connection.body) { "เซิร์ฟเวอร์ไม่ส่งข้อมูลโมเดล" }.byteStream().use { input ->
-                FileOutputStream(partial).use { output ->
+                FileOutputStream(partial, append).use { output ->
                     val buffer = ByteArray(128 * 1024)
                     while (true) {
                         val count = input.read(buffer)
                         if (count < 0) break
                         total += count
                         require(total <= MAX_MODEL_BYTES) { "ไฟล์โมเดลมีขนาดเกินขีดจำกัด" }
-                        digest.update(buffer, 0, count)
-                        output.write(buffer, 0, count)
+                         output.write(buffer, 0, count)
                         val progressTotal = if (declared > 0L) declared else EXPECTED_BYTES
                         onProgress(((total * 100L) / progressTotal).toInt().coerceIn(0, 99))
                     }
                     output.fd.sync()
                 }
             }
-            val actualHash = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            val actualHash = sha256(partial)
             validateDownloadedModel(total, declared, actualHash, GgufFileValidator.isValid(partial))
             check(partial.renameTo(target)) { "บันทึกไฟล์โมเดลไม่สำเร็จ" }
             onProgress(100)
             target
         } catch (error: Exception) {
-            partial.delete()
+            // Preserve interrupted network transfers so the next attempt can request a byte range.
+            if (error !is IOException) partial.delete()
             throw error
         } finally {
             connection.close()
@@ -88,7 +98,7 @@ class LocalModelStore(
      * avoiding a second platform DNS lookup between validation and TCP connect.
      * Every redirect is handled manually and receives a fresh validated DNS result.
      */
-    private fun openVerifiedDownloadConnection(): Response {
+    private fun openVerifiedDownloadConnection(rangeStart: Long = 0L): Response {
         var address = validateDownloadUrl(MODEL_URL)
         for (redirect in 0..MAX_REDIRECTS) {
             val client = OkHttpClient.Builder()
@@ -107,6 +117,7 @@ class LocalModelStore(
                 .get()
                 .header("User-Agent", "SOMCHAI-AI/1.9 local-model-installer")
                 .header("Accept-Encoding", "identity")
+                .apply { if (rangeStart > 0L) header("Range", "bytes=$rangeStart-") }
                 .build()
             val response = client.newCall(request).execute()
             if (response.code in 300..399) {
@@ -117,7 +128,7 @@ class LocalModelStore(
                 address = validateDownloadUrl(java.net.URI(address).resolve(location).toString())
                 continue
             }
-            if (response.code != 200) {
+            if (response.code != 200 && !(response.code == 206 && rangeStart > 0L)) {
                 val status = response.code
                 response.close()
                 throw IllegalStateException("ดาวน์โหลดโมเดลไม่สำเร็จ (HTTP $status)")
@@ -171,6 +182,29 @@ class LocalModelStore(
 
     companion object {
         private const val MAX_REDIRECTS = 5
+
+        internal fun parseContentRange(value: String?): Pair<Long, Long>? {
+            val match = Regex("^bytes (\\d+)-(\\d+)/(\\d+)$", RegexOption.IGNORE_CASE)
+                .matchEntire(value?.trim().orEmpty()) ?: return null
+            val start = match.groupValues[1].toLongOrNull() ?: return null
+            val end = match.groupValues[2].toLongOrNull() ?: return null
+            val total = match.groupValues[3].toLongOrNull() ?: return null
+            if (end < start || total <= end) return null
+            return start to total
+        }
+
+        private fun sha256(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { input ->
+                val buffer = ByteArray(128 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        }
 
         internal fun requireSufficientStorage(availableBytes: Long) {
             require(availableBytes >= MIN_FREE_BYTES) {
