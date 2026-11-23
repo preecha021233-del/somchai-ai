@@ -131,3 +131,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 22. CI run #45092099946: **SUCCESS**. JVM unit-test task passed; ARM64 llama.cpp native build passed; debug APK assembled; Android instrumentation APK compiled and assembled; both artifacts uploaded.
 23. CI evidence: https://github.com/preecha021233-del/somchai-ai/actions/runs/45092099946
 24. This is a CI/build pass only. The instrumentation test was compiled and packaged, not executed on a connected Android device. Device acceptance and Phase 1 remain NOT ACCEPTED.
+
+
+## P16 task lifecycle audit integration — 2026-11-23
+
+25. Added an audit callback to `TaskExecutionStore` and connected it to the app's persistent `ActivityLogger`.
+26. Persisted task transitions now emit privacy-minimized events: `TASK_CREATED`, `TASK_STEP_STARTED`, `TASK_STEP_COMPLETED`, `TASK_STEP_FAILED`, `TASK_STEP_RETRY_QUEUED`, and `TASK_STEP_CANCELLED`. Event details contain task ID, step index/status and task type/count; they deliberately omit the user's task goal and failure text.
+27. Audit callback failure is isolated so a logging outage cannot reverse or falsely fail an already-persisted task transition.
+28. Added regression tests for the full lifecycle event sequence, cancellation, minimized event details, and audit-logger failure isolation. CI for commits `ddd763a`, `c4e89b1`, `658a024`, and `a3c4ff6` has not yet been confirmed; these tests are pending CI verification. P16 device restart evidence remains required.
