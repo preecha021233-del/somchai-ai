@@ -431,3 +431,9 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 - Device TLS handshake, live DNS rebinding and actual Android behavior remain required even after CI passes.
 
 - Owner release procedure: [OWNER_RELEASE_BUILD.md](OWNER_RELEASE_BUILD.md). Final device test matrix: [PHASE1_DEVICE_FINAL_CHECKLIST.md](PHASE1_DEVICE_FINAL_CHECKLIST.md). The checklist is prepared but all real-device rows remain BLOCKED until executed and evidence is recorded.
+
+
+### Final HTTP trailer bound follow-up
+
+- Added a cumulative 32 KiB cap for chunked-response trailers so the HTTP header-size limit also covers trailers, not only the initial header block.
+- CI run #239 (run ID 45104053378), code commit 537caa649733a468a3fb1d26e8af30f82bc85cc3: JVM unit tests passed; ARM64 native runtime + Debug APK / instrumentation APK build step is still in progress at the time of this update. Final acceptance remains pending until this latest run completes successfully.
