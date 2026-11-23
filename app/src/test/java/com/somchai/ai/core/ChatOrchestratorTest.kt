@@ -48,6 +48,35 @@ class ChatOrchestratorTest {
         assertEquals("brain.local", orchestrator.handle("อธิบายสิ่งที่ไม่อยู่ในกฎ").intent)
         assertEquals(0, calls)
     }
+    @Test fun modelTestRouteBypassesRulesAndInvokesOnlyLocalBrain() = runBlocking {
+        var calls = 0
+        var captured: BrainRequest? = null
+        val local = object : Brain {
+            override suspend fun respond(request: BrainRequest): BrainReply {
+                calls++
+                captured = request
+                return BrainReply("ตอบจากโมเดล", "llama.cpp-android", false)
+            }
+        }
+        val (orchestrator) = make(brain = local)
+        val result = orchestrator.handle("/model-test สวัสดี")
+        assertEquals(1, calls)
+        assertEquals("สวัสดี", captured?.prompt)
+        assertTrue(captured?.history.isNullOrEmpty())
+        assertTrue(captured?.memoryContext.isNullOrEmpty())
+        assertEquals("model_test.passed", result.intent)
+        assertEquals("llama.cpp-android", result.engineId)
+        assertFalse(result.usedFallback)
+    }
+
+    @Test fun modelTestRouteReportsFallbackAsFailure() = runBlocking {
+        val (orchestrator) = make()
+        val result = orchestrator.handle("/model-test ช่วยคิดคำตอบ")
+        assertEquals("model_test.failed", result.intent)
+        assertTrue(result.usedFallback)
+        assertTrue(result.answer.contains("ทดสอบโมเดลภายในไม่ผ่าน"))
+    }
+
     @Test fun relevantMemoriesAreAttachedToLocalBrainRequests() = runBlocking {
         var captured: BrainRequest? = null
         val local = object : Brain {
