@@ -524,3 +524,15 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Test commit: `674b126b35b2f28834f5d5bcd765808bb6649495`.
 - CI run #247: pending at time of log update; do not mark Chunk 6 DONE until CI succeeds.
 - Scope: Chunk 6 only. This does not claim P10 or the P09–P12 group is accepted.
+
+
+## Phase 1 / Chunk 6 — Contradiction detection (2026-11-23) — completed
+
+- Refined weekday contradiction detection to require multiple weekday claims to refer to the same event anchor and an explicit conflict connector. Distinct events such as today and tomorrow are not contradictions.
+- Refined parity detection: an explicit integer is contradictory only when that same integer is asserted to be both even and odd; different integers are not conflated. Generic same-integer wording remains supported.
+- Kept the never/ever contradiction scoped to matching target text rather than merely the presence of both phrases.
+- Added processor-level regression coverage for same/different destinations, same/different integers, same-event weekday conflict, today/tomorrow, and insufficient weekday facts. Fixed the test fixture to use one processor instance so TemporaryFolder does not recreate the same directory twice.
+- Production commits: `efa5cc984bb407cd4024aaab35d5111b0d2f02e7` (claim scope) and `8bcb2b23f1b69bb0bd62fbfe0ad9843414c4033c` (explicit-integer parity regex).
+- Test commits: `e4cedbad69fa064cfacfdf775598f148b9a72b70` (fixture correction) and `f6875e59d869905fc812d669aa500178d7fc4985` (expanded regression matrix).
+- CI: GitHub Actions run #252 (run ID `45112818101`) — **SUCCESS** for head `f6875e59d869905fc812d669aa500178d7fc4985`. JVM unit-test job completed successfully. [Run #252](https://github.com/preecha021233-del/somchai-ai/actions/runs/45112818101).
+- Chunk 6 is DONE. This closes the work-chunk deliverable only; it does not declare P09–P12 or Phase 1 accepted.
