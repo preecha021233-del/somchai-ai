@@ -1,4 +1,4 @@
-# SOMCHAI AI — Phase 1 Work Plan (53 Chunks)
+# SOMCHAI AI — Phase 1 Work Plan (54 Work Items; Chunk 24 Split)
 
 **Branch:** `phase-1/local-brain-runtime`  
 **Acceptance baseline:** `docs/TESTING/PHASE1_ACCEPTANCE.md` (P01–P43)  
@@ -6,8 +6,8 @@
 
 ## Tracking rules
 
-- There are 53 planned chunks; each is planned for no more than 30 minutes of focused work.
-- The 26h 30m total is a planning baseline, not a guaranteed elapsed-time estimate.
+- There are 54 tracked work items; item 24 is split into 24A (implementation) and 24B (live acceptance test). Each item is planned for no more than 30 minutes of focused work.
+- The 27h total is a planning baseline, not a guaranteed elapsed-time estimate.
 - Status values: `NOT_STARTED`, `IN_PROGRESS`, `DONE`, `BLOCKED`.
 - Mark a chunk `DONE` only after its deliverable is complete and its evidence is recorded (commit, test result, device result, or documented finding).
 - A chunk may conclude that existing implementation already satisfies it; in that case record the exact existing evidence and mark it `DONE` without repeating the work.
@@ -21,8 +21,8 @@
 
 | Metric | Count |
 |---|---:|
-| Total chunks | 53 |
-| Done | 23 |
+| Total work items | 54 |
+| Done | 24 |
 | In progress | 0 |
 | Blocked | 1 |
 | Not started | 29 |
@@ -54,7 +54,7 @@
 | 21 | Research | P22–P25 | Improve extraction of page content and key information | DONE | 2026-11-23 | `WebPageReaderTest.extractsVisiblePageTextAndDropsScriptsAndNavigation`; `decodesNumericEntitiesAndBoundsExtractedText`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Extracts readable text, decodes entities, removes scripts/styles/navigation and bounds output size. |
 | 22 | Research | P22–P25 | Ensure summaries are grounded in retrieved sources | DONE | 2026-11-23 | `BuiltinToolExecutorTest.researchSummaryMustCiteEveryRequiredReadableSource`; `ResearchSummaryPromptTest.externalPageTextIsSanitizedAndDelimitedAsUntrustedData`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Local summary is generated only from pages actually read; requires valid [S1]/[S2] citations, sanitizes and delimits page text as untrusted, and rejects missing/invalid citations. |
 | 23 | Research | P22–P25 | Handle source reliability, insufficient evidence, and partial results | DONE | 2026-11-23 | `ResearchResultVerifierTest.discoveryOnlyIsNotReadEvidence`; `duplicateUrlCannotInflateCount`; `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Reports NONE/DISCOVERY_ONLY/READ_SINGLE_SOURCE/READ_MULTI_SOURCE; clearly marks fewer than two readable pages PARTIAL, reports errors without logging query/URL contents, and does not equate snippets with read evidence. |
-| 24 | Research | P22–P25 | Verify search and reading of at least two distinct pages with evidence | BLOCKED | 2026-11-23 | Automated fake-provider test `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; live app execution evidence not available | Mock tests prove orchestration reads two distinct pages, but P24 explicitly requires an approved Web Search plugin, a real query, and at least two real source pages opened/read in the running app. CI/mock evidence is not a substitute; needs live run after owner approval on a connected device. |
+| 24A | Research implementation | P22–P25 | Complete automated implementation-side P24 coverage: approved search, actual page-reader calls, two distinct sources, source reporting/citations, and partial-result handling | DONE | 2026-11-23 | `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID `45119904510`), head `e659b84cafe500c6c18d46a40ea2664860e64790` | Automated fake-provider coverage verifies the approved-search orchestration reads two distinct pages and reports the actual sources; insufficient readable pages remain PARTIAL. This closes implementation-side work only. Live app/device acceptance is tracked separately as 24B. |
 | 25 | Security | P26–P32 | Complete permission and owner-approval enforcement | NOT_STARTED | — | — | |
 | 26 | Security | P26–P32 | Complete plugin validation and integrity checks | NOT_STARTED | — | — | |
 | 27 | Security | P26–P32 | Close verified command and file-safety gaps | NOT_STARTED | — | — | |
@@ -83,6 +83,7 @@
 | 50 | Integration | P01–P43 | Fix integration-test failures and record targeted regression evidence | NOT_STARTED | — | — | |
 | 51 | Build | P01–P43 | Build and verify the intended APK artifact and record hashes/build evidence | NOT_STARTED | — | — | Owner signing credentials remain private |
 | 52 | Device acceptance | P01–P43 | Install/update in place and verify data retention plus device checklist without uninstall/clear-data | NOT_STARTED | — | — | Requires owner device and owner action |
+| 24B | Testing / device acceptance | P22–P25 | Run P24 against the running app after owner approval: issue a real query, open/read at least two distinct real pages, verify summary and traceable citations, and record full device/run evidence | BLOCKED | — | No live app/device evidence yet; CI #279 covers automated mock-provider tests only | This is an acceptance test, not an implementation task. Keep BLOCKED until a real approved Web Search run in the app proves two distinct source pages were actually opened/read; if fewer than two are readable, record PARTIAL/FAIL under the unchanged P24 threshold. |
 | 53 | Final acceptance | P01–P43 | Publish final P01–P43 evidence report and state Phase 1 outcome accurately | NOT_STARTED | — | — | Do not declare PASS with missing device evidence |
 
 ## Completion policy
