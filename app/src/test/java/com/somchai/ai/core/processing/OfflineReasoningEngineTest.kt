@@ -35,4 +35,4 @@ class OfflineReasoningEngineTest {
         assertNull(engine.solveArithmetic("9".repeat(65)))
         assertNull(engine.solveArithmetic("1+".repeat(128) + "1"))
     }
-}\n
+}

@@ -337,3 +337,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added an explicit P09 multi-step Thai budget problem regression test that checks both item subtotals and the final remaining balance.
 - Narrowed weekday contradiction detection to require an explicit conflict connector and a repeated event anchor, avoiding false contradiction claims for different events on different days.
 - Added a negative regression test for “today Monday, tomorrow Tuesday”. CI pending.
+
+
+## CI failure and repair — 2026-11-23
+
+- CI #213 failed during Kotlin test-source compilation at `OfflineReasoningEngineTest.kt:38`: the newly appended test file ended with literal backslash-n characters, producing a top-level syntax error.
+- This was a test-file formatting defect; the workflow did not reach the unit-test execution/native build stages. Removed the stray characters and queued a fresh full workflow.
+- No test pass is claimed for the new arithmetic, IPv6, skill-integrity or source-deduplication changes until the new run completes.

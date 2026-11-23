@@ -240,3 +240,8 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - Added explicit multi-step Thai purchase/budget calculation coverage (intermediate subtotals and final balance).
 - Reduced false-positive weekday contradictions by requiring an explicit conflict connector and repeated event anchor; added a separate-days negative case.
 - CI pending.
+
+
+## CI #213 repair note
+
+- CI #213 stopped at test-source compilation because the appended `OfflineReasoningEngineTest.kt` contained literal trailing backslash-n characters. This is being corrected in the test file; no unit-test or native-build pass is claimed from that run.
