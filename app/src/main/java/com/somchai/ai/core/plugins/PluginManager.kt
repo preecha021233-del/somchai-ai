@@ -61,16 +61,17 @@ class PluginManager(
         val source = paths.backups.listFiles()
             ?.filter { it.isFile && it.name.startsWith("disabled-$id-") && it.extension == "json" }
             ?.maxByOrNull { it.lastModified() } ?: return false
-        val manifest = validator.validate(readBoundedText(source))
+        val sourceRaw = readBoundedText(source)
+        val manifest = validator.validate(sourceRaw)
         require(manifest.id == id) { "Plugin identity mismatch" }
         require(manifest.enabled) { "A disabled manifest cannot be reactivated" }
         val target = File(paths.active, "$id.json")
         check(!target.exists()) { "Plugin is already active" }
         val temp = File(paths.active, "$id.tmp")
-        source.copyTo(temp, overwrite = false)
+        temp.writeText(sourceRaw)
         try {
             check(temp.renameTo(target)) { "Atomic plugin reactivation failed" }
-            val activated = validator.validate(target.readText())
+            val activated = validator.validate(readBoundedText(target))
             check(activated.enabled && activated.id == id) { "Reactivated plugin is not enabled" }
             check(source.delete()) { "Could not remove disabled backup" }
             logger.record("PLUGIN_ENABLED", "$id backup=${source.name}")
@@ -100,7 +101,7 @@ class PluginManager(
             val temp = File(paths.active, "$id.tmp")
             temp.writeText(raw)
             check(temp.renameTo(target)) { "Atomic plugin activation failed" }
-            val activated = validator.validate(target.readText())
+            val activated = validator.validate(readBoundedText(target))
             check(activated.enabled && activated.id == id) { "Activated plugin is not enabled" }
             smokeTester.run(activated)
             logger.record("PLUGIN_APPROVED", "$id hash=$expectedHash checks=${checks.size}")
@@ -119,10 +120,10 @@ class PluginManager(
         require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
         val source = File(paths.active, "$id.json")
         if (!source.isFile || !paths.contained(paths.active, source)) return false
-        val manifest = validator.validate(readBoundedText(source))
+        val raw = readBoundedText(source)
+        val manifest = validator.validate(raw)
         require(manifest.id == id) { "Plugin identity mismatch" }
         val target = File(paths.backups, "disabled-$id-${System.currentTimeMillis()}.json")
-        val raw = source.readText()
         // Prefer a same-filesystem rename so disabling is one atomic directory operation.
         // Fall back to a verified temporary copy only when the filesystem cannot rename.
         val moved = source.renameTo(target)
