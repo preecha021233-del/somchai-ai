@@ -483,3 +483,6 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Test commits: e0574ad1a375cf49c85ede01495759a4bbbeafd7 and newline-literal correction 11c68bec872a4545d38a6876cc2e8ad4474ac2d3.
 - CI: pending on the corrected test head. The earlier run triggered for the intermediate test commit was superseded/cancelled; no test pass is claimed yet.
 - Chunk 3 remains IN_PROGRESS until the latest CI run completes successfully.
+
+- CI verification: GitHub Actions run #243 (run ID 45110860508) — SUCCESS for corrected test commit 11c68bec872a4545d38a6876cc2e8ad4474ac2d3. [Run #243](https://github.com/preecha021233-del/somchai-ai/actions/runs/45110860508).
+- Chunk 3 is DONE. This confirms the added classifier regression tests pass in CI; it does not claim the full P01–P08 acceptance group or the target-device model quality gate has passed.
