@@ -96,11 +96,22 @@ class InternalProcessorTest {
     @Test fun recallsExactMemoryByIdAndAcceptsUppercaseCommand() {
         val subject = processor()
         val stored = subject.process("/remember ข้อมูลทดสอบรหัสความจำ")
-        val id = Regex("\\(รหัส ([0-9a-fA-F-]{8})\\)").find(stored.answer)?.groupValues?.get(1)
+        val id = Regex("\\(รหัส ([0-9a-fA-F-]{36})\\)").find(stored.answer)?.groupValues?.get(1)
         assertTrue("Expected a displayed stable memory ID", id != null)
         val recalled = subject.process("/RECALL $id")
         assertTrue(recalled.intent == "memory.read")
         assertTrue(recalled.answer.contains("ข้อมูลทดสอบรหัสความจำ"))
+    }
+
+    @Test fun rememberReturnsFullStableUuidAndRecallByItReturnsOnlyThatEntry() {
+        val subject = processor()
+        val stored = subject.process("/remember สอบวันที่ 30")
+        val id = Regex("\\(รหัส ([0-9a-fA-F-]{36})\\)").find(stored.answer)?.groupValues?.get(1)
+        assertTrue("Expected complete stable UUID", id != null)
+        val recalled = subject.process("/recall $id")
+        assertEquals("memory.read", recalled.intent)
+        assertTrue(recalled.answer.contains("[$id] สอบวันที่ 30"))
+        assertFalse(recalled.answer.contains("รายการอื่น"))
     }
 
     @Test fun storesAndRetrievesLocalMemory() {
