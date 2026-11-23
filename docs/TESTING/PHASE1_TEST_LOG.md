@@ -223,3 +223,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Changed `/forget` to prefer exact full IDs and reject ambiguous short prefixes instead of silently deleting the first match.
 - Added a regression test with two legacy memory UUIDs sharing the same displayed prefix; verifies ambiguity leaves both intact and full-ID deletion removes only the selected entry.
 - CI: NOT YET VERIFIED. Device acceptance: NOT RUN. P21 and Phase 1 remain NOT ACCEPTED.
+
+## Round 15 — 2026-11-23 — P20 transactional encrypted memory
+
+- Commits: `9e712218af01619d53710ec270a154717b67847e`, `3e1614b02cf4863e08ba99ddafbf2a141af01e51`, `d258d33a34ee6aad6559f5ede81c48dea1e9bc22`.
+- Candidate ciphertext is decrypted and schema-validated before replacing the live file. A rollback file is retained until committed bytes are read back successfully.
+- Startup recovers interrupted replacements; tests cover candidate verification failure and interrupted rename recovery.
+- CI: pending. Device acceptance: NOT RUN. P20 and Phase 1 remain NOT ACCEPTED.
