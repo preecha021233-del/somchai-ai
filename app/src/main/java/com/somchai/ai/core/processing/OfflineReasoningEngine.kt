@@ -58,13 +58,23 @@ class OfflineReasoningEngine {
     /** Asks for the specific inputs required by common calculations when they are absent. */
     fun missingInformation(input: String): String? {
         val text = input.lowercase()
-        if ((text.contains("ความเร็ว") || text.contains("อัตราเร็ว")) &&
-            (!text.contains("ระยะทาง") || !text.contains("เวลา"))) {
-            return "การคำนวณความเร็วต้องมีทั้งระยะทางและเวลาที่ใช้ครับ ตอนนี้ยังขาดข้อมูลอย่างน้อยหนึ่งอย่าง"
+        if (text.contains("ความเร็ว") || text.contains("อัตราเร็ว")) {
+            val missing = buildList {
+                if (!text.contains("ระยะทาง")) add("ระยะทาง")
+                if (!text.contains("เวลา")) add("เวลาที่ใช้")
+            }
+            if (missing.isNotEmpty()) {
+                return "การคำนวณความเร็วต้องมีระยะทางและเวลาที่ใช้ครับ ตอนนี้ยังขาด: ${missing.joinToString(" และ ")} กรุณาระบุข้อมูลเพิ่มเติม"
+            }
         }
-        if ((text.contains("เงินทอน") || text.contains("ทอนเท่าไร") || text.contains("ทอนเท่าไหร่")) &&
-            (!text.contains("จ่าย") || !(text.contains("ราคา") || text.contains("ชิ้นละ") || text.contains("อันละ")))) {
-            return "การคำนวณเงินทอนต้องทราบยอดราคาสินค้ารวมและจำนวนเงินที่จ่ายครับ กรุณาระบุข้อมูลที่ยังขาด"
+        if (text.contains("เงินทอน") || text.contains("ทอนเท่าไร") || text.contains("ทอนเท่าไหร่")) {
+            val missing = buildList {
+                if (!(text.contains("ราคา") || text.contains("ชิ้นละ") || text.contains("อันละ"))) add("ราคารวมของสินค้า")
+                if (!(text.contains("จ่าย") || text.contains("ชำระ"))) add("จำนวนเงินที่จ่าย")
+            }
+            if (missing.isNotEmpty()) {
+                return "การคำนวณเงินทอนต้องทราบราคารวมของสินค้าและจำนวนเงินที่จ่ายครับ ตอนนี้ยังขาด: ${missing.joinToString(" และ ")} กรุณาระบุข้อมูลเพิ่มเติม"
+            }
         }
         return null
     }
