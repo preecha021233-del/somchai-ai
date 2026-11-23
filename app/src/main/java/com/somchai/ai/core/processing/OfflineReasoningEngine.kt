@@ -73,7 +73,7 @@ class OfflineReasoningEngine {
 
     private fun solveChangeProblem(input: String): String? {
         val asksForChange = listOf("เงินทอน", "ได้ทอน", "ทอนเท่าไร", "ทอนเท่าไหร่").any(input::contains)
-        if (!asksForChange || !input.contains("จ่าย")) return null
+        if (!asksForChange || (!input.contains("จ่าย") && !input.contains("ชำระ"))) return null
 
         val priceSection = Regex("ราคา(.*?)(?:จ่าย|ชำระ)", RegexOption.DOT_MATCHES_ALL)
             .find(input)?.groupValues?.getOrNull(1)

@@ -20,6 +20,14 @@ class OfflineReasoningEngineTest {
         assertTrue(answer.contains("เงินไม่พอ"))
     }
 
+
+    @Test fun calculatesChangeWhenPaymentUsesThaiWordChำระ() {
+        val answer = engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ชำระ 100 บาท ได้ทอนเท่าไร")
+            ?: error("calculation was not recognized")
+        assertTrue(answer.contains("3 × 25 = 75 บาท"))
+        assertTrue(answer.contains("100 - 75 = 25 บาท"))
+    }
+
     @Test fun rejectsIncompleteChangeQuestion() {
         assertNull(engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ได้ทอนเท่าไร"))
     }}

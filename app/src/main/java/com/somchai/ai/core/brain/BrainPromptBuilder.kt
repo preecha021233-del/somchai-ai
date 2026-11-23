@@ -46,8 +46,16 @@ internal object BrainPromptBuilder {
         )
 
         val skills = request.approvedSkills.take(3).map { it.trim() }
-            .filter { it.isNotEmpty() }.joinToString("\n") { it.take(180) }
-        appendSection("ทักษะที่เจ้าของอนุมัติ:\n", skills, MAX_SKILL_CHARS)
+            .filter { it.isNotEmpty() }.joinToString("\n") { "• " + escapeUntrusted(it.take(180)) }
+        val skillsClosing = "\n</approved_skills>"
+        val skillsPayload = if (skills.isNotEmpty()) {
+            skills.take((MAX_SKILL_CHARS - skillsClosing.length).coerceAtLeast(0)) + skillsClosing
+        } else ""
+        appendSection(
+            "ทักษะที่เจ้าของอนุมัติ (ขั้นตอนที่แยกขอบเขตไว้):\n<approved_skills>\n",
+            skillsPayload,
+            MAX_SKILL_CHARS
+        )
 
         if (request.history.isNotEmpty() && remaining > 0) {
             val header = "บริบทก่อนหน้า:\n"
