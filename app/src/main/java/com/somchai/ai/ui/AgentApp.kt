@@ -188,10 +188,10 @@ fun AgentApp(runtime: CoreRuntime) {
                                     runtime.skills.relevantFor(text) to
                                         runtime.memory.relevantFor(text, 3).map { "${it.category}: ${it.content}" }
                                 }
-                                val taskAction = text.trim().split(Regex("\\s+")).getOrNull(1)?.lowercase().orEmpty()
-                                val answer = if (route == ChatRoute.TASK_COMMAND &&
-                                    taskAction in setOf("list", "show", "start", "complete", "fail", "retry", "cancel")) {
+                                val answer = if (ChatRoutePolicy.isTaskLifecycleCommand(text)) {
                                     TaskCommandProcessor(runtime.tasks).execute(text)
+                                } else if (route == ChatRoute.TASK_COMMAND) {
+                                    runtime.orchestrator.handle(text, history, approvedSkills, savedMemory).answer
                                 } else if (route == ChatRoute.SKILL_COMMAND) {
                                     val command = text.substringAfter(" ", "").trim()
                                     when {
