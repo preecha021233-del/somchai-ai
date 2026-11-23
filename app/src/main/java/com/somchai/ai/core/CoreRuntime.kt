@@ -72,7 +72,10 @@ class CoreRuntime(context: Context) {
         tasks = tasks,
         planner = planner,
         audit = { event, detail -> logger.record(event, detail) },
-        evaluator = ResultEvaluator()
+        evaluator = ResultEvaluator(),
+        retrieveMemory = { query ->
+            memory.relevantFor(query, 3).map { "[${it.id}] ${it.content}" }
+        }
     )
 
     private val modelLoader = Executors.newSingleThreadExecutor { task -> Thread(task, "somchai-model-loader").apply { isDaemon = true } }
