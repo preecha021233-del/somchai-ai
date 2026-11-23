@@ -219,8 +219,13 @@ class TaskExecutionStore(
         val temp = File(directory, "tasks.json.tmp")
         val rollback = File(directory, "tasks.json.rollback")
         temp.writeText(encoded)
-        val candidate = JSONArray(temp.readText())
-        check(candidate.toString() == array.toString()) { "Task candidate verification failed" }
+        try {
+            val candidate = JSONArray(temp.readText())
+            check(candidate.toString() == array.toString()) { "Task candidate verification failed" }
+        } catch (failure: Exception) {
+            temp.delete()
+            throw failure
+        }
 
         rollback.delete()
         if (file.exists()) check(file.renameTo(rollback)) { "Could not preserve previous task state" }
