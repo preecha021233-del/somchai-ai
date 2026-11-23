@@ -135,6 +135,7 @@ class LocalMemoryStore(
 
     fun restoreBackup(): Int = synchronized(lock) {
         require(backupFile.isFile) { "ไม่พบไฟล์สำรองความจำ" }
+        require(backupFile.length() in 1..MAX_FILE_BYTES.toLong()) { "ไฟล์สำรองมีขนาดไม่ถูกต้อง" }
         val restored = decodeRecords(cipher.decrypt(backupFile.readBytes()))
         require(restored.size <= 500) { "ไฟล์สำรองมีจำนวนรายการเกินกำหนด" }
         require(restored.map { it.id }.distinct().size == restored.size) { "ไฟล์สำรองมีรหัสซ้ำ" }
@@ -183,14 +184,21 @@ class LocalMemoryStore(
 
     private fun readEntries(): List<MemoryEntry> {
         if (!file.isFile) return emptyList()
+        require(file.length() in 1..MAX_FILE_BYTES.toLong()) { "ไฟล์ความจำมีขนาดไม่ถูกต้อง" }
         return decodeRecords(cipher.decrypt(file.readBytes()))
     }
 
-    private fun decodeRecords(bytes: ByteArray): List<MemoryEntry> =
-        String(bytes, Charsets.UTF_8).lineSequence()
+    private fun decodeRecords(bytes: ByteArray): List<MemoryEntry> {
+        require(bytes.size <= MAX_FILE_BYTES) { "ข้อมูลความจำมีขนาดเกินกำหนด" }
+        val records = String(bytes, Charsets.UTF_8).lineSequence()
             .filter { it.isNotBlank() }
+            .take(MAX_RECORDS + 1)
             .map { decode(it) }
             .toList()
+        require(records.size <= MAX_RECORDS) { "ข้อมูลความจำมีจำนวนรายการเกินกำหนด" }
+        require(records.map { it.id }.distinct().size == records.size) { "ข้อมูลความจำมีรหัสซ้ำ" }
+        return records
+    }
 
     private fun trimToLimit(entries: List<MemoryEntry>): List<MemoryEntry> =
         entries.takeLast(500)
@@ -250,6 +258,7 @@ class LocalMemoryStore(
 
     private fun migrateLegacyRecords() = synchronized(lock) {
         if (!legacyFile.isFile) return@synchronized
+        if (legacyFile.length() > MAX_FILE_BYTES) return@synchronized
         val legacyLines = runCatching { legacyFile.readLines().filter { it.isNotBlank() } }.getOrNull()
             ?: return@synchronized
         val legacyEntries = runCatching { legacyLines.map { decode(it) } }.getOrNull()
@@ -268,10 +277,10 @@ class LocalMemoryStore(
 
     private fun migrateLegacyNotes() = synchronized(lock) {
         val notesFile = File(file.parentFile, "notes.txt")
-        if (!notesFile.isFile) return@synchronized
-        val notes = runCatching { notesFile.readLines().map { it.trim() }.filter { it.isNotEmpty() } }
+        if (!notesFile.isFile || notesFile.length() > MAX_FILE_BYTES) return@synchronized
+        val notes = runCatching { notesFile.readLines().map { it.trim() }.filter { it.isNotEmpty() }.take(MAX_RECORDS + 1) }
             .getOrNull() ?: return@synchronized
-        if (notes.isEmpty()) return@synchronized
+        if (notes.isEmpty() || notes.size > MAX_RECORDS) return@synchronized
 
         // If the Keystore key is unavailable, preserve legacy notes and avoid crashing startup.
         val existing = runCatching { readEntries() }.getOrNull() ?: return@synchronized
@@ -300,6 +309,7 @@ class LocalMemoryStore(
         .put("content", entry.content).put("createdAt", entry.createdAt).toString()
 
     private fun decode(line: String): MemoryEntry {
+        require(line.length <= MAX_RECORD_LINE_CHARS) { "Memory record exceeds size limit" }
         val json = JSONObject(line)
         val schemaVersion = json.optInt("schemaVersion", 0)
         require(schemaVersion in 0..1) { "Unsupported memory schema version" }
@@ -310,5 +320,11 @@ class LocalMemoryStore(
         require(entry.content.isNotBlank() && entry.content.length <= 2000) { "Invalid memory content" }
         require(runCatching { java.time.Instant.parse(entry.createdAt) }.isSuccess) { "Invalid memory timestamp" }
         return entry
+    }
+
+    companion object {
+        private const val MAX_RECORDS = 500
+        private const val MAX_FILE_BYTES = 1_048_576
+        private const val MAX_RECORD_LINE_CHARS = 8_192
     }
 }
