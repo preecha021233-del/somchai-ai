@@ -98,11 +98,11 @@ class OfflineReasoningEngine {
     /** Verify each displayed numeric equality before a deterministic answer is shown. */
     fun verifyArithmeticAnswer(answer: String): Boolean {
         val equationLines = answer.lines().filter { line ->
-            Regex("""=\\s*[+-]?\\d+(?:\\.\\d+)?\\s*(?:บาท|%)?\\s*$""").containsMatchIn(line)
+            Regex("""=\s*[+-]?\d+(?:\.\d+)?\s*(?:บาท|%)?\s*$""").containsMatchIn(line)
         }
         if (equationLines.isEmpty()) return false
         return equationLines.all { line ->
-            val expectedMatch = Regex("""=\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*(?:บาท|%)?\\s*$""")
+            val expectedMatch = Regex("""=\s*([+-]?\d+(?:\.\d+)?)\s*(?:บาท|%)?\s*$""")
                 .find(line) ?: return@all false
             val expression = line.substring(0, expectedMatch.range.first)
                 .substringAfterLast('=')
