@@ -486,3 +486,13 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 
 - CI verification: GitHub Actions run #243 (run ID 45110860508) — SUCCESS for corrected test commit 11c68bec872a4545d38a6876cc2e8ad4474ac2d3. [Run #243](https://github.com/preecha021233-del/somchai-ai/actions/runs/45110860508).
 - Chunk 3 is DONE. This confirms the added classifier regression tests pass in CI; it does not claim the full P01–P08 acceptance group or the target-device model quality gate has passed.
+
+
+## Phase 1 — Chunk 4: Incomplete-question clarification (2026-11-23)
+
+- Evidence-based gap: the existing missing-information handler detected incomplete speed and cash-change questions but only said that at least one input was missing; it did not identify which specific input the user needed to provide.
+- Updated speed calculation clarification to list missing distance and/or elapsed time individually.
+- Updated cash-change clarification to list missing total price and/or payment amount individually, including both 'จ่าย' and 'ชำระ' forms.
+- Added regression tests for both-missing and one-missing cases for speed and cash-change questions.
+- Production commit: 25ce86bf48cf3ff3fbb2b0c7715be9b9fe9cbad8. Test commit: 8a3c477969a86a9031cae17f85a920c7b749da00.
+- CI verification pending; chunk remains IN_PROGRESS until the workflow completes successfully.
