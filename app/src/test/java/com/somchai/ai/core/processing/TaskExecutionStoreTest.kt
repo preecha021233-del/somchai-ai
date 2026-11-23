@@ -125,6 +125,21 @@ class TaskExecutionStoreTest {
     }
 
 
+    @Test fun completedAndCancelledStatesSurviveStoreReopen() {
+        val directory = temporaryFolder.newFolder("terminal-state-reopen")
+        val store = TaskExecutionStore(directory)
+        val completedTask = store.create(TaskPlanner().plan("งานที่ทำสำเร็จ"))
+        store.startStep(completedTask.id, 0)
+        store.completeStep(completedTask.id, 0)
+
+        val cancelledTask = store.create(TaskPlanner().plan("งานที่ยกเลิก"))
+        store.cancelStep(cancelledTask.id, 0)
+
+        val reopened = TaskExecutionStore(directory)
+        assertEquals(TaskStepStatus.COMPLETED, reopened.get(completedTask.id)?.steps?.first()?.status)
+        assertEquals(TaskStepStatus.CANCELLED, reopened.get(cancelledTask.id)?.steps?.first()?.status)
+    }
+
     @Test fun recoversTaskStateAfterInterruptedAtomicReplacement() {
         val directory = temporaryFolder.newFolder("task-recovery")
         val original = TaskExecutionStore(directory)
