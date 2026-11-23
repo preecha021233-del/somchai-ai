@@ -26,10 +26,7 @@ class LocalModelStore(private val directory: File) {
             return@withContext target
         }
         target.delete()
-        val available = StatFs(directory.absolutePath).availableBytes
-        require(available >= MIN_FREE_BYTES) {
-            "พื้นที่ว่างไม่เพียงพอ ต้องมีพื้นที่ว่างอย่างน้อยประมาณ 650 MB"
-        }
+        requireSufficientStorage(StatFs(directory.absolutePath).availableBytes)
 
         val partial = File(directory, "$MODEL_FILE_NAME.part")
         partial.delete()
@@ -59,12 +56,8 @@ class LocalModelStore(private val directory: File) {
                     output.fd.sync()
                 }
             }
-            require(total in MIN_MODEL_BYTES..MAX_MODEL_BYTES) { "ดาวน์โหลดไม่ครบหรือขนาดไฟล์โมเดลไม่ถูกต้อง" }
             val actualHash = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
-            require(actualHash.equals(EXPECTED_SHA256, ignoreCase = true)) {
-                "ตรวจสอบ SHA-256 ไม่ผ่าน ไฟล์โมเดลถูกปฏิเสธ"
-            }
-            require(GgufFileValidator.isValid(partial)) { "ไฟล์ที่ดาวน์โหลดไม่ใช่โมเดล GGUF" }
+            validateDownloadedModel(total, declared, actualHash, GgufFileValidator.isValid(partial))
             check(partial.renameTo(target)) { "บันทึกไฟล์โมเดลไม่สำเร็จ" }
             onProgress(100)
             target
@@ -153,6 +146,30 @@ class LocalModelStore(private val directory: File) {
 
     companion object {
         private const val MAX_REDIRECTS = 5
+
+        internal fun requireSufficientStorage(availableBytes: Long) {
+            require(availableBytes >= MIN_FREE_BYTES) {
+                "พื้นที่ว่างไม่เพียงพอ ต้องมีพื้นที่ว่างอย่างน้อยประมาณ 650 MB"
+            }
+        }
+
+        internal fun validateDownloadedModel(
+            totalBytes: Long,
+            declaredBytes: Long,
+            actualSha256: String,
+            validGgufHeader: Boolean
+        ) {
+            require(totalBytes in MIN_MODEL_BYTES..MAX_MODEL_BYTES) {
+                "ดาวน์โหลดไม่ครบหรือขนาดไฟล์โมเดลไม่ถูกต้อง"
+            }
+            require(declaredBytes <= 0L || declaredBytes == totalBytes) {
+                "ขนาดไฟล์ที่ดาวน์โหลดไม่ตรงกับที่เซิร์ฟเวอร์แจ้ง"
+            }
+            require(actualSha256.equals(EXPECTED_SHA256, ignoreCase = true)) {
+                "ตรวจสอบ SHA-256 ไม่ผ่าน ไฟล์โมเดลถูกปฏิเสธ"
+            }
+            require(validGgufHeader) { "ไฟล์ที่ดาวน์โหลดไม่ใช่โมเดล GGUF" }
+        }
 
         internal fun validateDownloadUrl(address: String): String {
             val uri = URI(address).normalize()
