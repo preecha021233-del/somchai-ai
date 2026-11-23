@@ -165,3 +165,7 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 40. Optional external LLM requests now reject blank/oversized user prompts, resolve the configured provider hostname and fail closed if any resolved address is private/reserved/non-public, disable automatic redirects to prevent credential forwarding to redirect targets, and cap response bodies at 1 MB.
 41. Persistent activity logging now rotates at 1 MB, retains at most 1,500 recent lines, and bounds reads to a 1 MB tail window so legacy oversized logs cannot be loaded wholly into memory.
 42. Added regression tests for loopback/private/invalid provider hostnames and bounded audit-log retention. DNS is checked before connection but not pinned to a socket address; target-device/network integration tests remain necessary. CI verification is pending.
+
+## P16 exact task-ID lookup correction — 2026-11-23
+
+43. Task lookup previously treated every full ID as a prefix. A full UUID could be rejected as ambiguous if another record shared its first characters. Exact UUID matches now take precedence; short prefixes remain supported only when unique. Added a regression case with deliberately colliding UUID prefixes. CI verification is pending.
