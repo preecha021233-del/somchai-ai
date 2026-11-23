@@ -205,3 +205,13 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Verified: JVM unit-test Gradle task passed; ARM64 llama.cpp native build passed; debug APK assembled; Android instrumentation APK compiled and assembled; both artifacts uploaded.
 - Device instrumentation execution: NOT RUN (CI only built the test APK).
 - Phase 1 acceptance: NOT ACCEPTED; remaining device-level P01–P43 evidence is still required.
+
+
+## Round 13 — 2026-11-23 — P16 task lifecycle audit integration
+
+- Branch: `phase-1/local-brain-runtime`
+- Implementation commits: `ddd763a863a43163f0048489ee45a5f5deb3bd5e`, `c4e89b1be4e0fe0aed94726e1d45e4d4ee5558ba`, `658a0240c80e0d4d9969fcfc9668aa8fc71fd8d7`, `a3c4ff67e393b0e81b76ee483d5fc85f087ab485`.
+- Connected durable task transitions to ActivityLogger with privacy-minimized audit details.
+- Added tests for create/start/fail/retry/start/complete/cancel event ordering and for audit callback failure not undoing persisted state.
+- CI status: NOT YET VERIFIED for this batch. No test pass is claimed.
+- Device restart/persistence evidence: NOT RUN. P16 and Phase 1 remain NOT ACCEPTED.
