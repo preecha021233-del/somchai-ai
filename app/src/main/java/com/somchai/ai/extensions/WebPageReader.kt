@@ -99,6 +99,12 @@ class WebPageReader(
             host != "lan" && !host.endsWith(".lan")) {
             "ไม่อนุญาตที่อยู่เครือข่ายภายใน"
         }
+        // Numeric literals are parsed locally; this does not perform a hostname DNS lookup.
+        if (isIpLiteral(host)) {
+            require(isPublicAddress(InetAddress.getByName(host))) {
+                "ไม่อนุญาต IP ภายในหรือ IP ที่ไม่ใช่สาธารณะ"
+            }
+        }
         return uri.toASCIIString()
     }
 
