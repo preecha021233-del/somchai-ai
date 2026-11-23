@@ -45,7 +45,7 @@ class WebPageReader(
                 instanceFollowRedirects = false
                 connectTimeout = CONNECT_TIMEOUT_MS
                 readTimeout = READ_TIMEOUT_MS
-                setRequestProperty("Host", host)
+                setRequestProperty("Host", target.host)
                 setRequestProperty("User-Agent", USER_AGENT)
                 setRequestProperty("Accept", "text/html,application/xhtml+xml,text/plain;q=0.9")
                 setRequestProperty("Accept-Encoding", "identity")
