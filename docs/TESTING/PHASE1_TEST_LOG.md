@@ -215,3 +215,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Added tests for create/start/fail/retry/start/complete/cancel event ordering and for audit callback failure not undoing persisted state.
 - CI status: NOT YET VERIFIED for this batch. No test pass is claimed.
 - Device restart/persistence evidence: NOT RUN. P16 and Phase 1 remain NOT ACCEPTED.
+
+## Round 14 — 2026-11-23 — P21 safe memory deletion
+
+- Branch: `phase-1/local-brain-runtime`
+- Commits: `8a5da393709a74455a0f5522b610146b9348139b`, `64389bd4d8a1f00ed28e569888993df3dbd04371`.
+- Changed `/forget` to prefer exact full IDs and reject ambiguous short prefixes instead of silently deleting the first match.
+- Added a regression test with two legacy memory UUIDs sharing the same displayed prefix; verifies ambiguity leaves both intact and full-ID deletion removes only the selected entry.
+- CI: NOT YET VERIFIED. Device acceptance: NOT RUN. P21 and Phase 1 remain NOT ACCEPTED.
