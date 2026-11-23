@@ -133,6 +133,18 @@ class LocalModelDownloadSecurityTest {
         }
     }
 
+    @Test fun acceptsOnlyPublicIpv4DestinationsThroughWellKnownNat64() {
+        val publicNat64 = InetAddress.getByName("64:ff9b::5db8:d822")
+        val publicStore = LocalModelStore(File("build/test-models")) { arrayOf(publicNat64) }
+        assertEquals(listOf(publicNat64), publicStore.resolvePublicAddresses("nat64.example"))
+
+        val privateNat64 = InetAddress.getByName("64:ff9b::a00:1")
+        val privateStore = LocalModelStore(File("build/test-models")) { arrayOf(privateNat64) }
+        assertThrows(IllegalArgumentException::class.java) {
+            privateStore.resolvePublicAddresses("nat64-private.example")
+        }
+    }
+
     @Test fun rejectsReservedAndTransitionIpv6ModelDestinations() {
         listOf(
             "https://[2001:2::1]/model.gguf",
