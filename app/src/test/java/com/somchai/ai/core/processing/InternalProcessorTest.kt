@@ -14,12 +14,30 @@ class InternalProcessorTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
     private fun processor(): InternalProcessor = InternalProcessor(LocalMemoryStore(temporaryFolder.newFolder("memory")))
 
-    @Test fun helpListsAllChatCommandFamiliesAndTheirOwnerBoundaries() {
+    @Test fun helpListsTheExactSupportedCommandListInOrder() {
         val answer = processor().process("/help").answer
-        listOf("/task", "/remember", "/recall", "/forget", "/search", "/plugins", "/ai",
-            "/skill list", "/skill learn", "/skill propose", "/skill test", "/skill approve", "/skill delete")
-            .forEach { command -> assertTrue("Missing help entry: $command", answer.contains(command)) }
-        assertTrue(answer.contains("เจ้าของตั้งค่า Provider และสั่งเอง"))
+        val expectedLines = listOf(
+            "คำสั่งภายในที่รองรับ:",
+            "/help — แสดงคำสั่ง",
+            "/plan งาน — แยกงานเป็นขั้นตอน",
+            "/planpersist งาน — แยกงานและบันทึกเป็น task",
+            "/tasks — แสดงงานที่บันทึกไว้",
+            "/task list|show|start|complete|fail|retry|cancel — จัดการสถานะงาน",
+            "/remember ข้อความ — บันทึกความจำในเครื่อง",
+            "/recall คำค้นหรือรหัส — ค้นคืนความจำ",
+            "/forget รหัส — ลบความจำตามรหัส",
+            "/search คำค้น — ค้นเว็บเมื่อปลั๊กอิน Web Search ได้รับอนุมัติแล้ว",
+            "/plugins — ดูปลั๊กอินที่ใช้งาน รออนุมัติ และปิดใช้งาน",
+            "/ai คำถาม — ส่งไปยัง AI ภายนอกเฉพาะเมื่อเจ้าของตั้งค่า Provider และสั่งเอง",
+            "/skill list — แสดงทักษะที่เรียนรู้และสถานะ",
+            "/skill learn ชื่อ | คำกระตุ้น | ประสบการณ์ | input => expected ;; input => expected — ให้โมเดลภายในสกัดทักษะจากประสบการณ์",
+            "/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected — เสนอทักษะใหม่",
+            "/skill test รหัส — ทดสอบด้วยโมเดลภายใน",
+            "/skill approve รหัส — อนุมัติทักษะที่ผ่านทุกการทดสอบ",
+            "/skill delete รหัส — ลบทักษะที่บันทึกไว้",
+            "พิมพ์ 'คุณทำอะไรได้บ้าง' เพื่อดูความสามารถปัจจุบัน"
+        )
+        assertEquals(expectedLines, answer.lines())
     }
 
     @Test fun answersGreetingWithoutExternalProvider() {
