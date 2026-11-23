@@ -199,4 +199,31 @@ class LocalMemoryStoreTest {
     }
 
 
+
+    @Test fun rejectsOversizedMemoryStoreBeforeReadingWholeFile() {
+        val directory = temporaryFolder.newFolder("oversized-memory")
+        val file = java.io.File(directory, "memory.enc")
+        file.writeBytes(ByteArray(1_048_577))
+        val store = LocalMemoryStore(directory, PlaintextMemoryCipher)
+
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) { store.all() }
+        assertEquals(1_048_577L, file.length())
+    }
+
+    @Test fun rejectsDuplicateIdsInAuthenticatedMemoryImport() {
+        val directory = temporaryFolder.newFolder("duplicate-memory-import")
+        val id = java.util.UUID.randomUUID().toString()
+        val line = org.json.JSONObject().put("schemaVersion", 1).put("id", id)
+            .put("category", "experience").put("content", "รายการ").put("createdAt", "2026-11-23T00:00:00Z").toString()
+        val duplicatePayload = (line + "\n" + line + "\n").toByteArray(Charsets.UTF_8)
+        val store = LocalMemoryStore(directory, PlaintextMemoryCipher)
+        store.add("ข้อมูลเดิม")
+
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            store.importEncrypted(duplicatePayload)
+        }
+        assertEquals("ข้อมูลเดิม", store.all().single().content)
+    }
+
+
 }
