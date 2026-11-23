@@ -15,6 +15,12 @@ enum class ChatRoute {
  * local Brain; the external provider is reachable only through an explicit /ai command.
  */
 object ChatRoutePolicy {
+    fun isTaskLifecycleCommand(input: String): Boolean {
+        if (classify(input) != ChatRoute.TASK_COMMAND) return false
+        val action = input.trim().split(Regex("\\s+")).getOrNull(1)?.lowercase().orEmpty()
+        return action in setOf("list", "show", "start", "complete", "fail", "retry", "cancel")
+    }
+
     fun classify(input: String): ChatRoute {
         val text = input.trim()
         return when {
