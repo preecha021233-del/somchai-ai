@@ -536,3 +536,14 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Test commits: `e4cedbad69fa064cfacfdf775598f148b9a72b70` (fixture correction) and `f6875e59d869905fc812d669aa500178d7fc4985` (expanded regression matrix).
 - CI: GitHub Actions run #252 (run ID `45112818101`) — **SUCCESS** for head `f6875e59d869905fc812d669aa500178d7fc4985`. JVM unit-test job completed successfully. [Run #252](https://github.com/preecha021233-del/somchai-ai/actions/runs/45112818101).
 - Chunk 6 is DONE. This closes the work-chunk deliverable only; it does not declare P09–P12 or Phase 1 accepted.
+
+
+## Phase 1 — Chunks 7–8: reasoning explanations and answer verification (2026-11-23)
+
+- Implemented and committed on branch `phase-1/local-brain-runtime`; code/test head: `232e24bdb7d909fc2d9cc406c44c161614312f0f`.
+- Chunk 7: contradiction explanations now name the exact conflicting integer and explain why the claims cannot both be true. Multi-step budget and cash-change responses include explicit calculation lines; missing-input clarification from Chunk 4 remains covered by its regression tests.
+- Chunk 8: added `OfflineReasoningEngine.verifyArithmeticAnswer` and wired it into `ResultEvaluator` for `reasoning.arithmetic`. Displayed arithmetic equations are parsed and checked against their stated results; incorrect or unverifiable arithmetic is marked unsafe and replaced with a safe clarification instead of being returned as confirmed.
+- Added `ResultEvaluatorTest` coverage for correct multi-step arithmetic, incorrect arithmetic, missing verifiable equations, and valid cash-change calculations; strengthened contradiction explanation assertions.
+- CI GitHub Actions run #259 (run ID `45113740793`) — **SUCCESS** for head `232e24bdb7d909fc2d9cc406c44c161614312f0f`. JVM unit-test step passed; ARM64 native runtime and Debug APK plus Android instrumentation APK builds completed; both artifacts uploaded. [Run #259](https://github.com/preecha021233-del/somchai-ai/actions/runs/45113740793).
+- Debug APK artifact ID `14790094169`; ZIP SHA-256 `440137bb87b53572b62bfeb01a561382d0c89f720a6a27c6976bbc020cffafdf`. Android instrumentation APK artifact ID `14791220095`; ZIP SHA-256 `798396202e2cca33a07977c5ef693c06b7491f903c8101805b06484e5bc6eff1`.
+- Chunks 7 and 8 are DONE as work-plan deliverables. Group 2 (Chunks 5–8) is now recorded complete. This does **not** declare P09–P12 fully accepted: the complete acceptance matrix still requires explicit criterion-by-criterion evidence, and CI does not replace target-device checks or final Phase 1 acceptance.
