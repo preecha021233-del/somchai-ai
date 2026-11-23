@@ -270,11 +270,28 @@ class LocalModelStore(
 }
 
 object GgufFileValidator {
-    /** Accept only the pinned starter model; never load arbitrary or merely GGUF-shaped files. */
-    fun isVerifiedDefaultModel(file: File): Boolean =
-        file.isFile && file.length() in 400_000_000L..600_000_000L && isValid(file) &&
-            runCatching { sha256(file).equals(LocalModelStore.EXPECTED_SHA256, ignoreCase = true) }
-                .getOrDefault(false)
+    private val verifiedFiles = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    /**
+     * Accept only the pinned starter model. Cache successful SHA-256 verification by
+     * canonical path, size and modification time so startup and load do not hash
+     * the same ~500 MB file twice. Failed checks are never cached.
+     */
+    fun isVerifiedDefaultModel(file: File): Boolean {
+        if (!file.isFile || file.length() !in 400_000_000L..600_000_000L || !isValid(file)) return false
+        val key = runCatching {
+            "${file.canonicalPath}|${file.length()}|${file.lastModified()}|${LocalModelStore.EXPECTED_SHA256}"
+        }.getOrNull() ?: return false
+        verifiedFiles[key]?.let { return it }
+        val verified = runCatching {
+            sha256(file).equals(LocalModelStore.EXPECTED_SHA256, ignoreCase = true)
+        }.getOrDefault(false)
+        if (verified) {
+            if (verifiedFiles.size >= 16) verifiedFiles.clear()
+            verifiedFiles[key] = true
+        }
+        return verified
+    }
 
     fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
