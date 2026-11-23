@@ -9,8 +9,8 @@ class BuiltinToolExecutor(
     private val permissions: PermissionManager,
     private val logger: ActivityLogger,
     private val checkStorageBudget: () -> Unit,
-    private val pageReader: WebPageReader = WebPageReader(),
-    private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(pageReader),
+    private val pageReader: ResearchPageReader = WebPageReader(),
+    private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(),
     private val isWebSearchApproved: () -> Boolean = { false },
     private val summarizeLocally: (suspend (String) -> String)? = null
 ) {
