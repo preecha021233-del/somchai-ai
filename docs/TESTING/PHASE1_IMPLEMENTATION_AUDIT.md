@@ -227,3 +227,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - Added explicit limits on arithmetic input size, numeric token count, numeric literal length, expression length and token count. Oversized expressions fail closed rather than consuming unbounded parsing/BigDecimal resources.
 - Regression tests added; CI pending.
+
+
+## CI evidence clarification
+
+- CI #205 passed for commit `804beaa294d75e25fa887d94eddc9b5704606e86`: JVM unit tests, ARM64 native build, debug APK and Android instrumentation APK build/upload.
+- Device instrumentation execution remains NOT RUN. Changes after that commit are pending the latest-branch workflow.

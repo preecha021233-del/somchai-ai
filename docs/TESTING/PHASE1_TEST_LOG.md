@@ -268,7 +268,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Activity logs no longer store raw research queries, discovered/read URLs, provider error text, or page-reader exception text. They retain aggregate counts and query length only.
 - Research result content still displays source URLs and errors to the user; this change limits persistent audit-log exposure, not the user-visible research report.
 - Added a regression test containing a private query and URL and asserting neither is present in the persisted activity log.
-- CI run #205 is pending at the time of this entry. P26 and Phase 1 remain NOT ACCEPTED pending CI and device/network validation.
+- CI #205 later completed successfully for commit `804beaa294d75e25fa887d94eddc9b5704606e86`; the JVM unit-test task, ARM64 native build, debug APK, Android instrumentation APK build, and artifact uploads passed. The device instrumentation was not executed. Later IPv6, skill-integrity, research-source and arithmetic changes require their own latest-branch CI. P26 and Phase 1 remain NOT ACCEPTED pending full latest-branch and device/network validation.
 
 
 ## Round 21 — 2026-11-23 — Reserved IPv6 destination filtering
@@ -322,3 +322,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Arithmetic parsing now rejects inputs with more than 128 numeric tokens, numeric literals longer than 64 digits, expressions longer than 512 characters, or more than 256 expression tokens.
 - Added regression tests for excessive numeric literal length and token count to prevent pathological BigDecimal parsing on-device.
 - CI pending.
+
+
+## CI result update — 2026-11-23
+
+- Run #45094274023 (#205): **SUCCESS** for commit `804beaa294d75e25fa887d94eddc9b5704606e86`.
+- Verified JVM unit tests, ARM64 llama.cpp native build, debug APK assembly, Android instrumentation APK compilation/assembly, and both artifact uploads.
+- The instrumentation test APK was built but not executed on a connected device.
+- This result verifies code through the privacy-safe research audit-log change, but does not verify later commits for IPv6 destination filtering, learned-skill evaluation/audit, canonical research source counting, or arithmetic resource limits.
