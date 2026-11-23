@@ -139,3 +139,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 26. Persisted task transitions now emit privacy-minimized events: `TASK_CREATED`, `TASK_STEP_STARTED`, `TASK_STEP_COMPLETED`, `TASK_STEP_FAILED`, `TASK_STEP_RETRY_QUEUED`, and `TASK_STEP_CANCELLED`. Event details contain task ID, step index/status and task type/count; they deliberately omit the user's task goal and failure text.
 27. Audit callback failure is isolated so a logging outage cannot reverse or falsely fail an already-persisted task transition.
 28. Added regression tests for the full lifecycle event sequence, cancellation, minimized event details, and audit-logger failure isolation. CI for commits `ddd763a`, `c4e89b1`, `658a024`, and `a3c4ff6` has not yet been confirmed; these tests are pending CI verification. P16 device restart evidence remains required.
+
+## P21 safe deletion by memory ID — 2026-11-23
+
+29. Fixed `/forget` so an exact full UUID takes precedence over shorter prefixes. If a short prefix matches multiple memory records, deletion is refused and the user is asked to supply the full ID; no arbitrary first match is deleted.
+30. Added a regression test that migrates two legacy records with deliberately colliding eight-character prefixes, verifies the short ID is rejected without deleting either record, then verifies the exact full ID deletes only the intended record.
+31. CI verification is pending for commits `8a5da39` and `64389bd`; no pass is claimed.
