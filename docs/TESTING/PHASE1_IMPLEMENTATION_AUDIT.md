@@ -159,3 +159,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 37. Learned-skill storage now validates persisted UUIDs, names, trigger counts/lengths, procedure sizes, test/result cardinality, approval invariants, output bounds, timestamps, and duplicate IDs.
 38. Learned-skill encrypted writes now decrypt and validate the staged candidate, retain rollback until read-back verification, and recover interrupted replacements on startup. Empty or oversized skill-retrieval queries return no skills.
 39. Regression tests cover task-state crash recovery, encrypted-skill crash recovery, malformed persisted skill rejection, and empty-query retrieval. CI verification is pending.
+
+## P26 external provider and audit-log resource hardening — 2026-11-23
+
+40. Optional external LLM requests now reject blank/oversized user prompts, resolve the configured provider hostname and fail closed if any resolved address is private/reserved/non-public, disable automatic redirects to prevent credential forwarding to redirect targets, and cap response bodies at 1 MB.
+41. Persistent activity logging now rotates at 1 MB, retains at most 1,500 recent lines, and bounds reads to a 1 MB tail window so legacy oversized logs cannot be loaded wholly into memory.
+42. Added regression tests for loopback/private/invalid provider hostnames and bounded audit-log retention. DNS is checked before connection but not pinned to a socket address; target-device/network integration tests remain necessary. CI verification is pending.
