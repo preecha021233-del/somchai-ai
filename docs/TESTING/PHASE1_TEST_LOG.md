@@ -502,3 +502,13 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 
 - CI rerun: GitHub Actions run #246 (run ID 45111802478) — **SUCCESS** for corrected test head 7cc7f923c1342288fefdd6cc1780d167e0a5c7ab. [Run #246](https://github.com/preecha021233-del/somchai-ai/actions/runs/45111802478).
 - Chunk 4 is DONE. The clarification implementation and its corrected regression tests are committed and the full CI workflow passed. This closes Chunk 4 only; it does not establish P01–P08 or Phase 1 acceptance.
+
+
+## Phase 1 — Chunk 5: P09 multi-step fact analysis review (2026-11-23)
+
+- Reviewed the P09 acceptance target and current deterministic reasoning path.
+- Existing end-to-end regression test: `InternalProcessorTest.solvesMultiStepThaiPurchaseBudgetProblem` uses a 500-baht budget, 2 notebooks at 30 baht each, and 3 pens at 10 baht each; it asserts both intermediate subtotals (60 and 30 baht) and the final remaining balance (410 baht).
+- The production path `solveMultiStepBalanceProblem` calculates each item subtotal, sums the subtotals, checks insufficient budget, and returns the intermediate and final calculations.
+- No new production change was justified: the reviewed P09 case is already implemented and covered by the existing regression test.
+- CI evidence: GitHub Actions run #246 (run ID 45111802478) — **SUCCESS** for test head `7cc7f923c1342288fefdd6cc1780d167e0a5c7ab`; the P09 regression test is present in that tested tree. [Run #246](https://github.com/preecha021233-del/somchai-ai/actions/runs/45111802478).
+- Chunk 5 is DONE as a review/evidence task. This does not declare all P09–P12 acceptance cases or Phase 1 accepted.
