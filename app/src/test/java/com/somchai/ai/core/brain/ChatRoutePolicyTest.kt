@@ -29,6 +29,16 @@ class ChatRoutePolicyTest {
         assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("จำไว้ว่า นัดหมายพรุ่งนี้"))
     }
 
+    @Test fun taskLifecycleCommandsAreSeparatedFromNewTaskCreation() {
+        listOf("/task list", "/task show abc", "/task start abc", "/task complete abc",
+            "/task fail abc", "/task retry abc", "/task cancel abc").forEach {
+            assertEquals(true, ChatRoutePolicy.isTaskLifecycleCommand(it))
+        }
+        assertEquals(false, ChatRoutePolicy.isTaskLifecycleCommand("/task"))
+        assertEquals(false, ChatRoutePolicy.isTaskLifecycleCommand("/task พัฒนาแอป SOMCHAI"))
+        assertEquals(false, ChatRoutePolicy.isTaskLifecycleCommand("/taskevil list"))
+    }
+
     @Test fun pluginStatusAliasesNeverRouteToWebSearchOrExternalAi() {
         listOf("/plugins", "ตรวจสอบปลั๊กอิน", "รายการปลั๊กอิน").forEach {
             assertEquals(ChatRoute.PLUGIN_STATUS, ChatRoutePolicy.classify(it))
