@@ -23,28 +23,29 @@ class ResultEvaluatorTest {
     }
 
     @Test fun rejectsArithmeticAnswerWhenDisplayedResultIsWrong() {
-        val checked = evaluator.evaluate(
-            ProcessingResult("วิธีคำนวณ:\\n2 + 3 * 4 = 15", "reasoning.arithmetic")
-        )
+        val answer = """
+            วิธีคำนวณ:
+            2 + 3 * 4 = 15
+        """.trimIndent()
+        val checked = evaluator.evaluate(ProcessingResult(answer, "reasoning.arithmetic"))
         assertFalse(checked.safe)
         assertTrue(checked.notes.contains("arithmetic-verification-failed"))
         assertTrue(checked.text.contains("ยังยืนยันไม่ได้"))
     }
 
     @Test fun rejectsArithmeticIntentWithoutAVerifiableEquation() {
-        val checked = evaluator.evaluate(
-            ProcessingResult("คำตอบคือ 14", "reasoning.arithmetic")
-        )
+        val checked = evaluator.evaluate(ProcessingResult("คำตอบคือ 14", "reasoning.arithmetic"))
         assertFalse(checked.safe)
     }
 
     @Test fun keepsCorrectCashChangeCalculationSafe() {
-        val checked = evaluator.evaluate(
-            ProcessingResult(
-                "วิธีคำนวณ:\\nราคารวม = 3 × 25 = 75 บาท\\nเงินทอน = เงินที่จ่าย - ราคารวม\\nเงินทอน = 100 - 75 = 25 บาท",
-                "reasoning.arithmetic"
-            )
-        )
+        val answer = """
+            วิธีคำนวณ:
+            ราคารวม = 3 × 25 = 75 บาท
+            เงินทอน = เงินที่จ่าย - ราคารวม
+            เงินทอน = 100 - 75 = 25 บาท
+        """.trimIndent()
+        val checked = evaluator.evaluate(ProcessingResult(answer, "reasoning.arithmetic"))
         assertTrue(checked.safe)
     }
 }
