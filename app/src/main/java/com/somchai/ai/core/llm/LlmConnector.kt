@@ -35,7 +35,10 @@ class LlmConnector(
         val body = JSONObject().put("model", provider.model).put("messages", messages)
             .put("temperature", 0.4).put("max_tokens", 1200)
         val client = OkHttpClient.Builder()
-            .dns(Dns { host -> resolvePublicProviderAddresses(host, dnsResolver) })
+            .dns(object : Dns {
+                override fun lookup(hostname: String): List<InetAddress> =
+                    resolvePublicProviderAddresses(hostname, dnsResolver)
+            })
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(45, TimeUnit.SECONDS)
             .followRedirects(false)
