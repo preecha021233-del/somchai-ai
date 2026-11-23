@@ -7,12 +7,18 @@ on:
     branches: [main, phase-1/research-reader-brain-integration]
     paths:
       - "app/**"
+      - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - "gradle/**"
       - "docs/LOCAL_BRAIN_RUNTIME.md"
       - ".github/workflows/phase1-local-brain.yml"
   push:
     branches: [phase-1/local-brain-runtime]
     paths:
       - "app/**"
+      - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - "gradle/**"
       - "docs/TESTING/**"
       - "docs/LOCAL_BRAIN_RUNTIME.md"
       - ".github/workflows/phase1-local-brain.yml"
