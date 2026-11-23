@@ -365,3 +365,6 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Local-model research summaries are now shown only when their source IDs are valid for the pages actually read. With two or more readable pages, the summary must cite both [S1] and [S2], and may not cite unavailable IDs.
 - Invalid or missing citations cause the model summary to be rejected; the actual source-page evidence remains visible and the user receives an explicit warning.
 - Added unit coverage for valid, missing, extra and single-page citations. CI pending.
+
+
+- Citation regex corrected to match literal `[S1]` / `[S2]` source IDs using Kotlin raw-regex escaping. CI remains pending.

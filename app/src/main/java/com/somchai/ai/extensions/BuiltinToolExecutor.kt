@@ -106,7 +106,7 @@ class BuiltinToolExecutor(
 internal fun hasValidResearchCitations(summary: String, readablePageCount: Int): Boolean {
     if (readablePageCount <= 0) return false
     val available = (1..minOf(readablePageCount, 2)).toSet()
-    val citations = Regex("""\\[S(\\d+)]""").findAll(summary)
+    val citations = Regex("""\[S(\d+)]""").findAll(summary)
         .mapNotNull { it.groupValues.getOrNull(1)?.toIntOrNull() }
         .toSet()
     return citations.isNotEmpty() && citations.all { it in available } &&
