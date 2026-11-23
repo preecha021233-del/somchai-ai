@@ -269,3 +269,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - **Unresolved P36 risk:** `LocalModelStore` validates DNS answers before opening an `HttpURLConnection`, but the HTTP client may resolve the hostname again when connecting. The validated address is not pinned to the TCP socket. This leaves a DNS-rebinding time-of-check/time-of-use gap in the model-download path. Do not claim the model downloader is fully hardened until a pinned-IP HTTPS connection and regression test close this gap, or a documented equivalent control is verified.
 - Latest-branch CI for the route change and subsequent documentation commits is not available in the connected GitHub status results at the time of this update. Earlier CI #281 is historical evidence only and does not validate the latest branch head.
 - Phase 1 remains NOT ACCEPTED. No device gate or final P01–P43 PASS is claimed.
+
+
+## P36 DNS socket-pinning correction — 2026-11-23
+
+- Closed the previously documented DNS rebinding gap in `LocalModelStore`: OkHttp now uses a custom `Dns` implementation that validates all DNS answers and returns those exact addresses to the HTTP client's connection layer, instead of validating with one resolver call and allowing `HttpURLConnection` to resolve again.
+- TLS still authenticates the original hostname; redirects are manual and revalidated on every hop; the model response body is streamed to disk, then size, GGUF header and SHA-256 are checked before rename into the active model path.
+- Regression tests cover resolver call count/changed second answer, mixed public/private answers, and reserved IPv6 ranges. This is implementation evidence only; latest CI run #293 is pending and target-device verification is still required.
