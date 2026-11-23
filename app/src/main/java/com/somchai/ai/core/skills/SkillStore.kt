@@ -184,9 +184,12 @@ class SkillStore(
 
     private fun readAll(): List<LearnedSkill> {
         if (!file.isFile) return emptyList()
+        require(file.length() in 1..MAX_FILE_BYTES.toLong()) { "ไฟล์ทักษะมีขนาดเกินกำหนดหรือว่างเปล่า" }
         val bytes = file.readBytes()
         require(bytes.size <= MAX_FILE_BYTES) { "ไฟล์ทักษะมีขนาดเกินกำหนด" }
-        return decodeSkills(cipher.decrypt(bytes))
+        val plaintext = cipher.decrypt(bytes)
+        require(plaintext.size <= MAX_FILE_BYTES) { "ข้อมูลทักษะหลังถอดรหัสมีขนาดเกินกำหนด" }
+        return decodeSkills(plaintext)
     }
 
     private fun decodeSkills(bytes: ByteArray): List<LearnedSkill> {

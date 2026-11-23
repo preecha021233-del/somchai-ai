@@ -208,3 +208,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - Discovery/read deduplication and the two-source threshold now use canonical URL identity, ignoring fragments, host casing and default ports. A duplicated page can no longer satisfy the requirement to read two distinct sources.
 - Regression test added; CI pending.
+
+
+## Learned-skill storage size bound
+
+- Enforce the 1 MiB ciphertext bound before `readBytes()`, then independently bound decrypted payload bytes before parsing. Regression test rejects oversized store files.
+- CI pending.

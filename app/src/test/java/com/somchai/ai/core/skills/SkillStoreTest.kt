@@ -312,4 +312,15 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun rejectsOversizedEncryptedSkillStoreBeforeReadingContents() {
+        val dir = createTempDir()
+        try {
+            File(dir, "skills.enc").writeBytes(ByteArray(1_048_577))
+            val store = newStore(dir)
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                store.all()
+            }
+        } finally { dir.deleteRecursively() }
+    }
+
 }

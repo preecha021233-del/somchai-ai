@@ -301,3 +301,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - The two-source completion predicate uses the same canonical identity rule.
 - Added regression coverage proving two fragment/default-port variants of one page count as one read and cannot satisfy the two-source minimum.
 - CI pending for the consolidated latest implementation; P24 and Phase 1 remain NOT ACCEPTED.
+
+
+## Round 25 — 2026-11-23 — Learned-skill storage read bounds
+
+- Skill storage now checks the encrypted file length before reading it into memory and checks the decrypted payload size before JSON parsing.
+- Added a regression test for an oversized encrypted skill file. This closes a pre-validation memory-allocation gap in the P43 persistence boundary.
+- CI pending for the consolidated branch.
