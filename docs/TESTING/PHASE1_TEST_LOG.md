@@ -728,3 +728,15 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - No device Network Trace or Audit Log was provided, so this observation does **not** establish that no discovery/provider/network request occurred.
 - Result: **PARTIAL**. P23 is not a PASS and remains open for the no-network evidence requirement. P24 (owner approval and live two-source search) has not been started.
 - The owner chose to defer the additional evidence collection for now; continue with other eligible Phase 1 checks without treating P23 as passed.
+
+
+## Round 2 device acceptance — P24 (2026-11-23)
+
+- Owner approved Web Search; the plugin screen showed pending 0 and active 1 (`Web Search v1 — web.search`), while a duplicate disabled entry remained visible.
+- Owner submitted the live P24 query requesting research on solar eclipses and safe viewing, with at least two real pages read and source links shown.
+- Observed device behavior reported by the owner: the app displayed “กำลังพิมพ์” for approximately 5 seconds, then the app crashed/exited.
+- No search results, opened-page evidence, summary, or source citations were returned. The two-real-source acceptance threshold was therefore not evaluated.
+- Result: **BLOCKED** (device crash), not PASS and not a search-provider failure diagnosis. Stop repeating the query until Android crash/logcat evidence is collected and inspected.
+- Preserve app data: do not uninstall the app or clear its storage. Inspect the crash window and relevant Web Search/research execution path before resuming P24.
+- P22 is updated as PARTIAL: the post-approval screen confirms one active Web Search and zero pending items, but the duplicate disabled entry remains unresolved.
+- Phase 1 remains NOT ACCEPTED.
