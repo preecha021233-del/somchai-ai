@@ -22,8 +22,8 @@
 | Metric | Count |
 |---|---:|
 | Total work items | 61 |
-| Done | 24 |
-| In progress | 8 |
+| Done | 32 |
+| In progress | 0 |
 | Blocked | 8 |
 | Not started | 21 |
 
