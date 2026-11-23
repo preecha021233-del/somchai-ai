@@ -394,3 +394,17 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 9. Test copy, feedback, Thai TTS and Android share actions.
 
 **Phase 1 close decision: NOT CLOSED.** Device evidence, owner-signed update compatibility and P01–P43 acceptance results remain required.
+
+
+## Gap-Fill CI verification — 2026-11-23
+
+- Verified commit: d6e1c93f5f094b8e666e0269b9310ad18d0288fe
+- GitHub Actions run #225: SUCCESS — https://github.com/preecha021233-del/somchai-ai/actions/runs/45100829228
+- ./gradlew testDebugUnitTest: PASS (BUILD SUCCESSFUL).
+- ./gradlew assembleDebug assembleDebugAndroidTest: PASS (BUILD SUCCESSFUL).
+- Native llama.cpp ARM64 CMake/NDK build: PASS.
+- Debug APK artifact uploaded: ID 14785207125.
+- Android instrumentation test APK artifact uploaded: ID 14785017835.
+- Instrumentation tests were compiled and packaged only; they were NOT executed on a physical Android device.
+- assembleRelease was not run because the workflow does not have the owner's local signing credentials. No signing key was changed or generated.
+- This CI result verifies JVM tests and build/package integration for the recorded commit. It does not prove on-device model inference, Thai answer quality, UI interaction, existing-install update compatibility, or final P01–P43 acceptance.
