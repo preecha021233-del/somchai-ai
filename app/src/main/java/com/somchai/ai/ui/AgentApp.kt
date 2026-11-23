@@ -38,6 +38,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import com.somchai.ai.core.CoreRuntime
 import com.somchai.ai.core.brain.BrainRequest
+import com.somchai.ai.core.brain.ChatRoute
+import com.somchai.ai.core.brain.ChatRoutePolicy
 import com.somchai.ai.core.processing.TaskPlan
 import com.somchai.ai.core.processing.TaskCommandProcessor
 import com.somchai.ai.core.skills.SkillTestCase
@@ -169,9 +171,10 @@ fun AgentApp(runtime: CoreRuntime) {
                         pendingPlan = null
                         scope.launch {
                             try {
-                                val answer = if (text.startsWith("/task", true)) {
+                                val route = ChatRoutePolicy.classify(text)
+                                val answer = if (route == ChatRoute.TASK_COMMAND) {
                                     TaskCommandProcessor(runtime.tasks).execute(text)
-                                } else if (text.startsWith("/skill", true)) {
+                                } else if (route == ChatRoute.SKILL_COMMAND) {
                                     val command = text.substringAfter(" ", "").trim()
                                     when {
                                         command.equals("list", true) -> {
@@ -236,7 +239,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                         }
                                         else -> "คำสั่งทักษะ:\n/skill list\n/skill learn ชื่อ | คำกระตุ้น | ประสบการณ์ | input => expected ;; input => expected\n/skill propose ชื่อ | คำกระตุ้น | ขั้นตอน | input => expected ;; input => expected\n/skill test รหัส\n/skill approve รหัส\n/skill delete รหัส"
                                     }
-                                } else if (text.equals("/plugins", true) || text.equals("ตรวจสอบปลั๊กอิน", true) || text.equals("รายการปลั๊กอิน", true)) {
+                                } else if (route == ChatRoute.PLUGIN_STATUS) {
                                     val active = runtime.plugins.activePlugins()
                                     val candidates = runtime.plugins.candidates()
                                     val disabled = runtime.plugins.disabledPlugins()
@@ -250,12 +253,12 @@ fun AgentApp(runtime: CoreRuntime) {
                                         disabled.forEach { append("• ").append(it.name).append(" (").append(it.id).append(") — ปิดใช้งาน\n") }
                                         if (active.isEmpty() && candidates.isEmpty() && disabled.isEmpty()) append("ยังไม่มีปลั๊กอินในระบบ")
                                     }
-                                } else if (text.startsWith("/search ", true)) {
+                                } else if (route == ChatRoute.WEB_SEARCH) {
                                     check(runtime.plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }) {
                                         "ต้องอนุมัติปลั๊กอิน Web Search ในหน้า Plugins ก่อน"
                                     }
                                     runtime.tools.search(text.substringAfter(' ').trim())
-                                } else if (text.startsWith("/ai ", true)) {
+                                } else if (route == ChatRoute.EXPLICIT_EXTERNAL_AI) {
                                     check(runtime.secrets.hasKey()) { "ยังไม่ได้ตั้งค่า LLM Provider ครับ ใช้คำสั่งภายในได้โดยไม่ต้องใช้ API" }
                                     val history = messages.dropLast(1).takeLast(12).mapNotNull {
                                         when {
@@ -265,12 +268,7 @@ fun AgentApp(runtime: CoreRuntime) {
                                         }
                                     }
                                     runtime.llm.ask(history, text.removeRange(0, 4).trim())
-                                } else if (
-                                    text.startsWith("/") ||
-                                    text.startsWith("จำไว้ว่า ") ||
-                                    text.startsWith("จำว่า ") ||
-                                    listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน").any { text.contains(it) }
-                                ) {
+                                } else if (route == ChatRoute.INTERNAL_PROCESSOR) {
                                     val result = runtime.processor.process(text)
                                     runtime.logger.record("INTERNAL_PROCESS", "intent=${result.intent}")
                                     if (result.intent == "task.plan") {
