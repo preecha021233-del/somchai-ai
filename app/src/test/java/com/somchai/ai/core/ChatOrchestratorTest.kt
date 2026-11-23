@@ -70,4 +70,39 @@ class ChatOrchestratorTest {
         assertEquals(TaskStepStatus.IN_PROGRESS, tasks.all().single().steps.first().status)
         assertTrue(result.answer.contains("ยังไม่ได้ดำเนินการภายนอก"))
     }
+
+    @Test fun taskStartPersistsFirstStepAndAuditWithoutClaimingExternalExecution() = runBlocking {
+        val directory = temp.newFolder("task-p16")
+        val events = mutableListOf<Pair<String, String>>()
+        val tasks = TaskExecutionStore(directory) { event, detail -> events += event to detail }
+        val planner = TaskPlanner()
+        val memory = LocalMemoryStore(temp.newFolder("memory-p16"))
+        val orchestrator = ChatOrchestrator(
+            fallback,
+            InternalProcessor(memory, planner, tasks = tasks),
+            { false },
+            { "unused" },
+            { false },
+            { _, _ -> "unused" },
+            tasks,
+            planner,
+            audit = { event, detail -> events += event to detail }
+        )
+
+        val result = orchestrator.handle("/task พัฒนาแอป Android")
+        val record = tasks.all().single()
+        assertEquals("task.create", result.intent)
+        assertEquals(TaskType.DEVELOPMENT, record.type)
+        assertEquals(TaskStepStatus.IN_PROGRESS, record.steps.first().status)
+        assertTrue(record.steps.drop(1).all { it.status == TaskStepStatus.PENDING })
+        assertTrue(events.any { it.first == "TASK_CREATED" && it.second.contains("id=${record.id}") })
+        assertTrue(events.any { it.first == "TASK_STEP_STARTED" && it.second.contains("id=${record.id}") })
+        assertTrue(events.any { it.first == "CHAT_TASK_CREATED" && it.second.contains("id=${record.id}") })
+        assertTrue(result.answer.contains("ยังไม่ได้ดำเนินการภายนอก"))
+        assertFalse(result.answer.contains("ทำงานเสร็จแล้ว"))
+
+        val reopened = TaskExecutionStore(directory)
+        assertEquals(record, reopened.get(record.id))
+        assertEquals(TaskStepStatus.IN_PROGRESS, reopened.get(record.id)?.steps?.first()?.status)
+    }
 }
