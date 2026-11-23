@@ -99,4 +99,18 @@ class ResearchCoordinatorTest {
         assertFalse(report.meetsTwoSourceMinimum)
         assertEquals(1, report.pageErrors.size)
     }
+    @Test fun fragmentAndDefaultPortVariantsDoNotCountAsDistinctSources() {
+        val duplicateCandidates = listOf(
+            ResearchCandidate("a", "A", "https://EXAMPLE.com:443/article#section-one"),
+            ResearchCandidate("b", "B", "https://example.com/article#section-two")
+        )
+        val report = ResearchCoordinator(
+            FakeDiscovery(ResearchDiscoveryResult(duplicateCandidates, emptyList())),
+            FakeReader()
+        ).research("duplicate source variants")
+
+        assertEquals(1, report.pagesRead.size)
+        assertFalse(report.meetsTwoSourceMinimum)
+    }
+
 }

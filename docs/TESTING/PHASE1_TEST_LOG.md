@@ -293,3 +293,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Follow-up to Round 22: older encrypted skill records are preserved even if they contain one-character triggers or duplicate test inputs. Such previously approved records are treated as inactive when loaded, and cannot be re-approved until re-proposed with valid triggers and unique tests.
 - Added regression coverage proving legacy data remains readable but cannot enter retrieval or be re-approved under the weaker criteria.
 - New proposals continue to enforce minimum trigger length and unique test inputs. CI pending.
+
+
+## Round 24 — 2026-11-23 — Distinct research source counting
+
+- Research candidates and successful page reads are now deduplicated by canonical URL identity: fragments, hostname case and default HTTPS/HTTP ports no longer make one page look like multiple sources.
+- The two-source completion predicate uses the same canonical identity rule.
+- Added regression coverage proving two fragment/default-port variants of one page count as one read and cannot satisfy the two-source minimum.
+- CI pending for the consolidated latest implementation; P24 and Phase 1 remain NOT ACCEPTED.

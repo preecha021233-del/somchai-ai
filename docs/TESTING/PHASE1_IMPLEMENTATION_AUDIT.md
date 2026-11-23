@@ -202,3 +202,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - Legacy records with previously-approved but unsafe one-character triggers or duplicate test inputs are retained rather than rejected; they are downgraded to inactive at read time and cannot be re-approved without a valid new proposal.
 - This preserves existing user data while preventing weak legacy triggers from entering active prompt context. Regression test added; CI pending.
+
+
+## Research source identity
+
+- Discovery/read deduplication and the two-source threshold now use canonical URL identity, ignoring fragments, host casing and default ports. A duplicated page can no longer satisfy the requirement to read two distinct sources.
+- Regression test added; CI pending.
