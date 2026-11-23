@@ -173,7 +173,7 @@ class WebPageReader(
  */
 internal class PinnedIpSslSocketFactory(
     private val pinnedIp: InetAddress,
-    private val tlsHost: String,
+    internal val tlsHost: String,
     private val connectTimeoutMs: Int,
     private val delegate: SSLSocketFactory,
     private val socketConnector: (Socket, InetSocketAddress, Int) -> Unit = { socket, destination, timeout ->
