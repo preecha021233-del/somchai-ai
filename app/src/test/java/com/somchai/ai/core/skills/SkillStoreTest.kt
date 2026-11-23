@@ -296,4 +296,20 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun legacyUnsafeApprovedSkillIsPreservedButForcedInactive() {
+        val dir = createTempDir()
+        try {
+            File(dir, "skills.enc").writeText(
+                """[{"id":"00000000-0000-0000-0000-000000000001","name":"legacy","triggers":["x"],"procedure":"legacy procedure","tests":[{"input":"same","expected":"ok"},{"input":"same","expected":"ok"}],"results":[{"passed":true,"output":"ok"},{"passed":true,"output":"ok"}],"approved":true,"createdAt":"2026-11-23T00:00:00Z"}]"""
+            )
+            val store = newStore(dir)
+            val legacy = store.all().single()
+            assertFalse(legacy.approved)
+            assertTrue(store.relevantFor("x").isEmpty())
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                store.approve(legacy.id)
+            }
+        } finally { dir.deleteRecursively() }
+    }
+
 }

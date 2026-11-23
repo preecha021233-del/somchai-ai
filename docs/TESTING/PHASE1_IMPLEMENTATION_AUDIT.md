@@ -196,3 +196,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - Added minimum trigger length and unique normalized test-input requirements at proposal and persisted-record validation boundaries.
 - Stale concurrent evaluation results are rejected if the skill changed while inference was running.
 - Regression tests cover invalid triggers, duplicate test inputs and stale evaluation write races. CI pending.
+
+
+## Learned-skill backward compatibility
+
+- Legacy records with previously-approved but unsafe one-character triggers or duplicate test inputs are retained rather than rejected; they are downgraded to inactive at read time and cannot be re-approved without a valid new proposal.
+- This preserves existing user data while preventing weak legacy triggers from entering active prompt context. Regression test added; CI pending.

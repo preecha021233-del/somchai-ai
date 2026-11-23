@@ -286,3 +286,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Evaluation now compares the current stored skill with the exact version tested before committing results. A concurrent/stale evaluation cannot overwrite newer results or revoke a more recent approval.
 - Added regression coverage for short triggers, duplicate cases and stale concurrent evaluation.
 - CI: pending. P40–P43 and Phase 1 remain NOT ACCEPTED.
+
+
+## Round 23 — 2026-11-23 — Backward-compatible learned-skill safety migration
+
+- Follow-up to Round 22: older encrypted skill records are preserved even if they contain one-character triggers or duplicate test inputs. Such previously approved records are treated as inactive when loaded, and cannot be re-approved until re-proposed with valid triggers and unique tests.
+- Added regression coverage proving legacy data remains readable but cannot enter retrieval or be re-approved under the weaker criteria.
+- New proposals continue to enforce minimum trigger length and unique test inputs. CI pending.

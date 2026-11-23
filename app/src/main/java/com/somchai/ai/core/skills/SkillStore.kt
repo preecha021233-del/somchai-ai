@@ -144,6 +144,10 @@ class SkillStore(
         val index = current.indexOfFirst { it.id == id }
         require(index >= 0) { "ไม่พบทักษะ" }
         val skill = current[index]
+        require(skill.triggers.all { it.length in 2..60 } &&
+            skill.tests.map { it.input.trim().lowercase() }.distinct().size == skill.tests.size) {
+            "ทักษะเดิมไม่ผ่านเกณฑ์ความปลอดภัย ต้องสร้างกรณีทดสอบใหม่ก่อนอนุมัติ"
+        }
         require(skill.results.size == skill.tests.size && skill.results.all { it.passed }) {
             "อนุมัติไม่ได้: ทักษะต้องผ่านกรณีทดสอบทุกข้อก่อน"
         }
@@ -211,16 +215,13 @@ class SkillStore(
             require(runCatching { UUID.fromString(skill.id) }.isSuccess) { "Invalid skill ID" }
             require(skill.name.isNotBlank() && skill.name.length <= 80) { "Invalid skill name" }
             require(skill.procedure.isNotBlank() && skill.procedure.length <= 4000) { "Invalid skill procedure" }
-            require(skill.triggers.size in 1..10 && skill.triggers.all { it.length in 2..60 }) {
+            require(skill.triggers.size in 1..10 && skill.triggers.all { it.isNotBlank() && it.length <= 60 }) {
                 "Invalid skill triggers"
             }
             require(skill.tests.size in 2..10 && skill.tests.all {
                 it.input.isNotBlank() && it.input.length <= 1000 &&
                     it.expectedContains.isNotBlank() && it.expectedContains.length <= 200
             }) { "Invalid skill test cases" }
-            require(skill.tests.map { it.input.trim().lowercase() }.distinct().size == skill.tests.size) {
-                "Duplicate skill test inputs"
-            }
             require(skill.results.isEmpty() || skill.results.size == skill.tests.size) {
                 "Skill evaluation result count does not match test count"
             }
@@ -229,7 +230,11 @@ class SkillStore(
                 "An approved skill must have passed every test"
             }
             require(runCatching { Instant.parse(skill.createdAt) }.isSuccess) { "Invalid skill timestamp" }
-            skill
+            // Preserve older owner data, but force legacy skills with weak triggers or
+            // duplicate test inputs inactive until the owner re-proposes and approves them.
+            val activationSafe = skill.triggers.all { it.length in 2..60 } &&
+                skill.tests.map { it.input.trim().lowercase() }.distinct().size == skill.tests.size
+            if (skill.approved && !activationSafe) skill.copy(approved = false) else skill
         }
         require(skills.map { it.id }.distinct().size == skills.size) { "Duplicate skill IDs" }
         return skills
