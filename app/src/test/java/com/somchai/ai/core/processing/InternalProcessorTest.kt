@@ -151,10 +151,11 @@ class InternalProcessorTest {
     }
 
     @Test fun doesNotFlagDifferentDestinationsOrDifferentIntegersAsContradictory() {
-        val differentPlaces = processor().process("ฉันไม่เคยไปกรุงเทพ แต่เคยไปเชียงใหม่")
+        val subject = processor()
+        val differentPlaces = subject.process("ฉันไม่เคยไปกรุงเทพ แต่เคยไปเชียงใหม่")
         assertFalse(differentPlaces.intent == "reasoning.contradiction")
 
-        val differentIntegers = processor().process("จำนวนหนึ่งเป็นเลขคู่ แต่อีกจำนวนหนึ่งเป็นเลขคี่")
+        val differentIntegers = subject.process("จำนวนหนึ่งเป็นเลขคู่ แต่อีกจำนวนหนึ่งเป็นเลขคี่")
         assertFalse(differentIntegers.intent == "reasoning.contradiction")
     }
 
