@@ -68,17 +68,28 @@ class BuiltinToolExecutor(
             }
             append("\nข้อจำกัด: จำนวนหน้าเว็บและเนื้อหาที่รายงานอิงจากผลที่เปิดอ่านได้จริง ไม่รับประกันว่าแหล่งข้อมูลเห็นตรงกัน")
         }
-        val summary = if (report.pagesRead.isNotEmpty()) {
+        val generatedSummary = if (report.pagesRead.isNotEmpty()) {
             runCatching { summarizeLocally?.invoke(buildSummaryPrompt(report))?.trim() }
                 .onFailure { logger.record("RESEARCH_SUMMARY_ERROR", it.javaClass.simpleName) }
-                .getOrNull()?.takeIf { !it.isNullOrBlank() }
+                .getOrNull()?.takeIf { it.isNotBlank() }
         } else null
-        val finalResult = if (summary != null) {
-            result.replace(
+        val summary = generatedSummary?.takeIf {
+            hasValidResearchCitations(it, report.pagesRead.size)
+        }
+        if (generatedSummary != null && summary == null) {
+            logger.record("RESEARCH_SUMMARY_REJECTED", "reason=invalid_source_citations")
+        }
+        val finalResult = when {
+            summary != null -> result.replace(
                 "หน้าเว็บที่เปิดอ่านจริง:",
                 "สรุปจากโมเดลภายใน (อ้างอิงเฉพาะแหล่งที่อ่านจริง):\n$summary\n\nหน้าเว็บที่เปิดอ่านจริง:"
             )
-        } else result
+            generatedSummary != null -> result.replace(
+                "หน้าเว็บที่เปิดอ่านจริง:",
+                "ไม่แสดงสรุปจากโมเดลภายใน เนื่องจากรหัสอ้างอิงไม่ครบหรือไม่ตรงกับหน้าเว็บที่อ่านจริง\n\nหน้าเว็บที่เปิดอ่านจริง:"
+            )
+            else -> result
+        }
 
         logger.record(
             "WEB_RESEARCH",
@@ -89,6 +100,17 @@ class BuiltinToolExecutor(
 
     private fun buildSummaryPrompt(report: ResearchReport): String =
         buildResearchSummaryPrompt(report, permissions::sanitizeExternalData)
+}
+
+
+internal fun hasValidResearchCitations(summary: String, readablePageCount: Int): Boolean {
+    if (readablePageCount <= 0) return false
+    val available = (1..minOf(readablePageCount, 2)).toSet()
+    val citations = Regex("""\\[S(\\d+)]""").findAll(summary)
+        .mapNotNull { it.groupValues.getOrNull(1)?.toIntOrNull() }
+        .toSet()
+    return citations.isNotEmpty() && citations.all { it in available } &&
+        (readablePageCount < 2 || (1 in citations && 2 in citations))
 }
 
 internal fun buildResearchSummaryPrompt(

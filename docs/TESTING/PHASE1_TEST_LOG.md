@@ -358,3 +358,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - JVM unit tests reached 172 cases; one test failed: `staleConcurrentSkillEvaluationCannotOverwriteNewerResults`.
 - The production stale-write guard correctly threw when an old evaluation tried to overwrite newer results. The test used a regular `async` child, whose expected exception cancelled its parent `runBlocking` scope even though `await()` was caught.
 - The test is being corrected to isolate the expected child failure in `supervisorScope`; this is a test-harness correction, not a relaxation of the stale-write protection.
+
+
+## Round 29 — 2026-11-23 — Research summary citation validation
+
+- Local-model research summaries are now shown only when their source IDs are valid for the pages actually read. With two or more readable pages, the summary must cite both [S1] and [S2], and may not cite unavailable IDs.
+- Invalid or missing citations cause the model summary to be rejected; the actual source-page evidence remains visible and the user receives an explicit warning.
+- Added unit coverage for valid, missing, extra and single-page citations. CI pending.

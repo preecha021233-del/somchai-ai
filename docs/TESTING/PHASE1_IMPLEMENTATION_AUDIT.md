@@ -254,3 +254,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - The stale-evaluation guard behaved as designed; the test's expected child exception cancelled its parent coroutine scope. Isolating the child with `supervisorScope` allows the test to assert the rejection without failing the enclosing test.
 - CI #215 did not reach native build; corrected test queued for rerun.
+
+
+## Research summary source-ID validation
+
+- Added a post-generation citation gate: a two-page research summary must cite both [S1] and [S2], and no reference may point outside the pages actually supplied to the model. Invalid summaries are omitted while raw read-page evidence is preserved.
+- Regression tests cover missing, valid and out-of-range citation IDs. CI pending.

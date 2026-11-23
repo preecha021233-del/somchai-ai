@@ -145,4 +145,13 @@ class BuiltinToolExecutorTest {
         assertTrue(audit.contains("pageErrors=1"))
     }
 
+    @Test fun researchSummaryMustCiteEveryRequiredReadableSource() {
+        assertTrue(hasValidResearchCitations("ข้อเท็จจริง [S1] และ [S2]", 2))
+        assertFalse(hasValidResearchCitations("ข้อเท็จจริง [S1]", 2))
+        assertFalse(hasValidResearchCitations("ข้อเท็จจริง [S1] [S3]", 2))
+        assertFalse(hasValidResearchCitations("ข้อเท็จจริงไม่มีแหล่งอ้างอิง", 2))
+        assertTrue(hasValidResearchCitations("ข้อเท็จจริง [S1]", 1))
+        assertFalse(hasValidResearchCitations("ข้อเท็จจริง [S2]", 1))
+    }
+
 }
