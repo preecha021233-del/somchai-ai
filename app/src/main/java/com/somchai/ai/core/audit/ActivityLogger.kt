@@ -46,7 +46,7 @@ class ActivityLogger(paths: CorePaths) {
             val bytes = ByteArray(remaining)
             input.readFully(bytes)
             String(bytes, Charsets.UTF_8).lineSequence()
-                .filter { it.isNotBlank() }.takeLast(MAX_RETAINED_LINES).toList()
+                .filter { it.isNotBlank() }.toList().takeLast(MAX_RETAINED_LINES)
         }
     }
 
