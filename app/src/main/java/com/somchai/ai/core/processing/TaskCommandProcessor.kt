@@ -67,10 +67,10 @@ class TaskCommandProcessor(private val store: TaskExecutionStore) {
     }.joinToString("\n")
 
     private fun requireTask(id: String): TaskRecord =
-        store.get(id.trim()) ?: error("ไม่พบงานรหัส $id")
+        store.get(id.trim()) ?: throw IllegalArgumentException("ไม่พบงานรหัส $id")
 
     private fun parseStep(value: String): Int {
-        val number = value.toIntOrNull() ?: error("ลำดับขั้นตอนต้องเป็นตัวเลข")
+        val number = value.toIntOrNull() ?: throw IllegalArgumentException("ลำดับขั้นตอนต้องเป็นตัวเลข")
         require(number > 0) { "ลำดับขั้นตอนเริ่มจาก 1" }
         return number - 1
     }
