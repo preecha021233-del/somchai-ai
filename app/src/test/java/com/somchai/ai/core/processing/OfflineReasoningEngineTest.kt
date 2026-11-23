@@ -31,6 +31,28 @@ class OfflineReasoningEngineTest {
     @Test fun rejectsIncompleteChangeQuestion() {
         assertNull(engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ได้ทอนเท่าไร"))
     }
+    @Test fun questionAndNegatedStatementAreNotMisclassifiedAsCommands() {
+        val question = engine.classifyExamples(
+            "จำแนกข้อความต่อไปนี้:\\n1. การบันทึกข้อมูลมีข้อดีอย่างไร"
+        ) ?: error("question intent was not recognized")
+        assertTrue(question.contains("ประเภท: คำถาม"))
+
+        assertNull(
+            engine.classifyExamples(
+                "จำแนกข้อความต่อไปนี้:\\n1. ฉันไม่ต้องการลบข้อมูล"
+            )
+        )
+    }
+
+    @Test fun recognizesAdditionalThaiQuestionFormsBeforeActionKeywords() {
+        val examples = engine.classifyExamples(
+            "จำแนกข้อความต่อไปนี้:\\n1. วิธีคำนวณภาษีทำอย่างไร\\n2. การสร้างบัญชีต้องใช้อะไร"
+        ) ?: error("Thai question forms were not recognized")
+        assertTrue(examples.contains("ประเภท: คำถาม"))
+        assertTrue(examples.contains("วิธีคำนวณภาษีทำอย่างไร"))
+        assertTrue(examples.contains("การสร้างบัญชีต้องใช้อะไร"))
+    }
+
     @Test fun rejectsOversizedNumericLiteralsAndExcessiveNumericTokens() {
         assertNull(engine.solveArithmetic("9".repeat(65)))
         assertNull(engine.solveArithmetic("1+".repeat(128) + "1"))
