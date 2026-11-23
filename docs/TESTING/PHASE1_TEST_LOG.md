@@ -437,3 +437,27 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 
 - Added a cumulative 32 KiB cap for chunked-response trailers so the HTTP header-size limit also covers trailers, not only the initial header block.
 - CI run #239 (run ID 45104053378), code commit 537caa649733a468a3fb1d26e8af30f82bc85cc3: JVM unit tests passed; ARM64 native runtime + Debug APK / instrumentation APK build step is still in progress at the time of this update. Final acceptance remains pending until this latest run completes successfully.
+
+
+## Phase 1 — Chunk 1: Thai understanding gap assessment (2026-11-23)
+
+Scope: compare P01–P08 with current implementation and tests; identify gaps only. This is a source/test review, not a claim that the full acceptance group has passed.
+
+| Criterion | Existing implementation / evidence | Review finding |
+|---|---|---|
+| P01 greeting | `InternalProcessor.isGreeting`; `InternalProcessorTest.answersGreetingWithoutExternalProvider`; `ChatOrchestratorTest.greetingUsesInternalAndDoesNotCallRemote` | Deterministic Thai greeting exists; orchestrator test asserts remote-provider call count remains zero. |
+| P02 help | `InternalProcessor.helpText`; `InternalProcessorTest.helpListsAllChatCommandFamiliesAndTheirOwnerBoundaries` | Help output exists and test checks major command families, but it does not assert the exact complete supported-command list. Genuine test-coverage gap; address in Chunk 2/4 only if still applicable after focused test design. |
+| P03 arithmetic precedence | `OfflineReasoningEngine.solveArithmetic`; `InternalProcessorTest.evaluatesArithmeticPrecedenceParenthesesAndUnarySigns` | Required expression 2 + 3 * 4 is covered with expected 14. |
+| P04 parentheses | Same test; case `(2 + 3) * 4` expected 20 | Covered. |
+| P05 nested expression | Same test; case `((2 + 3) * (4 - 1)) / 3` expected 5 | Covered. |
+| P06 Thai cash-change word problem | `OfflineReasoningEngine.solveChangeProblem`; `InternalProcessorTest.solvesQuantityAndUnitPriceCashChangePrompt`; `OfflineReasoningEngineTest.calculatesChangeFromQuantityAndUnitPriceInThai` | Required 3 × 25 and 100 − 75 = 25 calculation is covered. |
+| P07 thunder explanation | `BasicKnowledgeEngine.answer`; `BasicKnowledgeEngineTest.explainsHowThunderIsProduced`; `InternalProcessorTest.answersThunderQuestionWithCausalExplanation` | Thai causal explanation and key terms are covered by tests. |
+| P08 backup pros/cons | `BasicKnowledgeEngine.answer`; `BasicKnowledgeEngineTest.explainsBackupAdvantagesAndRisks`; `InternalProcessorTest.explainsBackupAdvantagesAndDisadvantages` | Multiple relevant advantages, disadvantages and encryption risk are present and tested. |
+
+### Cross-cutting findings
+
+- The deterministic P01–P08 paths are implemented and have focused unit-test coverage, but this review did not execute a fresh test run. Prior CI records in this log prove repository test/build runs for their recorded commits only.
+- The acceptance suite separately requires at least 18/20 local-model prompts to meet the relevance/correctness rubric. The starter Qwen2.5-0.5B model's target-device installation/inference and quality scoring are not evidenced; that model-quality gate remains BLOCKED, not PASS.
+- P02 exact help-list assertion is the only concrete P01–P08 deterministic coverage gap identified in this source review. No code change was made in Chunk 1.
+- Source references reviewed: `InternalProcessor.kt` blob `86866268f8c790f6d04eea5c376df631c1f8c7a1`; `BasicKnowledgeEngine.kt` blob `e632b3e04ab640d3397bf36bfe947e651d5eb056`; `OfflineReasoningEngine.kt` blob `a2fb77a99b005ecec303a50cca603223eaef7ee7`; `InternalProcessorTest.kt` blob `9ae9502130e19aacc5c767e7989190890e0ce741`; `BasicKnowledgeEngineTest.kt` blob `443bbb7de3be38b9bc8d2d506424b8a68caf3427`; `OfflineReasoningEngineTest.kt` blob `afa54d0ba44397a6b018c1974d4bff4efa770ed9`; `ChatOrchestratorTest.kt` blob `57100249b4eafb25cc25d644f62ff14ceddaa3ef`.
+- Chunk 1 is DONE as a review/documentation deliverable. This does not mark P01–P08 or Phase 1 accepted.
