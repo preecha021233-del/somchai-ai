@@ -12,8 +12,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // REQUIRED: increase versionCode for every published update; never reset it.
-        versionCode = 10
-        versionName = "1.9.0"
+        versionCode = 11
+        versionName = "1.9.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a") }
         externalNativeBuild {
