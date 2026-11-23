@@ -461,3 +461,12 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - P02 exact help-list assertion is the only concrete P01–P08 deterministic coverage gap identified in this source review. No code change was made in Chunk 1.
 - Source references reviewed: `InternalProcessor.kt` blob `86866268f8c790f6d04eea5c376df631c1f8c7a1`; `BasicKnowledgeEngine.kt` blob `e632b3e04ab640d3397bf36bfe947e651d5eb056`; `OfflineReasoningEngine.kt` blob `a2fb77a99b005ecec303a50cca603223eaef7ee7`; `InternalProcessorTest.kt` blob `9ae9502130e19aacc5c767e7989190890e0ce741`; `BasicKnowledgeEngineTest.kt` blob `443bbb7de3be38b9bc8d2d506424b8a68caf3427`; `OfflineReasoningEngineTest.kt` blob `afa54d0ba44397a6b018c1974d4bff4efa770ed9`; `ChatOrchestratorTest.kt` blob `57100249b4eafb25cc25d644f62ff14ceddaa3ef`.
 - Chunk 1 is DONE as a review/documentation deliverable. This does not mark P01–P08 or Phase 1 accepted.
+
+
+## Phase 1 — Chunk 2: P02 exact help-list coverage fix (2026-11-23)
+
+- Replaced the previous partial `/help` test (which only checked selected command substrings) with an exact ordered-line assertion for the complete current help output.
+- The expected list now covers `/help`, `/plan`, `/planpersist`, `/tasks`, all `/task` lifecycle operations, memory commands, approved Web Search, plugin listing, explicitly owner-configured `/ai`, all learned-skill commands, and the capability hint.
+- This is a test-only change. No production behavior or command policy was changed.
+- Commit: `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`; file: `app/src/test/java/com/somchai/ai/core/processing/InternalProcessorTest.kt`.
+- Status: implementation of the test-gap fix is committed; CI execution/result has not yet been verified. Chunk 2 remains IN_PROGRESS until test/build evidence confirms the assertion passes.
