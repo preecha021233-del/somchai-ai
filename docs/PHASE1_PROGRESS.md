@@ -27,7 +27,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
 - Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
 - JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
-- Application ID remains `com.somchai.ai`. Current development build is versionCode 11 and versionName 1.9.1 (verified against `app/build.gradle.kts`). Owner signing configuration is unchanged.
+- Application ID remains `com.somchai.ai`. Current development build is versionCode 12 and versionName 1.9.2 (verified against `app/build.gradle.kts`). Owner signing configuration is unchanged.
 
 ## Local model integration added on `phase-1/local-brain-runtime`
 
@@ -54,7 +54,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 | Basic plugin development | Validation, approval, smoke checks, disable/enable and rollback | CI pass plus lifecycle, owner-approval, denial and rollback checks |
 | Protection and recovery | App-private storage, permission checks, audit log and rollback; encrypted learned-skill storage has AES-GCM tamper tests | CI pass plus fault-injection and negative security checks on device |
 | Learned Skills | Encrypted reusable prompt procedures, 2–10 test cases, explicit owner approval and deletion revocation | P40–P43; model-backed learning/evaluation and device workflow still required |
-| Update compatibility | Package ID retained; versionCode 10 / versionName 1.9.0 | Verify APK package, version and SHA-256 signing certificate against the owner-signed baseline; install over existing app without uninstalling or clearing data |
+| Update compatibility | Previous owner-signed baseline: versionCode 11 / versionName 1.9.1; next candidate: versionCode 12 / versionName 1.9.2 | Verify APK package, version and SHA-256 signing certificate against the owner-signed baseline; install over existing app without uninstalling or clearing data |
 
 ## Known limits — do not overclaim
 
@@ -70,8 +70,8 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 1. Run the complete JVM unit-test suite (latest run #45037203591 passed).
 2. Build the debug APK.
 3. Build the owner-signed release APK using the existing protected signing secrets.
-4. Verify `com.somchai.ai`, versionCode 10, and signing-certificate continuity against the previous owner-signed release artifact.
-5. Install the release APK over the existing v1.8.0 baseline app on a real Android device without uninstalling or clearing data.
+4. Verify `com.somchai.ai`, versionCode 12 (greater than installed versionCode 11), and signing-certificate continuity against the previous owner-signed release artifact.
+5. Install the release APK over the existing v1.9.1 app on a real Android device without uninstalling or clearing data.
 6. Verify Figma UI layout, top-right menu, keyboard collapse, chat scrolling, all response actions, memory export/import, plugin lifecycle, research and offline behavior.
 7. Fix any failures and repeat only the affected checks plus the full release gate.
 8. Close Phase 1 only when every acceptance gate has evidence.
