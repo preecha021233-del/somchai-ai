@@ -512,3 +512,15 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - No new production change was justified: the reviewed P09 case is already implemented and covered by the existing regression test.
 - CI evidence: GitHub Actions run #246 (run ID 45111802478) — **SUCCESS** for test head `7cc7f923c1342288fefdd6cc1780d167e0a5c7ab`; the P09 regression test is present in that tested tree. [Run #246](https://github.com/preecha021233-del/somchai-ai/actions/runs/45111802478).
 - Chunk 5 is DONE as a review/evidence task. This does not declare all P09–P12 acceptance cases or Phase 1 accepted.
+
+
+## Phase 1 / Chunk 6 — Contradiction detection (2026-11-23)
+
+- Reviewed P10 and the current deterministic contradiction detector.
+- Found over-broad checks: any text containing both “ไม่เคย” and “แต่เคย” was flagged, even when the destinations/actions differed; any text containing both “เลขคู่” and “เลขคี่” was flagged without confirming they referred to the same integer.
+- Updated `OfflineReasoningEngine.detectContradiction` to require an explicit same-integer reference for parity conflicts and matching target text for “ไม่เคย…แต่เคย” conflicts.
+- Added processor-level regression tests for same-claim contradiction, different destinations, different integers, and same-integer parity contradiction.
+- Production commit: `efa5cc984bb407cd4024aaab35d5111b0d2f02e7`.
+- Test commit: `674b126b35b2f28834f5d5bcd765808bb6649495`.
+- CI run #247: pending at time of log update; do not mark Chunk 6 DONE until CI succeeds.
+- Scope: Chunk 6 only. This does not claim P10 or the P09–P12 group is accepted.
