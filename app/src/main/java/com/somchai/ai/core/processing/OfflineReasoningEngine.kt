@@ -136,15 +136,15 @@ class OfflineReasoningEngine {
         val spent = subtotals.fold(BigDecimal.ZERO, BigDecimal::add)
         val remaining = initial.subtract(spent)
         if (remaining.signum() < 0) {
-            return "ยอดใช้รวม \${format(spent)} บาท มากกว่าเงินเริ่มต้น \${format(initial)} บาท จึงมีเงินไม่พอ"
+            return "ยอดใช้รวม ${format(spent)} บาท มากกว่าเงินเริ่มต้น ${format(initial)} บาท จึงมีเงินไม่พอ"
         }
         val details = purchases.mapIndexed { index, (quantity, price) ->
-            "รายการที่ \${index + 1}: \${format(quantity)} × \${format(price)} = \${format(subtotals[index])} บาท"
+            "รายการที่ ${index + 1}: ${format(quantity)} × ${format(price)} = ${format(subtotals[index])} บาท"
         }
-        return "วิธีคำนวณ:\\nเงินเริ่มต้น = \${format(initial)} บาท\\n" +
-            details.joinToString("\\n") + "\\n" +
-            "ยอดใช้รวม = \${subtotals.joinToString(" + ") { format(it) }} = \${format(spent)} บาท\\n" +
-            "เงินคงเหลือ = \${format(initial)} - \${format(spent)} = \${format(remaining)} บาท"
+        return "วิธีคำนวณ:\nเงินเริ่มต้น = ${format(initial)} บาท\n" +
+            details.joinToString("\n") + "\n" +
+            "ยอดใช้รวม = ${subtotals.joinToString(" + ") { format(it) }} = ${format(spent)} บาท\n" +
+            "เงินคงเหลือ = ${format(initial)} - ${format(spent)} = ${format(remaining)} บาท"
     }
 
     private fun solveBatteryProblem(input: String): String? {
