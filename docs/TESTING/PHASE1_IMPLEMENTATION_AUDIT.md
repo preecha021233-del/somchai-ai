@@ -283,3 +283,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - Closed the earlier external-provider DNS TOCTOU gap. The optional LLM connector now passes validated DNS results directly through OkHttp's custom Dns interface to its connection layer, rather than validating once and allowing HttpURLConnection to resolve again.
 - Redirects and automatic connection retries are disabled; TLS hostname verification remains enabled; response size remains capped at 1 MB. Added resolver-injection tests for changed/private/reserved DNS answers.
 - Latest-branch CI is pending. Owner-device provider integration remains a separate acceptance check.
+
+
+## Latest-branch verification — CI #299 (2026-11-23)
+
+- Exact tested branch head: `bbfeafb6d187f29604ecb37f5614f2c5e73cb9dd`.
+- CI run #299 (`45132531059`) passed all workflow steps: JVM unit tests, ARM64 llama.cpp native build, Android Debug APK build, Debug APK upload, and Android instrumentation-test APK build/upload.
+- The CI run validates the OkHttp DNS-interface correction for both model downloads and optional external-provider calls, plus the regression tests. The prior failed compile attempt is superseded by this successful run; its root cause was using a lambda for OkHttp's non-SAM `Dns` interface, corrected with explicit implementations.
+- This is implementation/build evidence only. Instrumentation was not executed on the owner's phone; network behavior, model installation/inference, Thai quality/performance, process restart, and in-place update/data retention still require owner-device acceptance.
