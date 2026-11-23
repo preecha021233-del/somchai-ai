@@ -23,6 +23,18 @@ class TaskCommandProcessorTest {
         assertTrue(commands.execute("/task complete ${task.id.take(8)} 1").contains("เสร็จแล้ว"))
     }
 
+    @Test fun unknownTaskAndNonNumericStepReturnArgumentErrors() {
+        val store = TaskExecutionStore(temporaryFolder.newFolder("unknown"))
+        val commands = TaskCommandProcessor(store)
+        assertThrows(IllegalArgumentException::class.java) {
+            commands.execute("/task show missing-task")
+        }
+        val task = store.create(TaskPlanner().plan("งานทั่วไป"))
+        assertThrows(IllegalArgumentException::class.java) {
+            commands.execute("/task start ${task.id.take(8)} abc")
+        }
+    }
+
     @Test fun rejectsInvalidStepNumbersAndUnknownCommands() {
         val store = TaskExecutionStore(temporaryFolder.newFolder("invalid"))
         val task = store.create(TaskPlanner().plan("งานทั่วไป"))
