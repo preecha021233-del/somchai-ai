@@ -269,3 +269,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Research result content still displays source URLs and errors to the user; this change limits persistent audit-log exposure, not the user-visible research report.
 - Added a regression test containing a private query and URL and asserting neither is present in the persisted activity log.
 - CI run #205 is pending at the time of this entry. P26 and Phase 1 remain NOT ACCEPTED pending CI and device/network validation.
+
+
+## Round 21 — 2026-11-23 — Reserved IPv6 destination filtering
+
+- Commit: `adddf7a87c693e76f4f055b8a6ef9e70d0d10323`.
+- Tightened both the research page reader and model downloader to reject IPv6 IETF protocol-assignment, 6to4 transition, and 3fff documentation ranges, in addition to existing private, loopback, link-local, multicast and 2001:db8 documentation checks.
+- Added regression tests for each denied range and a public IPv6 literal acceptance case in both URL validators.
+- CI for this commit: pending. DNS answers are still not socket-pinned; DNS rebinding is not claimed solved. P26/P36 and Phase 1 remain NOT ACCEPTED.

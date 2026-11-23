@@ -182,3 +182,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - `BuiltinToolExecutor` now logs only source/page error counts and query length for research operations; raw query text, URLs, and exception/provider error strings are excluded from persistent audit details.
 - Added `researchAuditLogDoesNotStorePrivateQueryOrSourceUrls` regression coverage.
 - CI #205: pending; no pass is claimed. Device validation and DNS socket-pinning assessment remain open.
+
+
+## IPv6 destination policy extension — 2026-11-23
+
+- `WebPageReader` and `LocalModelStore` now reject IETF protocol-assignment, 6to4 transition, and 3fff documentation IPv6 ranges; tests assert these are blocked while a global-unicast IPv6 address is accepted by URL validation.
+- DNS pre-resolution remains defense-in-depth only; the HTTP connection is not pinned to the validated IP, so DNS rebinding remains a documented limitation.
+- CI pending; no acceptance claim.
