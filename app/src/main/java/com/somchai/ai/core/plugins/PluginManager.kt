@@ -34,8 +34,9 @@ class PluginManager(
 
     fun candidates(): List<PluginCandidate> = paths.staging.listFiles()
         ?.filter { it.isFile && it.extension == "json" }
+        ?.take(MAX_PLUGIN_FILES)
         ?.mapNotNull { file -> runCatching {
-            val raw = file.readText()
+            val raw = readBoundedText(file)
             val manifest = validator.validate(raw)
             PluginCandidate(manifest, sha256(raw), smokeTester.run(manifest))
         }.getOrNull() } ?: emptyList()
@@ -43,13 +44,15 @@ class PluginManager(
     /** Only explicitly enabled manifests in the active directory grant runtime access. */
     fun activePlugins(): List<PluginManifest> = paths.active.listFiles()
         ?.filter { it.isFile && it.extension == "json" }
-        ?.mapNotNull { file -> runCatching { validator.validate(file.readText()) }.getOrNull() }
+        ?.take(MAX_PLUGIN_FILES)
+        ?.mapNotNull { file -> runCatching { validator.validate(readBoundedText(file)) }.getOrNull() }
         ?.filter { it.enabled }
         ?: emptyList()
 
     fun disabledPlugins(): List<PluginManifest> = paths.backups.listFiles()
         ?.filter { it.isFile && it.name.startsWith("disabled-") && it.extension == "json" }
-        ?.mapNotNull { file -> runCatching { validator.validate(file.readText()) }.getOrNull() }
+        ?.take(MAX_PLUGIN_FILES)
+        ?.mapNotNull { file -> runCatching { validator.validate(readBoundedText(file)) }.getOrNull() }
         ?.distinctBy { it.id } ?: emptyList()
 
     @Synchronized
@@ -58,7 +61,7 @@ class PluginManager(
         val source = paths.backups.listFiles()
             ?.filter { it.isFile && it.name.startsWith("disabled-$id-") && it.extension == "json" }
             ?.maxByOrNull { it.lastModified() } ?: return false
-        val manifest = validator.validate(source.readText())
+        val manifest = validator.validate(readBoundedText(source))
         require(manifest.id == id) { "Plugin identity mismatch" }
         require(manifest.enabled) { "A disabled manifest cannot be reactivated" }
         val target = File(paths.active, "$id.json")
@@ -84,7 +87,7 @@ class PluginManager(
         require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
         val source = File(paths.staging, "$id.json")
         require(paths.contained(paths.staging, source) && source.isFile) { "Candidate not found" }
-        val raw = source.readText()
+        val raw = readBoundedText(source)
         val manifest = validator.validate(raw)
         require(manifest.id == id && sha256(raw) == expectedHash) { "Candidate changed after review" }
         require(manifest.enabled) { "A disabled candidate cannot be approved for activation" }
@@ -116,7 +119,7 @@ class PluginManager(
         require(id.matches(Regex("[a-z][a-z0-9-]{2,39}"))) { "Invalid plugin ID" }
         val source = File(paths.active, "$id.json")
         if (!source.isFile || !paths.contained(paths.active, source)) return false
-        val manifest = validator.validate(source.readText())
+        val manifest = validator.validate(readBoundedText(source))
         require(manifest.id == id) { "Plugin identity mismatch" }
         val target = File(paths.backups, "disabled-$id-${System.currentTimeMillis()}.json")
         val raw = source.readText()
@@ -154,7 +157,21 @@ class PluginManager(
         logger.record("PLUGIN_REJECTED", id)
     }
 
+    private fun readBoundedText(file: File): String {
+        require(file.isFile && file.length() in 1..MAX_MANIFEST_BYTES.toLong()) {
+            "Plugin manifest is missing, empty, or exceeds the 16 KB limit"
+        }
+        val bytes = file.readBytes()
+        require(bytes.size <= MAX_MANIFEST_BYTES) { "Plugin manifest exceeds the 16 KB limit" }
+        return String(bytes, Charsets.UTF_8)
+    }
+
     private fun sha256(value: String): String =
         MessageDigest.getInstance("SHA-256").digest(value.toByteArray())
             .joinToString("") { "%02x".format(it) }
+
+    companion object {
+        private const val MAX_MANIFEST_BYTES = 16_384
+        private const val MAX_PLUGIN_FILES = 100
+    }
 }
