@@ -22,14 +22,15 @@ class ChatOrchestratorTest {
         approved: () -> Boolean = { false },
         search: suspend (String) -> String = { "found:" + it },
         configured: () -> Boolean = { false },
-        remote: suspend (List<Pair<String, String>>, String) -> String = { _, _ -> "remote" }
+        remote: suspend (List<Pair<String, String>>, String) -> String = { _, _ -> "remote" },
+        retrieveMemory: (String) -> List<String> = { emptyList() }
     ): Pair<ChatOrchestrator, TaskExecutionStore> {
         val tasks = TaskExecutionStore(temp.newFolder("tasks" + System.nanoTime()))
         val planner = TaskPlanner()
         val memory = LocalMemoryStore(temp.newFolder("memory" + System.nanoTime()))
         return ChatOrchestrator(
             brain, InternalProcessor(memory, planner, tasks = tasks), approved, search,
-            configured, remote, tasks, planner
+            configured, remote, tasks, planner, retrieveMemory = retrieveMemory
         ) to tasks
     }
     @Test fun greetingUsesInternalAndDoesNotCallRemote() = runBlocking {
@@ -47,6 +48,43 @@ class ChatOrchestratorTest {
         assertEquals("brain.local", orchestrator.handle("อธิบายสิ่งที่ไม่อยู่ในกฎ").intent)
         assertEquals(0, calls)
     }
+    @Test fun relevantMemoriesAreAttachedToLocalBrainRequests() = runBlocking {
+        var captured: BrainRequest? = null
+        val local = object : Brain {
+            override suspend fun respond(request: BrainRequest): BrainReply {
+                captured = request
+                return BrainReply("local answer", "local-test", false)
+            }
+        }
+        val selected = listOf("[memory-1] โครงการ SOMCHAI พัฒนา AI ภายใน")
+        val (orchestrator) = make(
+            brain = local,
+            retrieveMemory = { query ->
+                assertTrue(query.contains("SOMCHAI"))
+                selected
+            }
+        )
+
+        val result = orchestrator.handle("ช่วยอธิบายประเด็น SOMCHAI ที่ไม่อยู่ในกฎ")
+        assertEquals("brain.local", result.intent)
+        assertEquals(selected, captured?.memoryContext)
+    }
+
+    @Test fun explicitRemoteAiRouteNeverRequestsOrAttachesPrivateMemory() = runBlocking {
+        var retrievalCalls = 0
+        var remoteCalls = 0
+        val (orchestrator) = make(
+            configured = { true },
+            remote = { _, _ -> remoteCalls++; "remote answer" },
+            retrieveMemory = { retrievalCalls++; listOf("private memory") }
+        )
+
+        val result = orchestrator.handle("/ai ช่วยสรุปคำถามนี้")
+        assertEquals("llm.explicit", result.intent)
+        assertEquals(1, remoteCalls)
+        assertEquals(0, retrievalCalls)
+    }
+
     @Test fun searchRequiresApproval() = runBlocking {
         var calls = 0
         val (orchestrator) = make(search = { calls++; "found" })
