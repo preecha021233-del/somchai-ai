@@ -18,8 +18,8 @@ object ChatRoutePolicy {
     fun classify(input: String): ChatRoute {
         val text = input.trim()
         return when {
-            text.startsWith("/task", ignoreCase = true) -> ChatRoute.TASK_COMMAND
-            text.startsWith("/skill", ignoreCase = true) -> ChatRoute.SKILL_COMMAND
+            (text.equals("/task", ignoreCase = true) || text.startsWith("/task ", ignoreCase = true)) -> ChatRoute.TASK_COMMAND
+            (text.equals("/skill", ignoreCase = true) || text.startsWith("/skill ", ignoreCase = true)) -> ChatRoute.SKILL_COMMAND
             text.equals("/plugins", ignoreCase = true) ||
                 text.equals("ตรวจสอบปลั๊กอิน", ignoreCase = true) ||
                 text.equals("รายการปลั๊กอิน", ignoreCase = true) -> ChatRoute.PLUGIN_STATUS
