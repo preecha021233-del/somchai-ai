@@ -23,9 +23,9 @@
 |---|---:|
 | Total chunks | 53 |
 | Done | 2 |
-| In progress | 0 |
+| In progress | 1 |
 | Blocked | 0 |
-| Not started | 51 |
+| Not started | 50 |
 
 ## Work tracker
 
