@@ -256,8 +256,13 @@ class SkillStore(
         val temporary = File(directory, "skills.enc.tmp")
         val rollback = File(directory, "skills.enc.rollback")
         temporary.writeBytes(encoded)
-        val candidate = decodeSkills(cipher.decrypt(temporary.readBytes()))
-        check(candidate == skills) { "ตรวจสอบไฟล์ทักษะชั่วคราวไม่สำเร็จ" }
+        try {
+            val candidate = decodeSkills(cipher.decrypt(temporary.readBytes()))
+            check(candidate == skills) { "ตรวจสอบไฟล์ทักษะชั่วคราวไม่สำเร็จ" }
+        } catch (failure: Exception) {
+            temporary.delete()
+            throw failure
+        }
 
         rollback.delete()
         if (file.exists()) check(file.renameTo(rollback)) { "สำรองไฟล์ทักษะเดิมไม่สำเร็จ" }
