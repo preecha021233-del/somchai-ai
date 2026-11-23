@@ -92,7 +92,10 @@ class LocalModelStore(
         var address = validateDownloadUrl(MODEL_URL)
         for (redirect in 0..MAX_REDIRECTS) {
             val client = OkHttpClient.Builder()
-                .dns(Dns { host -> resolvePublicAddresses(host) })
+                .dns(object : Dns {
+                    override fun lookup(hostname: String): List<InetAddress> =
+                        resolvePublicAddresses(hostname)
+                })
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(90, TimeUnit.SECONDS)
                 .followRedirects(false)
