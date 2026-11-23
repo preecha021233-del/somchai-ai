@@ -650,3 +650,13 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Android instrumentation-test APK build/upload: SUCCESS. The instrumentation APK was built and uploaded, but no physical-device instrumentation execution is claimed.
 - The successful JVM suite includes the model-download and external-provider DNS regression tests added in this work sprint. OkHttp DNS lookup now returns only validated address sets to the actual connection layer; redirects are manually revalidated for model downloads, while redirects and automatic retries are disabled for the optional provider connector.
 - CI run #299 is the current branch validation evidence for implementation work items 28, 33–39, 42–47, and 49–51. Owner-device items remain blocked: 24B, 35B, 40, 41, 47B, P26B–P32B, and 52. This CI result does not establish Phase 1 acceptance or Thai model-quality/performance on the target phone.
+
+
+## Phase 1 — UI/task command integration correction and CI #301 (2026-11-23)
+
+- Cross-system review found that the chat UI routed task lifecycle commands (`/task list/show/start/complete/fail/retry/cancel`) to `TaskCommandProcessor`, but did not forward new-task commands such as `/task พัฒนาแอป` to `ChatOrchestrator`. The orchestrator already supported task creation, but the UI path bypassed it.
+- Added `ChatRoutePolicy.isTaskLifecycleCommand` as the single lifecycle-command boundary. Lifecycle commands (including `/task help`) go to `TaskCommandProcessor`; other `/task <goal>` and bare `/task` go to `ChatOrchestrator` for creation/help.
+- Added route-boundary tests for all lifecycle actions, task creation input, unknown prefix collision and help. Existing `ChatOrchestratorTest.taskCreatesRecordAndStartsFirstStep` and P16 persistence/audit tests verify that the creation handler persists the task and starts step 1 without claiming external execution.
+- CI #301, run ID `45133546874`, tested code head `5e4b72e3596897d3c49d894118b087cb8fe29a39`: https://github.com/preecha021233-del/somchai-ai/actions/runs/45133546874. JVM unit tests SUCCESS; ARM64 native runtime + Debug APK build SUCCESS; Debug APK upload SUCCESS; Android instrumentation-test APK build/upload SUCCESS.
+- Artifacts: `somchai-local-brain-debug` (ID `14798916836`, 22,388,927 bytes) and `somchai-android-test-apk` (ID `14798856913`, 857,594 bytes). The instrumentation APK was built/uploaded, not executed on a physical device.
+- This closes the identified cross-system task-command routing defect and validates implementation/build work. Owner-device checks remain blocked; Phase 1 is not declared accepted.
