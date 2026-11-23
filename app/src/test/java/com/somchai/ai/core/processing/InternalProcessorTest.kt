@@ -10,6 +10,14 @@ class InternalProcessorTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
     private fun processor(): InternalProcessor = InternalProcessor(LocalMemoryStore(temporaryFolder.newFolder("memory")))
 
+    @Test fun helpListsAllChatCommandFamiliesAndTheirOwnerBoundaries() {
+        val answer = processor().process("/help").answer
+        listOf("/task", "/remember", "/recall", "/forget", "/search", "/plugins", "/ai",
+            "/skill list", "/skill learn", "/skill propose", "/skill test", "/skill approve", "/skill delete")
+            .forEach { command -> assertTrue("Missing help entry: $command", answer.contains(command)) }
+        assertTrue(answer.contains("เจ้าของตั้งค่า Provider และสั่งเอง"))
+    }
+
     @Test fun answersGreetingWithoutExternalProvider() {
         val result = processor().process("สวัสดี SOMCHAI")
         assertTrue(result.intent == "greeting")
