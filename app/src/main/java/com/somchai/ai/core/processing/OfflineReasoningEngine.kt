@@ -64,6 +64,7 @@ class OfflineReasoningEngine {
         val asksForChange = listOf("เงินทอน", "ได้ทอน", "ทอนเท่าไร", "ทอนเท่าไหร่").any(input::contains)
         if (asksForChange && !input.contains("จ่าย") && !input.contains("ชำระ")) return null
         solveChangeProblem(input)?.let { return it }
+        solveMultiStepBalanceProblem(input)?.let { return it }
         solveBatteryProblem(input)?.let { return it }
         val expression = Regex("""(?<![\p{L}\d])[+-]?(?:\d|\()[\d,.()+\-×*/÷\s]*""")
             .find(input)?.value ?: return null
@@ -107,6 +108,43 @@ class OfflineReasoningEngine {
         }
         return "วิธีคำนวณ:\nราคารวม = $calculation\n" +
             "เงินทอน = เงินที่จ่าย - ราคารวม\nเงินทอน = ${format(paid)} - ${format(total)} = ${format(change)} บาท"
+    }
+
+
+    /**
+     * Solves a bounded Thai multi-item word problem and shows every intermediate
+     * quantity × unit-price calculation before computing the remaining balance.
+     */
+    private fun solveMultiStepBalanceProblem(input: String): String? {
+        val text = input.lowercase()
+        if (!listOf("เหลือเงิน", "เงินคงเหลือ", "เหลือเท่าไร", "เหลือเท่าไหร่").any { text.contains(it) }) return null
+        val initial = Regex("""(?:มีเงิน|เงินเริ่มต้น|งบประมาณ|งบ)\s*([\d,]+(?:\.\d+)?)\s*บาท""")
+            .find(input)?.groupValues?.getOrNull(1)?.replace(",", "")?.toBigDecimalOrNull() ?: return null
+        val itemPattern = Regex(
+            """(\d+)\s*(?:ชิ้น|เล่ม|ด้าม|อัน|กล่อง|ชุด|รายการ|ขวด|ถุง|ตัว)\s*(?:ชิ้นละ|เล่มละ|ด้ามละ|อันละ|กล่องละ|ชุดละ|รายการละ|ขวดละ|ถุงละ|ตัวละ)\s*([\d,]+(?:\.\d+)?)\s*บาท"""
+        )
+        val purchases = itemPattern.findAll(input).mapNotNull { match ->
+            val quantity = match.groupValues[1].toBigDecimalOrNull() ?: return@mapNotNull null
+            val unitPrice = match.groupValues[2].replace(",", "").toBigDecimalOrNull() ?: return@mapNotNull null
+            if (quantity <= BigDecimal.ZERO || quantity > BigDecimal("10000") || unitPrice < BigDecimal.ZERO) {
+                return@mapNotNull null
+            }
+            quantity to unitPrice
+        }.toList()
+        if (purchases.size !in 2..10) return null
+        val subtotals = purchases.map { (quantity, price) -> quantity.multiply(price) }
+        val spent = subtotals.fold(BigDecimal.ZERO, BigDecimal::add)
+        val remaining = initial.subtract(spent)
+        if (remaining.signum() < 0) {
+            return "ยอดใช้รวม \${format(spent)} บาท มากกว่าเงินเริ่มต้น \${format(initial)} บาท จึงมีเงินไม่พอ"
+        }
+        val details = purchases.mapIndexed { index, (quantity, price) ->
+            "รายการที่ \${index + 1}: \${format(quantity)} × \${format(price)} = \${format(subtotals[index])} บาท"
+        }
+        return "วิธีคำนวณ:\\nเงินเริ่มต้น = \${format(initial)} บาท\\n" +
+            details.joinToString("\\n") + "\\n" +
+            "ยอดใช้รวม = \${subtotals.joinToString(" + ") { format(it) }} = \${format(spent)} บาท\\n" +
+            "เงินคงเหลือ = \${format(initial)} - \${format(spent)} = \${format(remaining)} บาท"
     }
 
     private fun solveBatteryProblem(input: String): String? {
