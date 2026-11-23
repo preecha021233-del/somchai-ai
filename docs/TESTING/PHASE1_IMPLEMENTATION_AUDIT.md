@@ -121,3 +121,13 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 16. Added `ChatRoutePolicyTest` covering ordinary chat, explicit provider opt-in, unknown slash commands, and every built-in command family. Existing `LocalFirstBrainTest` continues to cover local inference, unavailable-model fallback, runtime failure fallback and double-failure safety.
 17. CI #161 failed before Kotlin unit tests or native compilation: CMake's FetchContent git clone of the pinned public `ggml-org/llama.cpp` commit returned HTTP 403 from GitHub. This is an upstream fetch/network failure, not a compiler diagnostic. The workflow was changed to run JVM unit tests as a separate first step and cache the pinned FetchContent source for later builds.
 18. CI #162 was superseded by subsequent commits and may be cancelled by the workflow's concurrency policy. The current routing/test commit requires a fresh CI result; no pass is claimed.
+
+
+## CI repair and verified build — 2026-11-23
+
+19. Fixed the approved Web Search test expectation: the report correctly uses the title returned by the page reader, not the discovery candidate title. The test now asserts the two actually-read page titles, URLs, and evidence text.
+20. Fixed the Android Compose instrumentation test to use the supported `assertIsDisplayed()` assertion API instead of the unavailable `assertExists()` import.
+21. Verified commit: `d4a3625727fcd9caeb81efd30d8c52db8c87469e`.
+22. CI run #45092099946: **SUCCESS**. JVM unit-test task passed; ARM64 llama.cpp native build passed; debug APK assembled; Android instrumentation APK compiled and assembled; both artifacts uploaded.
+23. CI evidence: https://github.com/preecha021233-del/somchai-ai/actions/runs/45092099946
+24. This is a CI/build pass only. The instrumentation test was compiled and packaged, not executed on a connected Android device. Device acceptance and Phase 1 remain NOT ACCEPTED.
