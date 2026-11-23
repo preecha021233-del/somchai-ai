@@ -155,4 +155,48 @@ class LocalMemoryStoreTest {
         assertTrue(matches.size <= 3)
     }
 
+
+    @Test fun failedCandidateVerificationPreservesExistingMemory() {
+        class ToggleVerifyCipher : MemoryCipher {
+            private val delegate = PrefixCipher()
+            var failNextDecrypt = false
+            override fun encrypt(plaintext: ByteArray): ByteArray = delegate.encrypt(plaintext)
+            override fun decrypt(ciphertext: ByteArray): ByteArray {
+                if (failNextDecrypt) {
+                    failNextDecrypt = false
+                    error("simulated candidate verification failure")
+                }
+                return delegate.decrypt(ciphertext)
+            }
+        }
+        val directory = temporaryFolder.newFolder("transactional-memory")
+        val cipher = ToggleVerifyCipher()
+        val store = LocalMemoryStore(directory, cipher)
+        store.add("ข้อมูลเดิมต้องไม่สูญหาย")
+        val originalBytes = java.io.File(directory, "memory.enc").readBytes()
+
+        cipher.failNextDecrypt = true
+        org.junit.Assert.assertThrows(IllegalStateException::class.java) {
+            store.add("ข้อมูลใหม่ที่ยังบันทึกไม่สำเร็จ")
+        }
+
+        assertTrue(originalBytes.contentEquals(java.io.File(directory, "memory.enc").readBytes()))
+        assertEquals(listOf("ข้อมูลเดิมต้องไม่สูญหาย"), store.all().map { it.content })
+        assertFalse(java.io.File(directory, "memory.enc.tmp").exists())
+    }
+
+    @Test fun restoresRollbackFileAfterInterruptedMemoryRewrite() {
+        val directory = temporaryFolder.newFolder("memory-recovery")
+        val original = LocalMemoryStore(directory)
+        original.add("ข้อมูลก่อนระบบหยุด")
+        val live = java.io.File(directory, "memory.enc")
+        val rollback = java.io.File(directory, "memory.enc.rollback")
+        live.renameTo(rollback)
+
+        val recovered = LocalMemoryStore(directory)
+        assertEquals("ข้อมูลก่อนระบบหยุด", recovered.all().single().content)
+        assertFalse(rollback.exists())
+    }
+
+
 }
