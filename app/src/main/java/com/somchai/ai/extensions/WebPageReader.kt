@@ -3,6 +3,8 @@ package com.somchai.ai.extensions
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
+import java.io.ByteArrayInputStream
+import java.util.zip.GZIPInputStream
 import java.io.InputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -49,7 +51,8 @@ class WebPageReader(
                 .find(contentType)?.groupValues?.getOrNull(1)?.trim('"', '\'')
             val charset = charsetName?.let { runCatching { Charset.forName(it) }.getOrNull() }
                 ?: StandardCharsets.UTF_8
-            val source = String(response.body, charset)
+            val decodedBody = decodeContentEncoding(response.body, response.headers["content-encoding"])
+            val source = String(decodedBody, charset)
             val title = Regex("(?is)<title[^>]*>(.*?)</title>").find(source)?.groupValues?.getOrNull(1)
                 ?.let { HtmlTextExtractor.extract(it, 180) }.orEmpty().ifBlank { host }
             val text = HtmlTextExtractor.extract(source)
@@ -140,7 +143,7 @@ class WebPageReader(
                 "Host: $hostHeader\r\n" +
                 "User-Agent: $USER_AGENT\r\n" +
                 "Accept: text/html,application/xhtml+xml,text/plain;q=0.9\r\n" +
-                "Accept-Encoding: identity\r\n" +
+                "Accept-Encoding: gzip\r\n" +
                 "Connection: close\r\n\r\n").toByteArray(StandardCharsets.US_ASCII))
             output.flush()
 
@@ -177,6 +180,22 @@ class WebPageReader(
             runCatching { tls?.close() }
             runCatching { raw.close() }
         }
+    }
+
+    internal fun decodeContentEncoding(body: ByteArray, encoding: String?): ByteArray = when (encoding?.trim()?.lowercase()) {
+        null, "", "identity" -> body
+        "gzip" -> GZIPInputStream(ByteArrayInputStream(body)).use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(8192)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                require(output.size() + count <= MAX_RESPONSE_BYTES) { "หน้าเว็บหลังคลายการบีบอัดมีขนาดเกินขีดจำกัด" }
+                output.write(buffer, 0, count)
+            }
+            output.toByteArray()
+        }
+        else -> error("ไม่รองรับ Content-Encoding: $encoding")
     }
 
     private fun isIpLiteral(host: String) = host.contains(':') ||
