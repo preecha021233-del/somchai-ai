@@ -631,3 +631,11 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Added regression coverage for one-resolution behavior, mixed public/private DNS answers, and reserved/transition IPv6 DNS answers. Added OkHttp 4.12.0 dependency.
 - Commits: `bfd2c9d` (pinned DNS transport), `55b73f8` (dependency), `23457db` and `77240a6` (DNS regression tests), `a91b234` (IPv6 DNS policy).
 - CI run #293 (`45131804903`) was queued/pending at the time of this entry. No test pass is claimed until CI completes. Device download/install/inference evidence remains outstanding.
+
+
+## P26 provider DNS socket-pinning correction — 2026-11-23
+
+- Replaced the optional external LLM provider's HttpURLConnection transport with OkHttp and a custom DNS resolver. Every returned address is validated and the same address list is supplied to the connection layer; redirects and automatic retries are disabled so the API key is not forwarded to another host and the provider cannot silently change destination.
+- TLS hostname verification remains enabled by OkHttp. Response bodies remain bounded to 1 MB. Added injectable resolver tests for DNS answer changes, private answers and reserved/transition IPv6 ranges.
+- Commits: 7a4b702 (pinned provider DNS transport), 4b82f5c (IPv6 range policy), 4489e51 (regression tests).
+- This closes the previously noted validate-then-resolve-again DNS gap for the optional provider. CI for the latest code is pending; no pass is claimed.
