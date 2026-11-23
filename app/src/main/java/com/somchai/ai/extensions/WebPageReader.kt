@@ -204,7 +204,9 @@ internal class PinnedIpSslSocketFactory(
             connectRawSocket(raw, port)
             val tls = delegate.createSocket(raw, tlsHost, port, true) as SSLSocket
             val parameters = tls.sslParameters
-            parameters.serverNames = listOf(SNIHostName(tlsHost))
+            if (!tlsHost.contains(':') && !tlsHost.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}"""))) {
+                parameters.serverNames = listOf(SNIHostName(tlsHost))
+            }
             parameters.endpointIdentificationAlgorithm = "HTTPS"
             tls.sslParameters = parameters
             return tls
