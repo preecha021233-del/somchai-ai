@@ -28,6 +28,32 @@ class InternalProcessor(
                 else entries.joinToString("\n") { "• [${it.id}] ${it.content}" }
             return ProcessingResult(answer, "memory.read")
         }
+        if (normalized.startsWith("/edit ")) {
+            val payload = text.removeRange(0, "/edit ".length).trim()
+            val separator = payload.indexOf(' ')
+            if (separator <= 0) return ProcessingResult(
+                "ใช้รูปแบบ: /edit รหัสความจำ ข้อความใหม่ครับ", "memory.edit"
+            )
+            val id = payload.substring(0, separator)
+            val updatedContent = payload.substring(separator + 1).trim()
+            if (updatedContent.isBlank()) return ProcessingResult(
+                "กรุณาระบุข้อความใหม่ที่ต้องการบันทึกครับ", "memory.edit"
+            )
+            val entries = memory.all(500)
+            val exact = entries.firstOrNull { it.id.equals(id, ignoreCase = true) }
+            val matches = if (exact != null) listOf(exact)
+                else entries.filter { it.id.startsWith(id, ignoreCase = true) }
+            if (matches.isEmpty()) return ProcessingResult("ไม่พบรหัสความจำนี้ครับ", "memory.edit")
+            if (matches.size > 1) return ProcessingResult(
+                "รหัสย่อนี้ตรงกับความจำหลายรายการ เพื่อป้องกันการแก้ไขผิด กรุณาใช้รหัสเต็มครับ",
+                "memory.edit.ambiguous"
+            )
+            val updated = memory.update(matches.single().id, updatedContent)
+            return ProcessingResult(
+                if (updated) "แก้ไขความจำรายการนั้นแล้วครับ" else "แก้ไขความจำไม่สำเร็จครับ",
+                "memory.edit"
+            )
+        }
         if (normalized.startsWith("/forget ")) {
             val id = text.removeRange(0, "/forget ".length).trim()
             if (id.isBlank()) return ProcessingResult("กรุณาระบุรหัสความจำที่ต้องการลบครับ", "memory.delete")
@@ -123,6 +149,7 @@ class InternalProcessor(
             "/task list|show|start|complete|fail|retry|cancel — จัดการสถานะงาน\n" +
             "/remember ข้อความ — บันทึกความจำในเครื่อง\n" +
             "/recall คำค้นหรือรหัส — ค้นคืนความจำ\n" +
+            "/edit รหัสความจำ ข้อความใหม่ — แก้ไขความจำตามรหัส\n" +
             "/forget รหัส — ลบความจำตามรหัส\n" +
             "/search คำค้น — ค้นเว็บเมื่อปลั๊กอิน Web Search ได้รับอนุมัติแล้ว\n" +
             "/plugins — ดูปลั๊กอินที่ใช้งาน รออนุมัติ และปิดใช้งาน\n" +
