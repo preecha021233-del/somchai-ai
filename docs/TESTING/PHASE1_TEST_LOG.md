@@ -591,3 +591,10 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Latest code/test commits: `2545ff8153762ce28acc6324c0c07fc93d0c5a80` (plugin lifecycle bucket test), `e659b84cafe500c6c18d46a40ea2664860e64790` (plugin status route aliases).
 - CI run #279 (run ID `45119904510`) — **SUCCESS** for head `e659b84cafe500c6c18d46a40ea2664860e64790`. The `android-local-brain` job completed successfully: JVM unit tests, ARM64 native runtime build, Debug APK build, Android instrumentation APK build, and both artifact uploads all succeeded. [Run #279](https://github.com/preecha021233-del/somchai-ai/actions/runs/45119904510).
 - Work chunks 18–23 are **DONE** as implementation/test deliverables; chunk 24 remains **BLOCKED** until a real approved search is executed in the running app and at least two distinct live source pages are confirmed read. CI success is not live-search evidence and this is not a P22–P25 acceptance PASS.
+
+## P24 split — implementation complete, live acceptance pending (2026-11-23)
+
+- Split the former Chunk 24 into **24A** and **24B** without changing the P24 acceptance threshold.
+- **24A — DONE:** implementation-side automated coverage is complete. `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages` exercises approved search with two distinct page reads and source reporting; `ResearchResultVerifierTest` covers discovery-only, duplicate-source, and insufficient-readable-page states. CI #279 (run ID `45119904510`) passed on head `e659b84cafe500c6c18d46a40ea2664860e64790`. This is mock-provider/automated evidence, not a live search claim.
+- **24B — BLOCKED / moved to testing:** run P24 in the actual app after the owner approves Web Search; submit a real query, confirm at least two distinct real pages were opened/read, verify the summary and traceable citations, and record app/device/commit/timestamp evidence. If fewer than two pages are readable, record PARTIAL/FAIL; do not lower the threshold.
+- The 54-item tracker preserves the existing IDs for Chunks 25–53. 24B is listed in the testing/device-acceptance stage, while Chunk 53 remains the final P01–P43 decision/report.
