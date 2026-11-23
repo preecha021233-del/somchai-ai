@@ -35,6 +35,18 @@ class LocalMemoryStoreTest {
         assertFalse(reopened.delete(entry.id))
     }
 
+    @Test fun updatesMemoryContentWithoutChangingStableIdentityOrMetadata() {
+        val directory = temporaryFolder.newFolder("memory-edit")
+        val store = LocalMemoryStore(directory)
+        val original = store.add("ข้อความเดิม", "owner-note")
+
+        assertTrue(store.update(original.id, "  ข้อความใหม่  "))
+        val reopened = LocalMemoryStore(directory)
+        assertEquals(original.copy(content = "ข้อความใหม่"), reopened.all(500).single())
+        assertFalse(reopened.update("00000000-0000-0000-0000-000000000000", "ไม่ควรถูกสร้าง"))
+        assertEquals(original.copy(content = "ข้อความใหม่"), reopened.all(500).single())
+    }
+
     @Test fun limitsStoredEntriesToFiveHundred() {
         val store = LocalMemoryStore(temporaryFolder.newFolder("bounded"))
         repeat(505) { store.add("entry-$it") }
