@@ -113,6 +113,22 @@ class LocalMemoryStore(
         }
     }
 
+    fun update(id: String, content: String): Boolean {
+        val clean = content.trim()
+        require(clean.isNotEmpty()) { "Memory cannot be empty" }
+        require(clean.length <= 2000) { "Memory is limited to 2,000 characters" }
+        return synchronized(lock) {
+            val entries = readEntries()
+            val index = entries.indexOfFirst { it.id == id }
+            if (index < 0) return@synchronized false
+            val updated = entries.toMutableList()
+            updated[index] = updated[index].copy(content = clean)
+            rewrite(updated)
+            log("MEMORY_UPDATED", "id=$id")
+            true
+        }
+    }
+
     fun delete(id: String): Boolean = synchronized(lock) {
         val entries = readEntries()
         if (entries.none { it.id == id }) return@synchronized false
