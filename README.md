@@ -4,7 +4,7 @@
 
 SOMCHAI AI is an Android personal assistant being developed toward an independent, self-evolving system. Its long-term architecture is governed by `docs/IMPLEMENTATION_PLAN.md` (Master Command).
 
-## Current implemented baseline
+## Current implemented baseline\n\nCurrent candidate app version: `versionCode 12` / `versionName 1.9.2` (owner-signed release build and in-place update validation are still pending).
 
 - Android app foundation using Kotlin, Jetpack Compose and Material 3.
 - Offline-first chat UI routed through a deterministic internal rule engine by default.
