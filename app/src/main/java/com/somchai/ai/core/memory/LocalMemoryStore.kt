@@ -25,6 +25,7 @@ class LocalMemoryStore(
     private val lock = Any()
 
     init {
+        recoverInterruptedRewrite()
         migrateLegacyRecords()
         migrateLegacyNotes()
     }
@@ -194,18 +195,52 @@ class LocalMemoryStore(
     private fun trimToLimit(entries: List<MemoryEntry>): List<MemoryEntry> =
         entries.takeLast(500)
 
+    /**
+     * Verify the encrypted candidate before replacing the live store. Keep a same-directory
+     * rollback file until the new file has been read back successfully. On process restart,
+     * recover the old file if a crash interrupted the two renames.
+     */
     private fun rewrite(entries: List<MemoryEntry>) {
-        val content = trimToLimit(entries).joinToString(
+        val expected = trimToLimit(entries)
+        val content = expected.joinToString(
             separator = "\n",
-            postfix = if (entries.isEmpty()) "" else "\n"
+            postfix = if (expected.isEmpty()) "" else "\n"
         ) { encode(it) }.toByteArray(Charsets.UTF_8)
         val encrypted = cipher.encrypt(content)
-        val temp = File(file.parentFile, "memory.enc.tmp")
+        val parent = file.parentFile ?: error("Memory directory is unavailable")
+        check(parent.exists() || parent.mkdirs()) { "สร้างโฟลเดอร์ความจำไม่สำเร็จ" }
+        val temp = File(parent, "memory.enc.tmp")
+        val rollback = File(parent, "memory.enc.rollback")
         temp.writeBytes(encrypted)
-        if (!temp.renameTo(file)) {
-            temp.copyTo(file, overwrite = true)
+
+        val candidate = decodeRecords(cipher.decrypt(temp.readBytes()))
+        check(candidate == expected) { "ตรวจสอบไฟล์ความจำชั่วคราวไม่สำเร็จ" }
+
+        rollback.delete()
+        if (file.exists()) check(file.renameTo(rollback)) { "สำรองไฟล์ความจำเดิมก่อนเขียนไม่สำเร็จ" }
+        try {
+            check(temp.renameTo(file)) { "แทนที่ไฟล์ความจำไม่สำเร็จ" }
+            check(readEntries() == expected) { "ตรวจสอบข้อมูลหลังบันทึกไม่สำเร็จ" }
+            rollback.delete()
+        } catch (failure: Exception) {
+            file.delete()
+            if (rollback.exists()) {
+                check(rollback.renameTo(file)) { "กู้คืนไฟล์ความจำเดิมไม่สำเร็จ" }
+            }
             temp.delete()
+            throw failure
         }
+    }
+
+    private fun recoverInterruptedRewrite() = synchronized(lock) {
+        val rollback = File(file.parentFile, "memory.enc.rollback")
+        val temp = File(file.parentFile, "memory.enc.tmp")
+        if (!file.exists() && rollback.isFile) {
+            check(rollback.renameTo(file)) { "กู้คืนไฟล์ความจำหลังการเขียนที่หยุดกลางคันไม่สำเร็จ" }
+        } else if (file.isFile) {
+            rollback.delete()
+        }
+        temp.delete()
     }
 
     private fun migrateLegacyRecords() = synchronized(lock) {
