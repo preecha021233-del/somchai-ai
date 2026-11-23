@@ -1,4 +1,4 @@
-# SOMCHAI AI — Phase 1 Work Plan (54 Work Items; Chunk 24 Split)
+# SOMCHAI AI — Phase 1 Work Plan (61 Work Items; Chunks 24 and 26–32 Split)
 
 **Branch:** `phase-1/local-brain-runtime`  
 **Acceptance baseline:** `docs/TESTING/PHASE1_ACCEPTANCE.md` (P01–P43)  
@@ -6,14 +6,14 @@
 
 ## Tracking rules
 
-- There are 54 tracked work items; item 24 is split into 24A (implementation) and 24B (live acceptance test). Each item is planned for no more than 30 minutes of focused work.
+- There are 61 tracked work items; item 24 is split into 24A (implementation) and 24B (live acceptance test). Security acceptance criteria P26–P32 are also split into implementation-side A work (existing security work items 25–32) and seven separate real-device B tests (P26B–P32B). Each implementation chunk is planned for no more than 30 minutes of focused work; device acceptance may take longer and requires owner participation.
 - The 27h total is a planning baseline, not a guaranteed elapsed-time estimate.
 - Status values: `NOT_STARTED`, `IN_PROGRESS`, `DONE`, `BLOCKED`.
 - Mark a chunk `DONE` only after its deliverable is complete and its evidence is recorded (commit, test result, device result, or documented finding).
 - A chunk may conclude that existing implementation already satisfies it; in that case record the exact existing evidence and mark it `DONE` without repeating the work.
 - Once marked `DONE`, do not re-run or re-check it without a relevant code/requirement change, failed evidence, security concern, or final acceptance need. If reopened, explain why in Notes.
 - Update this same file when a chunk finishes. Batch multiple completed rows into one GitHub update when several chunks finish together; do not create duplicate tracking files.
-- Device-owner actions are required for chunks 41 and 52. Keep them `BLOCKED` until the required device evidence is available; do not claim completion on the basis of CI alone.
+- Device-owner actions are required for chunks 41 and 52, plus live acceptance items 24B and P26B–P32B. Keep them `BLOCKED` until the required device evidence is available; do not claim completion on the basis of CI alone.
 - This tracker does not authorize merging PRs, changing signing credentials, uninstalling the app, or clearing user data.
 - Initial statuses are `NOT_STARTED`; they track completion of this plan, not whether related code already exists.
 
@@ -21,10 +21,10 @@
 
 | Metric | Count |
 |---|---:|
-| Total work items | 54 |
+| Total work items | 61 |
 | Done | 24 |
 | In progress | 8 |
-| Blocked | 1 |
+| Blocked | 8 |
 | Not started | 21 |
 
 ## Work tracker
@@ -55,14 +55,14 @@
 | 22 | Research | P22–P25 | Ensure summaries are grounded in retrieved sources | DONE | 2026-11-23 | `BuiltinToolExecutorTest.researchSummaryMustCiteEveryRequiredReadableSource`; `ResearchSummaryPromptTest.externalPageTextIsSanitizedAndDelimitedAsUntrustedData`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Local summary is generated only from pages actually read; requires valid [S1]/[S2] citations, sanitizes and delimits page text as untrusted, and rejects missing/invalid citations. |
 | 23 | Research | P22–P25 | Handle source reliability, insufficient evidence, and partial results | DONE | 2026-11-23 | `ResearchResultVerifierTest.discoveryOnlyIsNotReadEvidence`; `duplicateUrlCannotInflateCount`; `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Reports NONE/DISCOVERY_ONLY/READ_SINGLE_SOURCE/READ_MULTI_SOURCE; clearly marks fewer than two readable pages PARTIAL, reports errors without logging query/URL contents, and does not equate snippets with read evidence. |
 | 24A | Research implementation | P22–P25 | Complete automated implementation-side P24 coverage: approved search, actual page-reader calls, two distinct sources, source reporting/citations, and partial-result handling | DONE | 2026-11-23 | `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID `45119904510`), head `e659b84cafe500c6c18d46a40ea2664860e64790` | Automated fake-provider coverage verifies the approved-search orchestration reads two distinct pages and reports the actual sources; insufficient readable pages remain PARTIAL. This closes implementation-side work only. Live app/device acceptance is tracked separately as 24B. |
-| 25 | Security | P26–P32 | Complete permission and owner-approval enforcement | IN_PROGRESS | — | — | PermissionManager and BuiltinToolExecutor approval boundary reviewed; targeted test evidence recorded; final group CI pending. |
-| 26 | Security | P26–P32 | Complete plugin validation and integrity checks | IN_PROGRESS | — | — | PluginValidator/PluginManager allowlist, hash-bound approval, smoke checks and lifecycle tests reviewed; final group CI pending. |
-| 27 | Security | P26–P32 | Close verified command and file-safety gaps | IN_PROGRESS | — | — | Path containment, manifest/file bounds and memory-store size/count limits reviewed; final security regression run pending. |
-| 28 | Security | P26–P32 | Close verified network-security gaps | IN_PROGRESS | — | — | WebPageReader HTTPS-only, DNS pinning, redirect revalidation, private/reserved IP rejection and bounded parser reviewed; final group CI pending. |
-| 29 | Security | P26–P32 | Complete audit-log coverage for relevant lifecycle actions | IN_PROGRESS | — | — | Added audit assertions for plugin lifecycle and memory backup/restore/import/export/mutations; new tests await CI. |
-| 30 | Security | P26–P32 | Complete backup and rollback behavior for supported operations | IN_PROGRESS | — | — | AES-GCM backup/restore and transactional rewrite/rollback implementation and tests reviewed; final group CI pending. |
-| 31 | Security | P26–P32 | Fix security findings and run targeted regression tests | IN_PROGRESS | — | — | Added missing audit-lifecycle regression coverage; run complete security regression suite and resolve any failures. |
-| 32 | Security | P26–P32 | Record evidence for P26–P32 security acceptance cases | IN_PROGRESS | — | — | Evidence map is being assembled from P26–P32 source/tests; cannot close until latest CI confirms. |
+| 25 | Security implementation (A) | P26–P32 | Complete permission and owner-approval enforcement | IN_PROGRESS | — | — | PermissionManager and BuiltinToolExecutor approval boundary reviewed; targeted test evidence recorded. CI #281 passed JVM tests/build/package for the security test head; implementation-side review/evidence mapping remains in progress. Real-device check is tracked separately as P26B. |
+| 26 | Security implementation (A) | P26–P32 | Complete plugin validation and integrity checks | IN_PROGRESS | — | — | PluginValidator/PluginManager allowlist, hash-bound approval, smoke checks and lifecycle tests reviewed. CI #281 passed; real-device lifecycle/denial check is tracked separately as P27B. |
+| 27 | Security implementation (A) | P26–P32 | Close verified command and file-safety gaps | IN_PROGRESS | — | — | Path containment, manifest/file bounds and memory-store size/count limits reviewed. CI #281 passed the current JVM suite; real-device behavior is tracked separately where applicable. |
+| 28 | Security implementation (A) | P26–P32 | Close verified network-security gaps | IN_PROGRESS | — | — | WebPageReader HTTPS-only, DNS validation, redirect revalidation, private/reserved IP rejection and bounded parser reviewed. CI #281 passed; live network/device check is tracked separately as P32B. |
+| 29 | Security implementation (A) | P26–P32 | Complete audit-log coverage for relevant lifecycle actions | IN_PROGRESS | — | — | Added audit assertions for plugin lifecycle and memory backup/restore/import/export/mutations; CI #281 passed the added JVM audit tests. Verify the resulting audit trail in the running app under P26B/P27B/P29B/P30B. |
+| 30 | Security implementation (A) | P26–P32 | Complete backup and rollback behavior for supported operations | IN_PROGRESS | — | — | AES-GCM backup/restore and transactional rewrite/rollback implementation and tests reviewed; CI #281 passed. Actual device backup/restore and tamper behavior are tracked separately as P29B–P31B. |
+| 31 | Security implementation (A) | P26–P32 | Fix security findings and run targeted regression tests | IN_PROGRESS | — | — | Security regression tests including audit lifecycle passed CI #281; review remaining findings and map exact P26–P32 test evidence before closure. |
+| 32 | Security implementation (A) | P26–P32 | Record evidence for P26–P32 implementation-side acceptance cases | IN_PROGRESS | — | — | CI #281 succeeded (JVM unit tests, ARM64 native build and APK/instrumentation-APK packaging). This does not execute tests on a physical device; keep B-side device acceptance separate. |
 | 33 | Brain routing | P33–P35 | Complete internal-brain routing behavior | NOT_STARTED | — | — | |
 | 34 | Brain routing | P33–P35 | Complete safe fallback behavior and user-facing status | NOT_STARTED | — | — | |
 | 35 | Brain routing | P33–P35 | Verify external AI is never used automatically as the primary brain | NOT_STARTED | — | — | |
@@ -84,6 +84,13 @@
 | 51 | Build | P01–P43 | Build and verify the intended APK artifact and record hashes/build evidence | NOT_STARTED | — | — | Owner signing credentials remain private |
 | 52 | Device acceptance | P01–P43 | Install/update in place and verify data retention plus device checklist without uninstall/clear-data | NOT_STARTED | — | — | Requires owner device and owner action |
 | 24B | Testing / device acceptance | P22–P25 | Run P24 against the running app after owner approval: issue a real query, open/read at least two distinct real pages, verify summary and traceable citations, and record full device/run evidence | BLOCKED | — | No live app/device evidence yet; CI #279 covers automated mock-provider tests only | This is an acceptance test, not an implementation task. Keep BLOCKED until a real approved Web Search run in the app proves two distinct source pages were actually opened/read; if fewer than two are readable, record PARTIAL/FAIL under the unchanged P24 threshold. |
+| P26B | Security device acceptance (B) | P26 | On the running app/device, verify undeclared permission requests are denied and the denial is reflected in the expected audit/evidence path without granting access | BLOCKED | — | Awaiting owner-device run; CI #281 is implementation-side only | Use a controlled test manifest/action; do not change production permissions or grant extra access. Record app/build/device details and observable denial. |
+| P27B | Security device acceptance (B) | P27 | Verify an inactive, disabled, or unapproved plugin cannot execute from the running app; verify approved/disabled lifecycle behavior and audit evidence | BLOCKED | — | Awaiting owner-device run; CI #281 covers automated lifecycle tests only | Use a harmless test plugin/action. Do not install arbitrary executable code or grant new permissions. |
+| P28B | Security device acceptance (B) | P28 | Run a controlled retrieved-page prompt-injection case and verify the app treats page instructions as untrusted content, not executable user/owner commands | BLOCKED | — | Awaiting owner-device run | Use a benign test page/payload and inspect the resulting response; do not expose secrets or perform external side effects. |
+| P29B | Security device acceptance (B) | P29 | Export a real app backup on device and verify it is authenticated/encrypted using the supported app flow | BLOCKED | — | Awaiting owner-device run; CI #281 covers automated tests only | Preserve the original data; capture file metadata and app-visible export result without sharing private contents. |
+| P30B | Security device acceptance (B) | P30 | Restore a known-good backup in a controlled test and verify exact record count, stable IDs and contents are recovered | BLOCKED | — | Awaiting owner-device run | Must use a safe test dataset or a verified backup copy; do not clear the owner's only copy of real data. |
+| P31B | Security device acceptance (B) | P31 | Attempt to import a deliberately modified copy of a test backup and verify rejection while existing memory remains unchanged | BLOCKED | — | Awaiting owner-device run | Tamper only with a duplicate test backup; never alter the only valid backup or real user data. |
+| P32B | Security device acceptance (B) | P32 | From the running app/device, verify unsafe URLs/redirects are rejected and a safe HTTPS page is read as visible text without script execution | BLOCKED | — | Awaiting owner-device run; CI covers URL/security unit cases | Use controlled safe/unsafe test endpoints; record outcomes and device/network context. |
 | 53 | Final acceptance | P01–P43 | Publish final P01–P43 evidence report and state Phase 1 outcome accurately | NOT_STARTED | — | — | Do not declare PASS with missing device evidence |
 
 ## Completion policy
