@@ -22,7 +22,7 @@ class InternalProcessor(
             return ProcessingResult("บันทึกความจำในเครื่องแล้วครับ (รหัส ${entry.id.take(8)})", "memory.write")
         }
         if (normalized.startsWith("/recall")) {
-            val entries = memory.search(text.removePrefix("/recall").trim(), 8)
+            val entries = memory.search(text.drop("/recall".length).trim(), 8)
             val answer = if (entries.isEmpty()) "ยังไม่พบความจำที่ตรงกับคำค้นครับ"
                 else entries.joinToString("\n") { "• [${it.id.take(8)}] ${it.content}" }
             return ProcessingResult(answer, "memory.read")
