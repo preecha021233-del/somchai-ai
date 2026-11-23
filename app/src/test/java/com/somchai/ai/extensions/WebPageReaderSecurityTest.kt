@@ -4,6 +4,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import javax.net.ssl.SSLParameters
+import javax.net.ssl.SNIHostName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -94,7 +95,7 @@ class WebPageReaderSecurityTest {
     @Test fun tlsUsesOriginalHostnameForSniAndHttpsEndpointVerification() {
         val parameters = configureTlsParameters(SSLParameters(), "research.example")
         assertEquals("HTTPS", parameters.endpointIdentificationAlgorithm)
-        assertEquals("research.example", parameters.serverNames.single().toString().removePrefix("type=host_name (0), value="))
+        assertEquals("research.example", (parameters.serverNames.single() as SNIHostName).asciiName)
     }
 
     @Test fun rejectsUnsafeAddressFamiliesAndSpecialRanges() {
