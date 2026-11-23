@@ -87,7 +87,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeLoadModel(
     }
 }
 
-extern "C" JNIEXPORT jstring JNICALL
+extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
     JNIEnv * env, jobject, jlong handle, jstring promptValue, jint maxTokens) {
     auto * engine = reinterpret_cast<Engine *>(handle);
@@ -162,7 +162,7 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_k(40));
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_p(0.90f, 1));
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_temp_ext(0.70f, 0.0f, 1.0f));
-        llama_sampler_chain_add(sampler.get(), llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_dist(42u));
 
         std::string output;
         for (int i = 0; i < limit; ++i) {
@@ -187,7 +187,14 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
             throwJava(env, "โมเดลไม่สร้างคำตอบ กรุณาลองใหม่");
             return nullptr;
         }
-        return env->NewStringUTF(output.c_str());
+        // Return raw UTF-8 bytes. NewStringUTF expects modified UTF-8 and is unsafe
+        // for arbitrary model output (notably supplementary-plane emoji).
+        const jsize byteCount = static_cast<jsize>(output.size());
+        jbyteArray result = env->NewByteArray(byteCount);
+        if (!result) return nullptr;
+        env->SetByteArrayRegion(result, 0, byteCount,
+            reinterpret_cast<const jbyte *>(output.data()));
+        return result;
     } catch (const std::exception & error) {
         throwJava(env, error.what());
         return nullptr;
