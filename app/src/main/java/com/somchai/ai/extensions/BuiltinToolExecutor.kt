@@ -1,7 +1,6 @@
 package com.somchai.ai.extensions
 
 import com.somchai.ai.core.audit.ActivityLogger
-import com.somchai.ai.core.resources.ResourceLimiter
 import com.somchai.ai.core.security.PermissionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,7 +8,7 @@ import kotlinx.coroutines.withContext
 class BuiltinToolExecutor(
     private val permissions: PermissionManager,
     private val logger: ActivityLogger,
-    private val limiter: ResourceLimiter,
+    private val checkStorageBudget: () -> Unit,
     private val pageReader: WebPageReader = WebPageReader(),
     private val discoveryProvider: ResearchDiscoveryProvider = HttpResearchDiscoveryProvider(pageReader),
     private val isWebSearchApproved: () -> Boolean = { false },
@@ -18,7 +17,7 @@ class BuiltinToolExecutor(
     suspend fun search(query: String): String = withContext(Dispatchers.IO) {
         permissions.require("network.search")
         check(isWebSearchApproved()) { "ต้องอนุมัติปลั๊กอิน Web Search ก่อนใช้งาน" }
-        limiter.checkStorageBudget()
+        checkStorageBudget()
         require(query.isNotBlank() && query.length <= 300) { "Search query is invalid" }
 
         val report = ResearchCoordinator(discoveryProvider, pageReader, maxPages = 5).research(query)
