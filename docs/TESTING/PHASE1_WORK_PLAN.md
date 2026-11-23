@@ -22,16 +22,16 @@
 | Metric | Count |
 |---|---:|
 | Total chunks | 53 |
-| Done | 0 |
+| Done | 1 |
 | In progress | 0 |
 | Blocked | 0 |
-| Not started | 53 |
+| Not started | 52 |
 
 ## Work tracker
 
 | # | Group | Criteria | Work / completion deliverable | Status | Completed (date) | Evidence (commit / test / report) | Notes |
 |---:|---|---|---|---|---|---|---|
-| 1 | Internal brain | P01–P08 | Compare Thai understanding criteria with current implementation and existing evidence; record only genuine gaps | NOT_STARTED | — | — | |
+| 1 | Internal brain | P01–P08 | Compare Thai understanding criteria with current implementation and existing evidence; record only genuine gaps | DONE | 2026-11-23 | `PHASE1_TEST_LOG.md` — Phase 1 / Chunk 1 gap assessment; source/test SHA references recorded there | Code/test review complete. P01/P03–P08 have matching implementation/tests; P02 exact-help-list assertion is incomplete. Local-model 18/20 rubric remains BLOCKED pending model/device evidence. |
 | 2 | Internal brain | P01–P08 | Fill verified Thai language-understanding gaps | NOT_STARTED | — | — | |
 | 3 | Internal brain | P01–P08 | Improve intent and context extraction where evidence shows gaps | NOT_STARTED | — | — | |
 | 4 | Internal brain | P01–P08 | Handle ambiguous and incomplete questions appropriately | NOT_STARTED | — | — | |
