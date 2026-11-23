@@ -1,6 +1,6 @@
 # SOMCHAI AI — Phase Status
 
-Updated: 2026-11-22
+Updated: 2026-11-23
 
 ## Phase 0 — Repository Audit
 
@@ -23,7 +23,7 @@ Observed limitation:
 
 ## Phase 1 — Baby SOMCHAI
 
-**Status: IMPLEMENTATION IN PROGRESS — native llama.cpp/Qwen runtime, direct model-test route and JNI UTF-8 fixes added; latest ARM64 CI run is pending; device/model acceptance remains open. Current candidate: versionCode 12 / versionName 1.9.2.**
+**Status: IMPLEMENTATION IN PROGRESS — native llama.cpp/Qwen runtime, direct model-test route and JNI UTF-8 fixes added; latest ARM64 CI run #346 is running; device/model acceptance remains open. Current candidate: versionCode 12 / versionName 1.9.2.**
 
 Owner authorization to complete the remaining Phase 1 implementation was reaffirmed on 2026-11-22. The approved scope remains the five capabilities below, plus the approved Chat UI alignment to the existing Figma reference. No Phase 2 work is included. See `docs/PHASE1_PROGRESS.md` for implementation details and final acceptance gates.
 
