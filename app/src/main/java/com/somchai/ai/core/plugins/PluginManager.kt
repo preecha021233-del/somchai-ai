@@ -119,10 +119,30 @@ class PluginManager(
         val manifest = validator.validate(source.readText())
         require(manifest.id == id) { "Plugin identity mismatch" }
         val target = File(paths.backups, "disabled-$id-${System.currentTimeMillis()}.json")
-        source.copyTo(target, overwrite = false)
-        check(source.delete()) { "Could not remove plugin from active set" }
-        logger.record("PLUGIN_DISABLED", "$id backup=${target.name}")
-        return true
+        val raw = source.readText()
+        // Prefer a same-filesystem rename so disabling is one atomic directory operation.
+        // Fall back to a verified temporary copy only when the filesystem cannot rename.
+        val moved = source.renameTo(target)
+        if (!moved) {
+            val temporary = File(paths.backups, ".disabled-$id-${System.nanoTime()}.tmp")
+            temporary.writeText(raw)
+            check(temporary.readText() == raw) { "Disabled plugin backup verification failed" }
+            check(temporary.renameTo(target)) { "Could not publish disabled plugin backup" }
+            if (!source.delete()) {
+                target.delete()
+                throw IllegalStateException("Could not remove plugin from active set")
+            }
+        }
+        try {
+            val disabledManifest = validator.validate(target.readText())
+            check(disabledManifest.id == id) { "Disabled plugin identity mismatch" }
+            logger.record("PLUGIN_DISABLED", "$id backup=${target.name}")
+            return true
+        } catch (error: Exception) {
+            // Restore the active manifest if verification fails after the move.
+            if (!source.exists()) target.renameTo(source) else target.delete()
+            throw error
+        }
     }
 
     @Synchronized
