@@ -260,3 +260,12 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - Added a post-generation citation gate: a two-page research summary must cite both [S1] and [S2], and no reference may point outside the pages actually supplied to the model. Invalid summaries are omitted while raw read-page evidence is preserved.
 - Regression tests cover missing, valid and out-of-range citation IDs. CI pending.
+
+
+## Latest route-boundary review and remaining model-download risk — 2026-11-23
+
+- Tightened `ChatRoutePolicy` so `/task` and `/skill` match only the exact command or a command followed by a space. Lookalike inputs such as `/taskevil run` and `/skillful prompt` now route to the internal unknown-command handler. Commits: `4c7b76b45437c85a3454168b5c57332f717a1a1b` and `db05372d8ac5ecab3b1f42cf78565c14c5444540`.
+- The work plan now separates device acceptance for P33–P35 (35B), P40–P43 (47B), model quality/performance (40), model load/inference (41), and full install/update acceptance (52). These remain BLOCKED until owner-device evidence exists.
+- **Unresolved P36 risk:** `LocalModelStore` validates DNS answers before opening an `HttpURLConnection`, but the HTTP client may resolve the hostname again when connecting. The validated address is not pinned to the TCP socket. This leaves a DNS-rebinding time-of-check/time-of-use gap in the model-download path. Do not claim the model downloader is fully hardened until a pinned-IP HTTPS connection and regression test close this gap, or a documented equivalent control is verified.
+- Latest-branch CI for the route change and subsequent documentation commits is not available in the connected GitHub status results at the time of this update. Earlier CI #281 is historical evidence only and does not validate the latest branch head.
+- Phase 1 remains NOT ACCEPTED. No device gate or final P01–P43 PASS is claimed.
