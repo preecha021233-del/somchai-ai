@@ -11,7 +11,8 @@ class ChatOrchestrator(
     private val searchApproved:()->Boolean, private val search:suspend (String)->String,
     private val remoteConfigured:()->Boolean, private val remoteAsk:suspend (List<Pair<String,String>>,String)->String,
     private val tasks:TaskExecutionStore, private val planner:TaskPlanner,
-    private val audit:(String,String)->Unit = { _,_-> }, private val evaluator:ResultEvaluator = ResultEvaluator()
+    private val audit:(String,String)->Unit = { _,_-> }, private val evaluator:ResultEvaluator = ResultEvaluator(),
+    private val retrieveMemory:(String)->List<String> = { emptyList() }
 ) {
     suspend fun handle(userText:String, history:List<Pair<String,String>> = emptyList(),
         approvedSkills:List<String> = emptyList(), memoryContext:List<String> = emptyList()):ChatTurnResult {
@@ -74,7 +75,14 @@ class ChatOrchestrator(
             return ChatTurnResult(checked.text,checked.intent,"internal-processor",true,deterministic.plan)
         }
         return try {
-            val reply=brain.respond(BrainRequest(text,history,approvedSkills,memoryContext))
+            // Retrieve only a small, relevant set for the local brain. This path is
+            // intentionally below the explicit /ai route, so private memory is never
+            // attached to a remote-provider request.
+            val selectedMemory = (memoryContext + runCatching { retrieveMemory(text) }.getOrDefault(emptyList()))
+                .filter { it.isNotBlank() }
+                .distinct()
+                .take(5)
+            val reply=brain.respond(BrainRequest(text,history,approvedSkills,selectedMemory))
             val result=if(reply.usedFallback) deterministic else ProcessingResult(reply.text,"brain.local")
             val checked=evaluator.evaluate(result)
             safeAudit("CHAT_TURN","intent="+checked.intent+" engine="+reply.engineId+" fallback="+reply.usedFallback+" safe="+checked.safe)
