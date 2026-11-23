@@ -40,6 +40,11 @@ class WebPageReaderTest {
         assertTrue(HtmlTextExtractor.extract("x".repeat(100), 20).length <= 20)
     }
 
+    @Test fun allowsOnlyPublicIpv4TargetsThroughWellKnownNat64() {
+        assertTrue(reader.isPublicAddress(java.net.InetAddress.getByName("64:ff9b::5db8:d822")))
+        assertFalse(reader.isPublicAddress(java.net.InetAddress.getByName("64:ff9b::a00:1")))
+    }
+
     @Test fun acceptsHttpsPublicHostname() {
         assertTrue(reader.validateUrl("https://example.com/article").startsWith("https://"))
     }
