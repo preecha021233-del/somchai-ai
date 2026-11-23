@@ -4,6 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.net.URL
+import java.net.InetAddress
+import java.io.File
 
 class LocalModelDownloadSecurityTest {
     @Test fun rejectsInsufficientFreeStorage() {
@@ -96,6 +98,30 @@ class LocalModelDownloadSecurityTest {
             LocalModelStore.validateDownloadUrl(redirected)
         }
     }
+    @Test fun modelDownloaderUsesOnlyValidatedDnsAddresses() {
+        var dnsCalls = 0
+        val publicIp = InetAddress.getByName("93.184.216.34")
+        val store = LocalModelStore(File("build/test-models")) {
+            dnsCalls++
+            if (dnsCalls == 1) arrayOf(publicIp) else arrayOf(InetAddress.getByName("127.0.0.1"))
+        }
+        assertEquals(listOf(publicIp), store.resolvePublicAddresses("model.example"))
+        assertEquals(1, dnsCalls)
+        assertThrows(IllegalArgumentException::class.java) {
+            store.resolvePublicAddresses("model.example")
+        }
+        assertEquals(2, dnsCalls)
+    }
+
+    @Test fun rejectsMixedPublicAndPrivateModelDnsAnswers() {
+        val store = LocalModelStore(File("build/test-models")) {
+            arrayOf(InetAddress.getByName("93.184.216.34"), InetAddress.getByName("10.0.0.1"))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.resolvePublicAddresses("rebind.example")
+        }
+    }
+
     @Test fun rejectsReservedAndTransitionIpv6ModelDestinations() {
         listOf(
             "https://[2001:2::1]/model.gguf",
