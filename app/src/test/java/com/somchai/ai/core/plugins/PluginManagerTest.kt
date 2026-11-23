@@ -80,4 +80,23 @@ class PluginManagerTest {
     }
 
 
+
+    @Test fun reportsPendingActiveAndDisabledManifestsInTheirCorrectLifecycleBuckets() {
+        val fixture = fixture()
+        fixture.manager.ensureStarterCandidate()
+        val pending = fixture.manager.candidates().single()
+        assertEquals(pending.manifest.id, "web-search")
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+        assertTrue(fixture.manager.disabledPlugins().isEmpty())
+
+        assertTrue(fixture.manager.approve(pending.manifest.id, pending.hash))
+        assertEquals(listOf("web-search"), fixture.manager.activePlugins().map { it.id })
+        assertTrue(fixture.manager.candidates().isEmpty())
+
+        assertTrue(fixture.manager.disable("web-search"))
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+        assertEquals(listOf("web-search"), fixture.manager.disabledPlugins().map { it.id })
+        assertTrue(fixture.manager.candidates().isEmpty())
+    }
+
 }
