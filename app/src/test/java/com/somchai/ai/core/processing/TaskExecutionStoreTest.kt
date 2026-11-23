@@ -140,4 +140,21 @@ class TaskExecutionStoreTest {
     }
 
 
+
+    @Test fun exactTaskIdWinsAndAmbiguousShortPrefixIsRejected() {
+        val directory = temporaryFolder.newFolder("task-id-collision")
+        val store = TaskExecutionStore(directory)
+        val first = store.create(TaskPlanner().plan("งานแรก"))
+        val second = store.create(TaskPlanner().plan("งานที่สอง"))
+        val firstId = "12345678-0000-4000-8000-000000000001"
+        val secondId = "12345678-1111-4111-8111-000000000002"
+        val file = java.io.File(directory, "tasks.json")
+        file.writeText(file.readText().replace(first.id, firstId).replace(second.id, secondId))
+
+        assertEquals("งานแรก", store.get(firstId)?.goal)
+        assertEquals("งานที่สอง", store.get(secondId)?.goal)
+        assertThrows(IllegalArgumentException::class.java) { store.get("12345678") }
+    }
+
+
 }
