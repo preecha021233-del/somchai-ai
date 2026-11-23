@@ -639,3 +639,14 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - TLS hostname verification remains enabled by OkHttp. Response bodies remain bounded to 1 MB. Added injectable resolver tests for DNS answer changes, private answers and reserved/transition IPv6 ranges.
 - Commits: 7a4b702 (pinned provider DNS transport), 4b82f5c (IPv6 range policy), 4489e51 (regression tests).
 - This closes the previously noted validate-then-resolve-again DNS gap for the optional provider. CI for the latest code is pending; no pass is claimed.
+
+
+## Phase 1 — Latest-branch CI #299 / DNS hardening and implementation verification (2026-11-23)
+
+- Tested exact branch head `bbfeafb6d187f29604ecb37f5614f2c5e73cb9dd` (workflow run #299, run ID `45132531059`): https://github.com/preecha021233-del/somchai-ai/actions/runs/45132531059
+- JVM unit-test step: SUCCESS.
+- ARM64 llama.cpp native runtime + Android Debug APK build step: SUCCESS.
+- Debug APK upload: SUCCESS.
+- Android instrumentation-test APK build/upload: SUCCESS. The instrumentation APK was built and uploaded, but no physical-device instrumentation execution is claimed.
+- The successful JVM suite includes the model-download and external-provider DNS regression tests added in this work sprint. OkHttp DNS lookup now returns only validated address sets to the actual connection layer; redirects are manually revalidated for model downloads, while redirects and automatic retries are disabled for the optional provider connector.
+- CI run #299 is the current branch validation evidence for implementation work items 28, 33–39, 42–47, and 49–51. Owner-device items remain blocked: 24B, 35B, 40, 41, 47B, P26B–P32B, and 52. This CI result does not establish Phase 1 acceptance or Thai model-quality/performance on the target phone.
