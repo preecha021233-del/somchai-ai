@@ -498,3 +498,7 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - CI verification pending; chunk remains IN_PROGRESS until the workflow completes successfully.
 
 - First CI attempt #245 failed: 201 JVM tests executed, 200 passed, 1 failed (`identifiesMissingCashChangeInputsIndividually`, line 77). The negative assertion searched the entire explanatory sentence, which necessarily names the required total-price input even when that field is not missing. Corrected the test to inspect only the `ตอนนี้ยังขาด:` segment. Test-fix commit: 7cc7f923c1342288fefdd6cc1780d167e0a5c7ab. CI rerun pending.
+
+
+- CI rerun: GitHub Actions run #246 (run ID 45111802478) — **SUCCESS** for corrected test head 7cc7f923c1342288fefdd6cc1780d167e0a5c7ab. [Run #246](https://github.com/preecha021233-del/somchai-ai/actions/runs/45111802478).
+- Chunk 4 is DONE. The clarification implementation and its corrected regression tests are committed and the full CI workflow passed. This closes Chunk 4 only; it does not establish P01–P08 or Phase 1 acceptance.
