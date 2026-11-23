@@ -36,7 +36,9 @@ class CoreRuntime(context: Context) {
     val memory = LocalMemoryStore(paths.memory, AndroidMemoryCipher()) { event, detail -> logger.record(event, detail) }
     val skills = SkillStore(paths.skills, AndroidMemoryCipher()) { event, detail -> logger.record(event, detail) }
     val planner = TaskPlanner()
-    val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core)
+    val tasks = com.somchai.ai.core.processing.TaskExecutionStore(paths.core) { event, detail ->
+        logger.record(event, detail)
+    }
     val processor = InternalProcessor(memory, planner)
     val modelStore = LocalModelStore(paths.models)
     val localInference = NativeLlamaInferenceEngine()
