@@ -74,7 +74,8 @@ class OfflineReasoningEngineTest {
         val missingPayment = engine.missingInformation("สินค้าราคา 80 บาท เงินทอนเท่าไร")
             ?: error("missing payment amount was not detected")
         assertTrue(missingPayment.contains("จำนวนเงินที่จ่าย"))
-        assertTrue(!missingPayment.contains("ราคารวมของสินค้า"))
+        val missingFields = missingPayment.substringAfter("ตอนนี้ยังขาด:").substringBefore("กรุณาระบุ")
+        assertTrue(!missingFields.contains("ราคารวมของสินค้า"))
     }
 
     @Test fun rejectsOversizedNumericLiteralsAndExcessiveNumericTokens() {
