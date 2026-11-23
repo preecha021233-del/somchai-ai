@@ -3,7 +3,7 @@ package com.somchai.ai.extensions
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
-import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.SSLParameters
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -26,15 +26,12 @@ class WebPageReaderSecurityTest {
     }
 
     @Test fun blocksLocalhostNamesAndPrivateIpv4Literals() {
-        rejected("https://localhost/")
-        rejected("https://api.localhost/")
-        rejected("https://printer.local/")
-        rejected("https://service.internal/")
-        rejected("https://router.lan/")
-        rejected("https://127.0.0.1/")
-        rejected("https://10.0.0.8/")
-        rejected("https://192.168.1.10/")
-        rejected("https://169.254.169.254/")
+        listOf(
+            "https://localhost/", "https://api.localhost/", "https://printer.local/",
+            "https://service.internal/", "https://router.lan/", "https://127.0.0.1/",
+            "https://10.0.0.8/", "https://172.16.0.1/", "https://172.31.255.254/",
+            "https://192.168.1.10/", "https://169.254.169.254/"
+        ).forEach(::rejected)
     }
 
     @Test fun permitsOnlyHttpsAndStandardPort() {
@@ -47,10 +44,20 @@ class WebPageReaderSecurityTest {
         rejected("https://user:password@example.com/")
     }
 
-    @Test fun rejectsRedirectDestinationThatIsPrivate() {
-        // Redirect targets pass through the same URL validation before the next DNS/connect hop.
-        rejected("https://127.0.0.1/admin")
-        rejected("https://metadata.internal/latest")
+    @Test fun redirectResolutionRevalidatesTheEntireDestination() {
+        val subject = reader()
+        try {
+            subject.validateRedirect(java.net.URI("https://public.example/path"), "https://127.0.0.1/admin")
+            fail("Redirect to loopback must be rejected")
+        } catch (_: IllegalArgumentException) {
+            // expected
+        }
+        try {
+            subject.validateRedirect(java.net.URI("https://public.example/path"), "http://example.org/")
+            fail("Redirect to HTTP must be rejected")
+        } catch (_: IllegalArgumentException) {
+            // expected
+        }
     }
 
     @Test fun rejectsDnsAnswerIfAnyAddressIsPrivate() {
@@ -63,39 +70,40 @@ class WebPageReaderSecurityTest {
         }
     }
 
-    @Test fun resolvesOnlyOnceAndPinsTheValidatedAnswerAgainstRebinding() {
+    @Test fun resolvesOnceAndTcpConnectUsesOnlyTheValidatedPinnedIp() {
         var dnsCalls = 0
         val publicAddress = ip("93.184.216.34")
         val subject = reader {
             dnsCalls++
             if (dnsCalls == 1) arrayOf(publicAddress) else arrayOf(ip("127.0.0.1"))
         }
-        val selected = subject.resolvePublicAddresses("rebind.example").first()
-        var actualTcpDestination: InetSocketAddress? = null
-        val factory = PinnedIpSslSocketFactory(
-            pinnedIp = selected,
-            tlsHost = "rebind.example",
-            connectTimeoutMs = 8_000,
-            delegate = SSLSocketFactory.getDefault() as SSLSocketFactory,
-            socketConnector = { _, destination, _ -> actualTcpDestination = destination }
+        val pinned = subject.resolvePublicAddresses("rebind.example").first()
+        var actualDestination: InetSocketAddress? = null
+        connectPinnedSocket(
+            socket = Socket(),
+            pinnedIp = pinned,
+            port = 443,
+            timeoutMs = 8_000,
+            connector = { _, endpoint, _ -> actualDestination = endpoint }
         )
-
-        // Exercise the exact connector used by the TLS factory without opening a network socket.
-        factory.connectRawSocket(Socket(), 443)
-
         assertEquals(1, dnsCalls)
-        assertEquals(publicAddress, actualTcpDestination!!.address)
-        assertEquals(443, actualTcpDestination!!.port)
-        assertEquals("rebind.example", factory.tlsHost)
+        assertEquals(publicAddress, actualDestination!!.address)
+        assertEquals(443, actualDestination!!.port)
+    }
+
+    @Test fun tlsUsesOriginalHostnameForSniAndHttpsEndpointVerification() {
+        val parameters = configureTlsParameters(SSLParameters(), "research.example")
+        assertEquals("HTTPS", parameters.endpointIdentificationAlgorithm)
+        assertEquals("research.example", parameters.serverNames.single().toString().removePrefix("type=host_name (0), value="))
     }
 
     @Test fun rejectsUnsafeAddressFamiliesAndSpecialRanges() {
         val subject = reader()
         listOf(
-            "0.0.0.1", "100.64.0.1", "172.16.0.1", "172.31.255.254",
-            "192.0.2.1", "198.18.0.1", "198.51.100.1", "203.0.113.1",
+            "0.0.0.1", "100.64.0.1", "100.127.255.254", "172.16.0.1", "172.31.255.254",
+            "192.0.2.1", "192.88.99.1", "198.18.0.1", "198.51.100.1", "203.0.113.1",
             "224.0.0.1", "255.255.255.255", "::1", "fc00::1", "fe80::1",
-            "2001:db8::1", "2002::1"
+            "2001:db8::1", "2002::1", "3fff::1"
         ).forEach { address ->
             assertFalse("Must block $address", subject.isPublicAddress(ip(address)))
         }
