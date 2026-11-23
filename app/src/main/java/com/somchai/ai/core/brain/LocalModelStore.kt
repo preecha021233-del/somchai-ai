@@ -120,6 +120,12 @@ class LocalModelStore(
                 .apply { if (rangeStart > 0L) header("Range", "bytes=$rangeStart-") }
                 .build()
             val response = client.newCall(request).execute()
+            if (response.code == 416 && rangeStart > 0L) {
+                response.close()
+                // A stale partial file may no longer match the server's current asset.
+                // Retry once from byte zero rather than getting stuck on repeated 416s.
+                return openVerifiedDownloadConnection(0L)
+            }
             if (response.code in 300..399) {
                 val location = response.header("Location")
                 response.close()
