@@ -91,3 +91,12 @@ This is an implementation audit, not an acceptance-test result. The P01–P43 th
 6. `TaskCommandProcessor` used `error()` for an unknown task and non-numeric step, producing `IllegalStateException` rather than the argument-validation contract. Changed both to `IllegalArgumentException` and added command-adapter regression coverage.
 
 These changes are committed on the branch. Their CI result is pending; no test pass is claimed for these new commits.
+
+
+## P18 memory-ID retrieval correction — 2026-11-23
+
+7. `LocalMemoryStore.search` previously treated every ID lookup as a prefix match. An exact UUID lookup could therefore return more than one record if another ID shared that prefix. Exact full-ID matches now take precedence and return one record; short displayed IDs still work as prefixes.
+8. `InternalProcessor` recognized `/RECALL` case-insensitively but removed the lowercase command prefix case-sensitively. It now removes the fixed-length command prefix, so uppercase and lowercase forms both search the intended query.
+9. Added regression tests for exact-ID precedence and uppercase `/RECALL` using the stable ID displayed by `/remember`.
+
+The code and tests are committed. CI has not yet been confirmed for these latest commits; this correction is not marked test-passed until the workflow result is available.
