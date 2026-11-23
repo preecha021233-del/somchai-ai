@@ -44,6 +44,17 @@ class InternalProcessorTest {
         assertTrue(result.plan.isNotEmpty())
         assertTrue(result.answer.contains("ยังไม่ได้ลงมือทำ"))
     }
+    @Test fun recallsExactMemoryByIdAndAcceptsUppercaseCommand() {
+        val subject = processor()
+        subject.process("/remember ข้อมูลทดสอบรหัสความจำ")
+        val stored = subject.process("/recall ข้อมูลทดสอบรหัสความจำ")
+        val id = Regex("\\(รหัส ([0-9a-fA-F-]{8})\\)").find(stored.answer)?.groupValues?.get(1)
+        assertTrue("Expected a displayed stable memory ID", id != null)
+        val recalled = subject.process("/RECALL $id")
+        assertTrue(recalled.intent == "memory.read")
+        assertTrue(recalled.answer.contains("ข้อมูลทดสอบรหัสความจำ"))
+    }
+
     @Test fun storesAndRetrievesLocalMemory() {
         val processor = processor()
         assertTrue(processor.process("/remember ขั้นตอนสำรองข้อมูล").answer.contains("บันทึก"))
