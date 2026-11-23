@@ -124,4 +124,20 @@ class TaskExecutionStoreTest {
         assertEquals(TaskStepStatus.IN_PROGRESS, TaskExecutionStore(directory).get(task.id)?.steps?.first()?.status)
     }
 
+
+    @Test fun recoversTaskStateAfterInterruptedAtomicReplacement() {
+        val directory = temporaryFolder.newFolder("task-recovery")
+        val original = TaskExecutionStore(directory)
+        val task = original.create(TaskPlanner().plan("กู้คืนสถานะงาน"))
+        val live = java.io.File(directory, "tasks.json")
+        val rollback = java.io.File(directory, "tasks.json.rollback")
+        assertTrue(live.renameTo(rollback))
+
+        val recovered = TaskExecutionStore(directory)
+        assertEquals(task, recovered.get(task.id))
+        assertFalse(rollback.exists())
+        assertFalse(java.io.File(directory, "tasks.json.tmp").exists())
+    }
+
+
 }
