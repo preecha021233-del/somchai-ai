@@ -31,7 +31,10 @@ class TaskExecutionStore(
     private val file = File(directory, "tasks.json")
     private val lock = Any()
 
-    init { check(directory.exists() || directory.mkdirs()) { "Cannot create task storage" } }
+    init {
+        check(directory.exists() || directory.mkdirs()) { "Cannot create task storage" }
+        recoverInterruptedWrite()
+    }
 
     fun create(plan: TaskPlan): TaskRecord = synchronized(lock) {
         require(plan.steps.isNotEmpty()) { "Task plan must contain at least one step" }
@@ -214,12 +217,36 @@ class TaskExecutionStore(
         val encoded = array.toString()
         require(encoded.toByteArray(Charsets.UTF_8).size <= MAX_FILE_BYTES) { "Task store exceeds size limit" }
         val temp = File(directory, "tasks.json.tmp")
+        val rollback = File(directory, "tasks.json.rollback")
         temp.writeText(encoded)
-        check(temp.renameTo(file) || run {
-            temp.copyTo(file, overwrite = true)
+        val candidate = JSONArray(temp.readText())
+        check(candidate.toString() == array.toString()) { "Task candidate verification failed" }
+
+        rollback.delete()
+        if (file.exists()) check(file.renameTo(rollback)) { "Could not preserve previous task state" }
+        try {
+            check(temp.renameTo(file)) { "Could not atomically replace task records" }
+            check(readAll() == records) { "Task state verification after write failed" }
+            rollback.delete()
+        } catch (failure: Exception) {
+            file.delete()
+            if (rollback.exists()) {
+                check(rollback.renameTo(file)) { "Could not restore previous task state" }
+            }
             temp.delete()
-            true
-        }) { "Could not save task records" }
+            throw failure
+        }
+    }
+
+    private fun recoverInterruptedWrite() {
+        val rollback = File(directory, "tasks.json.rollback")
+        val temp = File(directory, "tasks.json.tmp")
+        if (!file.exists() && rollback.isFile) {
+            check(rollback.renameTo(file)) { "Could not recover interrupted task write" }
+        } else if (file.isFile) {
+            rollback.delete()
+        }
+        temp.delete()
     }
 
     companion object {
