@@ -27,7 +27,7 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Chat UI is being aligned to the approved Figma screen: white chat surface, top-right navigation menu, gradient user bubbles, assistant response card with labeled actions, and bottom composer. There is no bottom tab bar.
 - Response actions are wired to clipboard, persisted local feedback, Thai text-to-speech readiness checks and Android share chooser.
 - JVM tests cover processor intents, task planning, memory CRUD/persistence, encrypted export/import and tamper rejection, plugin manifest negative cases, plugin smoke checks and permission filtering.
-- Application ID remains `com.somchai.ai`. Current development build is versionCode 10 and versionName 1.9.0. Owner signing configuration is unchanged.
+- Application ID remains `com.somchai.ai`. Current development build is versionCode 11 and versionName 1.9.1 (verified against `app/build.gradle.kts`). Owner signing configuration is unchanged.
 
 ## Local model integration added on `phase-1/local-brain-runtime`
 
@@ -199,3 +199,11 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Debug APK artifact uploaded by CI. It is not a release-signed APK and is not being treated as device acceptance evidence.
 - The compiler reports deprecation warnings for legacy llama.cpp decode/batch APIs and some Compose APIs; these did not fail the build and remain maintenance items.
 - Phase 1 remains NOT ACCEPTED: Android device inference/Thai quality/performance, real-source research acceptance, and install-over-existing/signing continuity still require device evidence.
+
+
+## Pre-device-test corrective batch — 2026-11-23
+- JNI generation output is returned as a UTF-8 byte array, avoiding modified-UTF-8 assumptions in JNI NewStringUTF for Thai and supplementary Unicode such as emoji. Kotlin decodes the returned bytes as UTF-8.
+- LocalFirstBrain preserves bounded failure diagnostics for model readiness/generation and fallback failures; coroutine cancellation is rethrown. Chat audit records failure details.
+- Added explicit `/model-test` command to bypass deterministic InternalProcessor routing and invoke Brain directly. A fallback response is explicitly reported as a failed model test; this route does not call a remote provider.
+- Native sampler uses fixed seed 42 for improved repeatability; temperature remains 0.70, so exact repeatability and output quality still require device validation.
+- CI and Android-device validation are pending. No Phase 1 acceptance item is marked PASS by these code changes.
