@@ -172,6 +172,8 @@ class InternalProcessorTest {
 
         val sameNumber = subject.process("เลข 4 เป็นเลขคู่ แต่เลข 4 เป็นเลขคี่")
         assertEquals("reasoning.contradiction", sameNumber.intent)
+        assertTrue(sameNumber.answer.contains("เลข 4"))
+        assertTrue(sameNumber.answer.contains("เป็นไปไม่ได้"))
 
         val differentNumbers = subject.process("เลข 4 เป็นเลขคู่ และเลข 5 เป็นเลขคี่")
         assertFalse(differentNumbers.intent == "reasoning.contradiction")
