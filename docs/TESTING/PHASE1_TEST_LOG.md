@@ -330,3 +330,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Verified JVM unit tests, ARM64 llama.cpp native build, debug APK assembly, Android instrumentation APK compilation/assembly, and both artifact uploads.
 - The instrumentation test APK was built but not executed on a connected device.
 - This result verifies code through the privacy-safe research audit-log change, but does not verify later commits for IPv6 destination filtering, learned-skill evaluation/audit, canonical research source counting, or arithmetic resource limits.
+
+
+## Round 28 — 2026-11-23 — Reasoning acceptance precision
+
+- Added an explicit P09 multi-step Thai budget problem regression test that checks both item subtotals and the final remaining balance.
+- Narrowed weekday contradiction detection to require an explicit conflict connector and a repeated event anchor, avoiding false contradiction claims for different events on different days.
+- Added a negative regression test for “today Monday, tomorrow Tuesday”. CI pending.

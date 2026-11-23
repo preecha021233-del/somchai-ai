@@ -34,8 +34,11 @@ class OfflineReasoningEngine {
         val text = input.lowercase()
         val weekdays = listOf("วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์", "วันอาทิตย์")
             .filter { text.contains(it) }
-        if (weekdays.size > 1) {
-            return "ข้อมูลขัดแย้งกันครับ: ระบุวันในสัปดาห์มากกว่าหนึ่งวัน (${weekdays.joinToString(" และ ")}) สำหรับเหตุการณ์เดียวกัน กรุณาระบุวันที่หรือวันที่ถูกต้อง"
+        val explicitConflictConnector = listOf("แต่", "ทว่า", "ขัดแย้ง").any(text::contains)
+        val repeatedEventAnchor = listOf("วันนี้", "นัด", "ประชุม", "สอบ", "กิจกรรม", "กำหนดการ")
+            .any { anchor -> Regex(Regex.escape(anchor)).findAll(text).count() >= 2 }
+        if (weekdays.size > 1 && explicitConflictConnector && repeatedEventAnchor) {
+            return "ข้อมูลขัดแย้งกันครับ: ระบุวันในสัปดาห์มากกว่าหนึ่งวันสำหรับเหตุการณ์เดียวกัน (${weekdays.joinToString(" และ ")}) กรุณาระบุวันที่หรือวันที่ถูกต้อง"
         }
         if (text.contains("เลขคู่") && text.contains("เลขคี่")) {
             return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน"

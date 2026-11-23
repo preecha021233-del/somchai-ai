@@ -233,3 +233,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - CI #205 passed for commit `804beaa294d75e25fa887d94eddc9b5704606e86`: JVM unit tests, ARM64 native build, debug APK and Android instrumentation APK build/upload.
 - Device instrumentation execution remains NOT RUN. Changes after that commit are pending the latest-branch workflow.
+
+
+## P09/P10 reasoning precision
+
+- Added explicit multi-step Thai purchase/budget calculation coverage (intermediate subtotals and final balance).
+- Reduced false-positive weekday contradictions by requiring an explicit conflict connector and repeated event anchor; added a separate-days negative case.
+- CI pending.

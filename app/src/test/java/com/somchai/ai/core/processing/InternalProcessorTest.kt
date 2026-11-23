@@ -171,5 +171,20 @@ class InternalProcessorTest {
         assertTrue(memory.all().any { it.id == secondId })
     }
 
+    @Test fun solvesMultiStepThaiPurchaseBudgetProblem() {
+        val result = processor().process(
+            "มีเงิน 500 บาท ซื้อสมุด 2 เล่ม เล่มละ 30 บาท ซื้อปากกา 3 ด้าม ด้ามละ 10 บาท เหลือเงินเท่าไร"
+        )
+        assertEquals("reasoning.arithmetic", result.intent)
+        assertTrue(result.answer.contains("2 × 30 = 60 บาท"))
+        assertTrue(result.answer.contains("3 × 10 = 30 บาท"))
+        assertTrue(result.answer.contains("500 - 90 = 410 บาท"))
+    }
+
+    @Test fun doesNotCallDifferentWeekdaysForDifferentEventsAContradiction() {
+        val result = processor().process("วันนี้เป็นวันจันทร์ และพรุ่งนี้เป็นวันอังคาร")
+        assertFalse(result.intent == "reasoning.contradiction")
+    }
+
 
 }
