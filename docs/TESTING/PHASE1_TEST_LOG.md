@@ -614,3 +614,11 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Code/test evidence is on the Phase 1 branch through test head `1f8508e97501767b3b7de7f81a614fed7de17add` (includes plugin lifecycle audit tests at `dfe95b994f24759d05331ad689e9b847679fa793` and memory lifecycle audit tests at `1f8508e97501767b3b7de7f81a614fed7de17add`).
 - GitHub Actions run #281 (run ID `45126187843`) — **SUCCESS** for test head `1f8508e97501767b3b7de7f81a614fed7de17add`: independent JVM unit tests, ARM64 native runtime/APK build, Debug APK upload and Android instrumentation APK upload all succeeded. [Run #281](https://github.com/preecha021233-del/somchai-ai/actions/runs/45126187843). The instrumentation APK was built/uploaded; Android instrumentation was **not** executed on the owner's physical device.
 - **Chunks 25–32 / Group 6A are DONE as implementation and automated-test deliverables.** Real-device checks P26B–P32B remain BLOCKED and separate. This does not claim a full P26–P32 device acceptance pass or final Phase 1 acceptance.
+
+
+## Phase 1 — Brain route boundary hardening (2026-11-23)
+
+- Code review found that `ChatRoutePolicy` used broad `startsWith("/task")` and `startsWith("/skill")` checks. Inputs such as `/taskevil run` or `/skillful prompt` could be misclassified as built-in commands rather than unknown slash commands.
+- Tightened both routes to accept only the exact command or the command followed by a space. Added regression tests proving the lookalike prefixes route to the internal unknown-command handler.
+- Commits: `4c7b76b45437c85a3454168b5c57332f717a1a1b` (route fix), `db05372d8ac5ecab3b1f42cf78565c14c5444540` (tests).
+- CI status: not yet available for this commit. Do not mark this regression test as passed until a workflow result is recorded.
