@@ -28,7 +28,7 @@ object ChatRoutePolicy {
             text.startsWith("/") ||
                 text.startsWith("จำไว้ว่า ") ||
                 text.startsWith("จำว่า ") ||
-                listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน").any(text::contains) ->
+                listOf("วางแผน", "แผนงาน", "แบ่งงาน", "ขั้นตอน").any { phrase -> text.contains(phrase) } ->
                 ChatRoute.INTERNAL_PROCESSOR
             else -> ChatRoute.LOCAL_BRAIN
         }
