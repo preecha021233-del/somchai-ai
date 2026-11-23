@@ -30,7 +30,7 @@ class ChatRoutePolicyTest {
     }
 
     @Test fun taskLifecycleCommandsAreSeparatedFromNewTaskCreation() {
-        listOf("/task list", "/task show abc", "/task start abc", "/task complete abc",
+        listOf("/task help", "/task list", "/task show abc", "/task start abc", "/task complete abc",
             "/task fail abc", "/task retry abc", "/task cancel abc").forEach {
             assertEquals(true, ChatRoutePolicy.isTaskLifecycleCommand(it))
         }
