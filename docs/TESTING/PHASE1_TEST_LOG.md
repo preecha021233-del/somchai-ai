@@ -260,3 +260,12 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Memory reads now enforce a 1 MiB encrypted/decrypted limit, maximum 500 records, unique UUIDs, and an 8 KiB record bound.
 - Backup restore and legacy migrations check input size/count before reading; oversized legacy sources remain untouched.
 - Added oversized-store and duplicate-import regression tests. CI: pending. Device acceptance: NOT RUN. Phase 1 remains NOT ACCEPTED.
+
+
+## Round 20 — 2026-11-23 — Research audit-log privacy minimization
+
+- Commit: `9ed76eaea260f46dcc2984461a76e23765087293` (follow-up test-path correction: `804beaa294d75e25fa887d94eddc9b5704606e86`).
+- Activity logs no longer store raw research queries, discovered/read URLs, provider error text, or page-reader exception text. They retain aggregate counts and query length only.
+- Research result content still displays source URLs and errors to the user; this change limits persistent audit-log exposure, not the user-visible research report.
+- Added a regression test containing a private query and URL and asserting neither is present in the persisted activity log.
+- CI run #205 is pending at the time of this entry. P26 and Phase 1 remain NOT ACCEPTED pending CI and device/network validation.

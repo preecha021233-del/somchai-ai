@@ -175,3 +175,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 44. Encrypted memory-store reads now reject files larger than 1 MiB before loading them; decrypted payloads are bounded to 1 MiB and 500 records, duplicate IDs are rejected, and individual record lines are capped at 8 KiB.
 45. Backup restore and legacy plaintext migration now check file size/count limits before reading; oversized legacy files are preserved rather than consumed or deleted.
 46. Added tests for oversized store rejection and duplicate-ID encrypted import while preserving existing memory. CI verification is pending.
+
+
+## Research audit-log privacy correction — 2026-11-23
+
+- `BuiltinToolExecutor` now logs only source/page error counts and query length for research operations; raw query text, URLs, and exception/provider error strings are excluded from persistent audit details.
+- Added `researchAuditLogDoesNotStorePrivateQueryOrSourceUrls` regression coverage.
+- CI #205: pending; no pass is claimed. Device validation and DNS socket-pinning assessment remain open.
