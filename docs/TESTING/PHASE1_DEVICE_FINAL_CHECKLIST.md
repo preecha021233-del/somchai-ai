@@ -1,0 +1,74 @@
+# Phase 1 — Final on-device acceptance checklist
+
+Record one row per test. Do not mark PASS without observable evidence. Use BLOCKED when a prerequisite is unavailable; do not reinterpret BLOCKED as PASS.
+
+**Run metadata**
+- Date/time:
+- Device/model:
+- Android version:
+- ABI:
+- App versionName/versionCode:
+- APK SHA-256:
+- Signing certificate SHA-256:
+- Repository commit:
+- Tester:
+
+For every item, record **Result: PASS / FAIL / BLOCKED**, **Evidence** (screenshot, sanitized log, command output, or test artifact), and **Notes**.
+
+## Set A — Core functions and update compatibility
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| A01 | Verify package ID and signing certificate; install owner-signed Release over existing app with adb install -r only | BLOCKED | | Never uninstall or clear data |
+| A02 | Verify existing chats, memories and app settings remain after update | BLOCKED | | Compare before/after |
+| A03 | Disable network; send Thai greeting and basic capability question | BLOCKED | | Confirm local/internal response; no remote request |
+| A04 | Disable network; ask a basic reasoning/calculation question and inspect honesty/fallback | BLOCKED | | Record exact prompt and output |
+| A05 | Create plan using /plan ... | BLOCKED | | Record plan and expected steps |
+| A06 | Create task using /task ...; list/show/start/complete/fail/retry/cancel supported lifecycle | BLOCKED | | Confirm state changes persist |
+| A07 | Test /remember, /recall, and /forget including ambiguous short-ID refusal | BLOCKED | | Verify only intended memory is deleted |
+| A08 | Run memory backup and owner-confirmed restore | BLOCKED | | Verify restored content and confirmation |
+| A09 | Run encrypted export/import round trip on same installation/key | BLOCKED | | Not a cross-device migration format |
+| A10 | Plugin candidate approve and reject | BLOCKED | | Verify owner confirmation and audit events |
+| A11 | Plugin disable and enable | BLOCKED | | Verify active state changes |
+| A12 | Plugin rollback after failed/invalid candidate | BLOCKED | | Verify previous approved state restored |
+
+## Set B — Research and permissions
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| B01 | Before Web Search plugin approval, run /search SOMCHAI security test | BLOCKED | | Must be blocked by orchestrator and tool boundary |
+| B02 | Approve Web Search plugin, then run a real /search query | BLOCKED | | Record exact query and sanitized output |
+| B03 | Verify URLs discovered versus pages actually opened/read | BLOCKED | | Discovery snippets are not read-page evidence |
+| B04 | Verify evidence level READ_MULTI_SOURCE, READ_SINGLE_SOURCE, DISCOVERY_ONLY, or NONE matches actual pages read | BLOCKED | | Two distinct read pages required for multi-source |
+| B05 | Verify cited source IDs correspond only to pages actually read | BLOCKED | | Reject invented or out-of-range citations |
+| B06 | Run /ai without configured provider credentials | BLOCKED | | Must be blocked; ordinary chat must not call remote AI |
+| B07 | Configure provider only if owner explicitly chooses, then invoke /ai explicitly | BLOCKED | | Not a default chat route |
+
+## Set C — Network security / DNS rebinding
+
+| ID | Test | Result | Evidence | Notes |
+|---|---|---|---|---|
+| C01 | Attempt HTTPS read of localhost and loopback targets | BLOCKED | | Must fail before request reaches local service |
+| C02 | Attempt HTTPS read of RFC1918 private targets (10/8, 172.16/12, 192.168/16) | BLOCKED | | Must be rejected |
+| C03 | Attempt HTTPS read of link-local/cloud metadata 169.254.169.254 | BLOCKED | | Must be rejected |
+| C04 | Attempt .local, .internal, .lan hostnames | BLOCKED | | Must be rejected |
+| C05 | Attempt http:// URL | BLOCKED | | HTTPS only |
+| C06 | Attempt URL with userinfo and non-443 port | BLOCKED | | Both rejected |
+| C07 | Redirect from public HTTPS host to localhost/private IP | BLOCKED | | Redirect destination independently validated and pinned |
+| C08 | Controlled DNS-rebinding test: first DNS answer public, subsequent answer private | BLOCKED | | TCP destination remains exactly the first validated IP; no second hostname resolution |
+| C09 | Verify TLS SNI and certificate hostname use original URL hostname while TCP peer is pinned IP | BLOCKED | | Capture safe test-server evidence |
+| C10 | Verify no private response content, metadata, credentials or internal addresses leak into chat | BLOCKED | | Record sanitized output only |
+| C11 | Verify redirects are not automatically followed by an HTTP library | BLOCKED | | Reader handles each redirect itself |
+| C12 | Verify timeouts, response byte cap, header cap and HTML/XHTML/plain-text content-type allowlist | BLOCKED | | Oversize/unsupported content must fail safely |
+
+## Acceptance summary
+
+- Set A: ___ PASS / ___ FAIL / ___ BLOCKED
+- Set B: ___ PASS / ___ FAIL / ___ BLOCKED
+- Set C: ___ PASS / ___ FAIL / ___ BLOCKED
+- Open defects:
+- Evidence folder/link:
+- Reviewer:
+- Decision: ACCEPT / REJECT / INCOMPLETE
+
+Phase 1 is not complete merely because CI passes. Real-device checks, model inference/Thai quality, update compatibility, security and all Phase 1 P01–P43 evidence remain mandatory.
