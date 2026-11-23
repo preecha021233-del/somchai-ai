@@ -87,10 +87,12 @@ class BuiltinToolExecutorTest {
         val result = tool.search("test query")
         assertEquals(2, reader.readUrls.size)
         assertTrue(result.contains("อ่านแหล่งข้อมูลจริงอย่างน้อย 2 หน้าแล้ว"))
-        assertTrue(result.contains("[S1] Source A"))
-        assertTrue(result.contains("[S2] Source B"))
+        assertTrue(result.contains("[S1] Title https://a.example/article"))
+        assertTrue(result.contains("[S2] Title https://b.example/article"))
         assertTrue(result.contains("https://a.example/article"))
         assertTrue(result.contains("https://b.example/article"))
+        assertTrue(result.contains("Readable evidence for https://a.example/article"))
+        assertTrue(result.contains("Readable evidence for https://b.example/article"))
     }
 
     @Test fun invalidQueryIsRejectedBeforeDiscovery() = runBlocking {
