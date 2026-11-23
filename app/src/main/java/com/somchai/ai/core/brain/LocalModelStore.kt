@@ -165,7 +165,7 @@ class LocalModelStore(private val directory: File) {
                 !host.endsWith(".local") && !host.endsWith(".internal") && !host.endsWith(".lan")) {
                 "ไม่อนุญาตปลายทางดาวน์โหลดเครือข่ายภายใน"
             }
-            val ipLiteral = host.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}""")) || host.contains(":")
+            val ipLiteral = host.matches(Regex("""\d{1,3}(\.\d{1,3}){3}""")) || host.contains(":")
             if (ipLiteral) {
                 val literal = host.removePrefix("[").removeSuffix("]")
                 require(isPublicAddressLiteral(InetAddress.getByName(literal))) {
