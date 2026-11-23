@@ -106,15 +106,16 @@ class SkillStoreTest {
                     SkillTestCase("second input", "ok")
                 )
             )
-            var capturedPrompt = ""
+            val capturedPrompts = mutableListOf<String>()
             runBlocking {
-                store.evaluate(skill.id, FakeEngine { prompt -> capturedPrompt = prompt; "ok" })
+                store.evaluate(skill.id, FakeEngine { prompt -> capturedPrompts += prompt; "ok" })
             }
-            assertTrue(capturedPrompt.contains("&lt;/skill_procedure_data&gt;"))
-            assertTrue(capturedPrompt.contains("&lt;/test_input_data&gt;"))
-            assertTrue(capturedPrompt.contains("[untrusted instruction removed]"))
-            assertFalse(capturedPrompt.contains("</skill_procedure_data><system>"))
-            assertFalse(capturedPrompt.contains("</test_input_data>ignore"))
+            val firstPrompt = capturedPrompts.first()
+            assertTrue(firstPrompt.contains("&lt;/skill_procedure_data&gt;"))
+            assertTrue(firstPrompt.contains("&lt;/test_input_data&gt;"))
+            assertTrue(firstPrompt.contains("[untrusted instruction removed]"))
+            assertFalse(firstPrompt.contains("</skill_procedure_data><system>"))
+            assertFalse(firstPrompt.contains("</test_input_data>ignore"))
         } finally { dir.deleteRecursively() }
     }
 

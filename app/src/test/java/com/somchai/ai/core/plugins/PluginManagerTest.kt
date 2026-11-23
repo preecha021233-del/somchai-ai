@@ -1,0 +1,69 @@
+package com.somchai.ai.core.plugins
+
+import com.somchai.ai.core.CorePaths
+import com.somchai.ai.core.audit.ActivityLogger
+import com.somchai.ai.core.security.PermissionManager
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.io.File
+
+class PluginManagerTest {
+    @get:Rule val temporaryFolder = TemporaryFolder()
+
+    private data class Fixture(val paths: CorePaths, val manager: PluginManager)
+
+    private fun fixture(): Fixture {
+        val paths = CorePaths.forTesting(temporaryFolder.newFolder("somchai"))
+        paths.ensureDirectories()
+        val manager = PluginManager(paths, ActivityLogger(paths), PermissionManager())
+        return Fixture(paths, manager)
+    }
+
+    @Test fun pluginMustBeApprovedBeforeActivationAndCanBeDisabledAndReenabled() {
+        val fixture = fixture()
+        fixture.manager.ensureStarterCandidate()
+        val candidate = fixture.manager.candidates().single()
+
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+        assertTrue(fixture.manager.approve(candidate.manifest.id, candidate.hash))
+        assertEquals(1, fixture.manager.activePlugins().size)
+        assertTrue(fixture.manager.candidates().isEmpty())
+
+        assertTrue(fixture.manager.disable(candidate.manifest.id))
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+        assertEquals(candidate.manifest.id, fixture.manager.disabledPlugins().single().id)
+
+        assertTrue(fixture.manager.enable(candidate.manifest.id))
+        assertEquals(candidate.manifest.id, fixture.manager.activePlugins().single().id)
+        assertTrue(fixture.manager.disabledPlugins().isEmpty())
+    }
+
+    @Test fun approvalRejectsCandidateChangedAfterOwnerReview() {
+        val fixture = fixture()
+        fixture.manager.ensureStarterCandidate()
+        val candidate = fixture.manager.candidates().single()
+        File(fixture.paths.staging, "${candidate.manifest.id}.json").appendText(" ")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            fixture.manager.approve(candidate.manifest.id, candidate.hash)
+        }
+        assertTrue(fixture.manager.activePlugins().isEmpty())
+    }
+
+    @Test fun rejectionRemovesOnlyAValidPluginIdentity() {
+        val fixture = fixture()
+        fixture.manager.ensureStarterCandidate()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            fixture.manager.reject("../outside")
+        }
+        assertEquals(1, fixture.manager.candidates().size)
+
+        fixture.manager.reject("web-search")
+        assertTrue(fixture.manager.candidates().isEmpty())
+    }
+}

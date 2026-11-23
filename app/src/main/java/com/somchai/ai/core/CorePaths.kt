@@ -3,8 +3,8 @@ package com.somchai.ai.core
 import android.content.Context
 import java.io.File
 
-class CorePaths(context: Context) {
-    private val root = File(context.filesDir, "somchai")
+class CorePaths private constructor(private val root: File) {
+    constructor(context: Context) : this(File(context.filesDir, "somchai"))
     val core = File(root, "core")
     val staging = File(root, "plugins/staging")
     val active = File(root, "plugins/active")
@@ -22,4 +22,8 @@ class CorePaths(context: Context) {
 
     fun contained(parent: File, child: File): Boolean =
         child.canonicalFile.toPath().startsWith(parent.canonicalFile.toPath())
+
+    companion object {
+        internal fun forTesting(root: File): CorePaths = CorePaths(root)
+    }
 }
