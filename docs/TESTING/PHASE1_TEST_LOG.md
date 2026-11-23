@@ -718,3 +718,13 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - Safety: do not uninstall the app, clear app data, or overwrite its local storage. Do not repeat inference tests until crash logs and chat persistence are inspected.
 - Required next actions before resuming device acceptance: collect Android crash/logcat evidence for the crash window; inspect chat storage/read path and startup initialization; determine whether prior messages remain in app-private storage; preserve any recoverable data; then fix and retest only the affected gates.
 - Phase 1 remains NOT ACCEPTED. No PASS is awarded for P01 or P38 from these observations.
+
+
+## Round 2 device acceptance — P23 (2026-11-23)
+
+- Owner submitted `/search ข่าวเทคโนโลยีล่าสุด` while Web Search was still pending/unapproved.
+- Observed app response reported by the owner: `ปลั๊กอิน Web Search ยังไม่ได้รับอนุมัติ`.
+- This confirms the user-facing denial path for an unapproved plugin.
+- No device Network Trace or Audit Log was provided, so this observation does **not** establish that no discovery/provider/network request occurred.
+- Result: **PARTIAL**. P23 is not a PASS and remains open for the no-network evidence requirement. P24 (owner approval and live two-source search) has not been started.
+- The owner chose to defer the additional evidence collection for now; continue with other eligible Phase 1 checks without treating P23 as passed.
