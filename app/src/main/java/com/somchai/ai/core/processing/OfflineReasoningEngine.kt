@@ -48,7 +48,12 @@ class OfflineReasoningEngine {
         }
         val sameIntegerReference = listOf("จำนวนเต็มเดียวกัน", "จำนวนเดียวกัน", "เลขเดียวกัน")
             .any(text::contains)
-        if (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่")) {
+        val evenNumbers = Regex("""(?:เลข\\s*)?(\\d+)\\s*(?:เป็น)?\\s*เลขคู่""")
+            .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
+        val oddNumbers = Regex("""(?:เลข\\s*)?(\\d+)\\s*(?:เป็น)?\\s*เลขคี่""")
+            .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
+        if ((evenNumbers intersect oddNumbers).isNotEmpty() ||
+            (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่"))) {
             return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน"
         }
         if (text.contains("ไม่เคย") && text.contains("แต่เคย")) {
