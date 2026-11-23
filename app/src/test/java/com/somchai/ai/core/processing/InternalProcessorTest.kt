@@ -46,8 +46,7 @@ class InternalProcessorTest {
     }
     @Test fun recallsExactMemoryByIdAndAcceptsUppercaseCommand() {
         val subject = processor()
-        subject.process("/remember ข้อมูลทดสอบรหัสความจำ")
-        val stored = subject.process("/recall ข้อมูลทดสอบรหัสความจำ")
+        val stored = subject.process("/remember ข้อมูลทดสอบรหัสความจำ")
         val id = Regex("\\(รหัส ([0-9a-fA-F-]{8})\\)").find(stored.answer)?.groupValues?.get(1)
         assertTrue("Expected a displayed stable memory ID", id != null)
         val recalled = subject.process("/RECALL $id")
