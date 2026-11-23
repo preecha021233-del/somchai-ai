@@ -1,4 +1,4 @@
-# SOMCHAI AI — Phase 1 Work Plan (61 Work Items; Chunks 24 and 26–32 Split)
+# SOMCHAI AI — Phase 1 Work Plan (63 Work Items; implementation/device gates split where required)
 
 **Branch:** `phase-1/local-brain-runtime`  
 **Acceptance baseline:** `docs/TESTING/PHASE1_ACCEPTANCE.md` (P01–P43)  
@@ -6,7 +6,7 @@
 
 ## Tracking rules
 
-- There are 61 tracked work items; item 24 is split into 24A (implementation) and 24B (live acceptance test). Security acceptance criteria P26–P32 are also split into implementation-side A work (existing security work items 25–32) and seven separate real-device B tests (P26B–P32B). Each implementation chunk is planned for no more than 30 minutes of focused work; device acceptance may take longer and requires owner participation.
+- There are 63 tracked work items; item 24 is split into 24A (implementation) and 24B (live acceptance test). Security acceptance criteria P26–P32 are split into implementation-side A work (existing security work items 25–32) and seven separate real-device B tests (P26B–P32B). Brain routing and learned-skill workflows also have separate device acceptance rows 35B and 47B. Each implementation chunk is planned for no more than 30 minutes of focused work; device acceptance may take longer and requires owner participation.
 - The 27h total is a planning baseline, not a guaranteed elapsed-time estimate.
 - Status values: `NOT_STARTED`, `IN_PROGRESS`, `DONE`, `BLOCKED`.
 - Mark a chunk `DONE` only after its deliverable is complete and its evidence is recorded (commit, test result, device result, or documented finding).
@@ -21,11 +21,11 @@
 
 | Metric | Count |
 |---|---:|
-| Total work items | 61 |
+| Total work items | 63 |
 | Done | 32 |
-| In progress | 0 |
-| Blocked | 8 |
-| Not started | 21 |
+| In progress | 13 |
+| Blocked | 12 |
+| Not started | 6 |
 
 ## Work tracker
 
@@ -63,21 +63,23 @@
 | 30 | Security implementation (A) | P26–P32 | Complete backup and rollback behavior for supported operations | DONE | 2026-11-23 | `LocalMemoryStoreTest.authenticatedExportImportPreservesExactIdsCategoriesAndContents`; `encryptsMemoryAndBackupThroughInjectedCipher`; `restoresRollbackFileAfterInterruptedMemoryRewrite`; `LocalMemoryStoreAuditTest`; CI #281 SUCCESS | Authenticated encrypted export/import, encrypted backup/restore, stable IDs/content, transactional rewrite verification and interrupted-write recovery are covered. Device backup/restore remains P29B–P30B. |
 | 31 | Security implementation (A) | P26–P32 | Fix security findings and run targeted regression tests | DONE | 2026-11-23 | `PermissionManagerTest`; `PluginManagerTest`; `LocalMemoryStoreTest.rejectsTamperedImportWithoutReplacingExistingMemory` / `rejectsTamperedBackupWithoutChangingCurrentMemory`; `WebPageReaderSecurityTest`; CI #281 SUCCESS | Reviewed the P26–P32 implementation findings and ran the negative/tamper/security regression suite in the successful JVM CI run. Prompt-injection filters are defense in depth, not a guarantee against every possible injection. |
 | 32 | Security implementation (A) | P26–P32 | Record evidence for P26–P32 implementation-side acceptance cases | DONE | 2026-11-23 | `PHASE1_TEST_LOG.md` — Phase 1 Group 6A evidence mapping; test head `1f8508e97501767b3b7de7f81a614fed7de17add`; CI #281 run ID `45126187843` SUCCESS | P26–P32 implementation-side evidence is mapped to named tests and CI. Instrumentation APK was built/uploaded, not run on a physical device; B-side tests remain separate and BLOCKED. |
-| 33 | Brain routing | P33–P35 | Complete internal-brain routing behavior | NOT_STARTED | — | — | |
-| 34 | Brain routing | P33–P35 | Complete safe fallback behavior and user-facing status | NOT_STARTED | — | — | |
-| 35 | Brain routing | P33–P35 | Verify external AI is never used automatically as the primary brain | NOT_STARTED | — | — | |
-| 36 | On-device model | P36–P39 | Verify local model file discovery and GGUF loading path | NOT_STARTED | — | — | |
-| 37 | On-device model | P36–P39 | Verify SHA-256/model integrity enforcement | NOT_STARTED | — | — | |
-| 38 | On-device model | P36–P39 | Complete native runtime integration on supported Android ABI | NOT_STARTED | — | — | |
-| 39 | On-device model | P36–P39 | Complete memory/resource handling and inference error handling | NOT_STARTED | — | — | |
-| 40 | On-device model | P36–P39 | Validate Thai response quality and performance on target Android hardware | NOT_STARTED | — | — | |
-| 41 | On-device model | P36–P39 | Run real-device model load/inference checks and record owner-device evidence | NOT_STARTED | — | — | Requires owner device; CI is not a substitute |
-| 42 | Learned skills | P40–P43 | Complete extraction of candidate skills from approved experience | NOT_STARTED | — | — | |
-| 43 | Learned skills | P40–P43 | Complete skill test-case creation and minimum test coverage | NOT_STARTED | — | — | |
-| 44 | Learned skills | P40–P43 | Complete skill evaluation and rejection of unsafe/weak candidates | NOT_STARTED | — | — | |
-| 45 | Learned skills | P40–P43 | Enforce explicit owner approval before a skill becomes active | NOT_STARTED | — | — | |
-| 46 | Learned skills | P40–P43 | Complete context-matched retrieval of approved skills | NOT_STARTED | — | — | |
-| 47 | Learned skills | P40–P43 | Verify skill lifecycle, audit history, and acceptance evidence | NOT_STARTED | — | — | |
+| 33 | Brain routing implementation (A) | P33–P35 | Complete internal-brain routing behavior | IN_PROGRESS | — | `ChatRoutePolicy`, `LocalFirstBrain`; `ChatRoutePolicyTest`, `LocalFirstBrainTest` | Implementation and tests are present; route-prefix collision was fixed in `4c7b76b` with regression tests in `db05372d`. Latest CI is not yet confirmed. |
+| 34 | Brain routing implementation (A) | P33–P35 | Complete safe fallback behavior and user-facing status | IN_PROGRESS | — | `LocalFirstBrain`, `CoreRuntime`; `LocalFirstBrainTest` | Model-unavailable/runtime-failure fallback and engine/fallback status have automated coverage; latest CI is not yet confirmed. |
+| 35 | Brain routing implementation (A) | P33–P35 | Verify external AI is never used automatically as the primary brain | IN_PROGRESS | — | `ChatRoutePolicy`, `AgentApp`; `ChatRoutePolicyTest`, `LlmConnectorSecurityTest` | Ordinary chat is routed local-first; only explicit `/ai` selects external provider. Regression coverage exists; latest CI is not yet confirmed. |
+| 35B | Brain routing device acceptance (B) | P33–P35 | Verify on the running Android app that ordinary chat never contacts an external AI provider and that the displayed engine/fallback status is accurate | BLOCKED | — | Awaiting owner-device/network evidence | Inspect sanitized network evidence on the target device; `/ai` is tested separately and only by explicit request. |
+| 36 | On-device model implementation (A) | P36–P39 | Verify local model file discovery and GGUF loading path | IN_PROGRESS | — | `LocalModelStore`, `GgufFileValidatorTest`, `LocalModelDownloadSecurityTest` | File validation/download path and negative cases are implemented; latest CI and real-device model install remain outstanding. |
+| 37 | On-device model implementation (A) | P36–P39 | Verify SHA-256/model integrity enforcement | IN_PROGRESS | — | `GgufFileValidatorTest`, `LocalModelDownloadSecurityTest` | Pinned hash, GGUF header, size and redirect checks have automated cases; latest CI is not yet confirmed. |
+| 38 | On-device model implementation (A) | P36–P39 | Complete native runtime integration on supported Android ABI | IN_PROGRESS | — | `NativeLlamaInferenceEngine`, `NativeLlamaBindings`, `app/src/main/cpp`; prior ARM64 CI #281 | JNI/llama.cpp integration exists and prior ARM64 build passed; latest branch CI is not yet confirmed. |
+| 39 | On-device model implementation (A) | P36–P39 | Complete memory/resource handling and inference error handling | IN_PROGRESS | — | `NativeLlamaInferenceEngine`, `ResourceLimiter`; `LocalFirstBrainTest` | Bounded context/output and safe fallback are implemented; latest CI and target-device resource measurements remain outstanding. |
+| 40 | On-device model device acceptance (B) | P01–P12, P36–P39 | Validate Thai response quality and performance on target Android hardware | BLOCKED | — | Awaiting owner-device model installation and benchmark | Requires target device and unchanged Thai quality rubric; record latency, peak RAM, temperature, battery and exact prompts. |
+| 41 | On-device model device acceptance (B) | P36–P39 | Run real-device model load/inference checks and record owner-device evidence | BLOCKED | — | Awaiting owner-device model download/load/generation evidence | Requires owner device; CI is not a substitute. |
+| 42 | Learned skills implementation (A) | P40–P43 | Complete extraction of candidate skills from approved experience | IN_PROGRESS | — | `SkillStore.learnFromExperience`; `SkillStoreTest.learnsDraftProcedureFromExperienceButDoesNotAutoApprove` | Draft extraction, untrusted experience delimiting and no-auto-approval behavior are covered by tests; latest CI is not yet confirmed. |
+| 43 | Learned skills implementation (A) | P40–P43 | Complete skill test-case creation and minimum test coverage | IN_PROGRESS | — | `SkillStore`; `SkillStoreTest` | Enforces 2–10 test cases and evaluates bounded inputs; latest CI is not yet confirmed. |
+| 44 | Learned skills implementation (A) | P40–P43 | Complete skill evaluation and rejection of unsafe/weak candidates | IN_PROGRESS | — | `SkillStore.evaluate`; `SkillStoreTest` | Escaping, bounded prompts, failed-case rejection and stale-evaluation protection have tests; latest CI is not yet confirmed. |
+| 45 | Learned skills implementation (A) | P40–P43 | Enforce explicit owner approval before a skill becomes active | IN_PROGRESS | — | `SkillStore.approve`; `SkillStoreTest` | Drafts remain inactive until explicit approval and all tests pass; latest CI is not yet confirmed. |
+| 46 | Learned skills implementation (A) | P40–P43 | Complete context-matched retrieval of approved skills | IN_PROGRESS | — | `SkillStore.relevantFor`; `SkillStoreTest` | Retrieval is restricted to approved, matching skills; empty/oversized query and deletion revocation are covered; latest CI is not yet confirmed. |
+| 47 | Learned skills implementation (A) | P40–P43 | Verify skill lifecycle, audit history, and acceptance evidence | IN_PROGRESS | — | `SkillStore`, `ActivityLogger`; `SkillStoreTest`, `SkillStoreEncryptionTest`, `ActivityLoggerTest` | Encrypted persistence, lifecycle audit and rollback recovery are implemented; latest CI is not yet confirmed. |
+| 47B | Learned skills device acceptance (B) | P40–P43 | Run model-backed skill extraction, evaluation, explicit approval, matching retrieval and deletion in the running app | BLOCKED | — | Awaiting owner-device model-backed workflow evidence | Verify 2–10 test cases, failed-case rejection, approval gate, retrieval boundary and audit events on device. |
 | 48 | Integration | P01–P43 | Resolve cross-system integration defects found during implementation | NOT_STARTED | — | — | |
 | 49 | Integration | P01–P43 | Run focused and integration acceptance tests across P01–P43 | NOT_STARTED | — | — | Reuse valid existing evidence; do not repeat unaffected checks |
 | 50 | Integration | P01–P43 | Fix integration-test failures and record targeted regression evidence | NOT_STARTED | — | — | |
