@@ -143,8 +143,10 @@ class TaskExecutionStore(
 
     private fun findById(records: List<TaskRecord>, id: String): TaskRecord? {
         require(id.isNotBlank()) { "Task ID cannot be blank" }
-        val matches = records.filter { it.id == id || it.id.startsWith(id) }
-        require(matches.size <= 1) { "Task ID prefix is ambiguous" }
+        // An exact UUID must win even when another UUID happens to share its prefix.
+        records.firstOrNull { it.id == id }?.let { return it }
+        val matches = records.filter { it.id.startsWith(id) }
+        require(matches.size <= 1) { "Task ID prefix is ambiguous; use the full task ID" }
         return matches.firstOrNull()
     }
 
