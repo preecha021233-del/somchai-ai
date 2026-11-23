@@ -25,6 +25,7 @@ class InternalProcessorTest {
             "/task list|show|start|complete|fail|retry|cancel — จัดการสถานะงาน",
             "/remember ข้อความ — บันทึกความจำในเครื่อง",
             "/recall คำค้นหรือรหัส — ค้นคืนความจำ",
+            "/edit รหัสความจำ ข้อความใหม่ — แก้ไขความจำตามรหัส",
             "/forget รหัส — ลบความจำตามรหัส",
             "/search คำค้น — ค้นเว็บเมื่อปลั๊กอิน Web Search ได้รับอนุมัติแล้ว",
             "/plugins — ดูปลั๊กอินที่ใช้งาน รออนุมัติ และปิดใช้งาน",
@@ -236,6 +237,20 @@ class InternalProcessorTest {
         assertTrue(result.answer.contains("25 บาท"))
     }
 
+
+    @Test fun editMemoryByStableIdPreservesIdentityAndReplacesContent() {
+        val subject = processor()
+        val saved = subject.process("/remember ข้อมูลเก่าที่ต้องแก้ไข")
+        val id = Regex("\\(รหัส ([0-9a-fA-F-]{36})\\)").find(saved.answer)?.groupValues?.get(1)
+        assertTrue(id != null)
+
+        val edited = subject.process("/edit $id ข้อมูลใหม่ที่ถูกต้อง")
+        assertEquals("memory.edit", edited.intent)
+        assertTrue(edited.answer.contains("แก้ไขความจำ"))
+        val recalled = subject.process("/recall $id")
+        assertTrue(recalled.answer.contains("[$id] ข้อมูลใหม่ที่ถูกต้อง"))
+        assertFalse(recalled.answer.contains("ข้อมูลเก่าที่ต้องแก้ไข"))
+    }
 
     @Test fun forgetRejectsAmbiguousShortIdsAndHonorsExactFullId() {
         val directory = temporaryFolder.newFolder("ambiguous-memory-ids")
