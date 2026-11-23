@@ -189,3 +189,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - `WebPageReader` and `LocalModelStore` now reject IETF protocol-assignment, 6to4 transition, and 3fff documentation IPv6 ranges; tests assert these are blocked while a global-unicast IPv6 address is accepted by URL validation.
 - DNS pre-resolution remains defense-in-depth only; the HTTP connection is not pinned to the validated IP, so DNS rebinding remains a documented limitation.
 - CI pending; no acceptance claim.
+
+
+## Learned-skill test integrity — 2026-11-23
+
+- Added minimum trigger length and unique normalized test-input requirements at proposal and persisted-record validation boundaries.
+- Stale concurrent evaluation results are rejected if the skill changed while inference was running.
+- Regression tests cover invalid triggers, duplicate test inputs and stale evaluation write races. CI pending.

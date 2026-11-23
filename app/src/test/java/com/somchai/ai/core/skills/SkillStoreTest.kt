@@ -4,6 +4,7 @@ import com.somchai.ai.core.brain.BrainRequest
 import com.somchai.ai.core.brain.OnDeviceInferenceEngine
 import com.somchai.ai.core.memory.PlaintextMemoryCipher
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.async
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -277,7 +278,7 @@ class SkillStoreTest {
                     return release.await()
                 }
             }
-            val staleEvaluation = kotlinx.coroutines.async(kotlin.coroutines.coroutineContext) {
+            val staleEvaluation = async {
                 store.evaluate(skill.id, slowEngine)
             }
             entered.await()

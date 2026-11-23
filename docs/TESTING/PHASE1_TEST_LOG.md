@@ -277,3 +277,12 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Tightened both the research page reader and model downloader to reject IPv6 IETF protocol-assignment, 6to4 transition, and 3fff documentation ranges, in addition to existing private, loopback, link-local, multicast and 2001:db8 documentation checks.
 - Added regression tests for each denied range and a public IPv6 literal acceptance case in both URL validators.
 - CI for this commit: pending. DNS answers are still not socket-pinned; DNS rebinding is not claimed solved. P26/P36 and Phase 1 remain NOT ACCEPTED.
+
+
+## Round 22 — 2026-11-23 — Learned-skill evaluation integrity
+
+- Commit: `773def4691ff4cf40b9c50f9db2fd7afd9215d31` (test coroutine import correction follows).
+- Skill proposals now reject one-character triggers and duplicate normalized test inputs; encrypted persisted records enforce the same invariants.
+- Evaluation now compares the current stored skill with the exact version tested before committing results. A concurrent/stale evaluation cannot overwrite newer results or revoke a more recent approval.
+- Added regression coverage for short triggers, duplicate cases and stale concurrent evaluation.
+- CI: pending. P40–P43 and Phase 1 remain NOT ACCEPTED.
