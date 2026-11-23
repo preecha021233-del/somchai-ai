@@ -217,3 +217,12 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Successful GGUF SHA-256 verification is cached by canonical path, file size and modification time so the same unchanged model is not hashed again during the immediate load path. Failed checks are never cached.
 - Candidate version incremented to versionCode 12 / versionName 1.9.2 so it can update an installed 1.9.1 app in place. Application ID and owner signing configuration remain unchanged.
 - GitHub Actions run #45175799639 (run 346) is building this candidate. No CI success, device acceptance, or Phase 1 PASS is claimed until evidence is returned.
+
+
+## Network and model-download corrective batch — 2026-11-23
+- WebPageReader now requests gzip where supported and safely decompresses gzip responses with a strict post-decompression size limit, while retaining the existing pinned-IP HTTPS connection and redirect validation.
+- Fixed HTTP error diagnostics so the actual status code is reported.
+- Local model downloads now retain interrupted partial files, request the remaining byte range on retry, validate HTTP 206 Content-Range before appending, restart from byte zero when a stale range receives HTTP 416, and recompute SHA-256 over the complete file before accepting it.
+- Added JVM regression tests for gzip decoding and malformed/mismatched Content-Range metadata.
+- Source/test commits: `e1bc75fc2764638aeebf95c1cbbec3fff39cd69c`, `7c8b817b4dc3e3bad9224c89f6f034d444801f38`, `495a09d3923cf18b90a5c75710732358899c2c84`, `0a856f388b2bebbfb343b1bc3af39bfa05582886`, `32f5b0b12b352ddad28102e6e5677418d5dc11a7`, `78d44bce9f68a781912bcb0439496008f3ff3b73`.
+- CI for the latest source commit is pending. No test pass, release APK readiness, device performance result, or Phase 1 acceptance is claimed until evidence is available.
