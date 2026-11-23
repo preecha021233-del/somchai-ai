@@ -105,3 +105,11 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 ## Plugin disable transition hardening — 2026-11-23
 
 10. The previous disable path copied an active manifest into the disabled-backup directory and then deleted the active copy. A failure between those operations could leave the same plugin reported as both active and disabled. The manager now prefers a same-filesystem rename for an atomic move; when rename is unavailable it writes and verifies a temporary backup before deleting the active copy. It validates the moved manifest and attempts rollback if validation fails. Existing lifecycle tests cover approve → disable → re-enable; CI for this change remains unconfirmed.
+
+
+## P23 and P36 implementation completion batch — 2026-11-23
+
+11. **P23 Web Search approval boundary:** changed the storage-budget dependency to an injected check callback so the tool boundary can be tested without Android Context. Added `BuiltinToolExecutorTest` proving an unapproved search is rejected before discovery/network work or storage-budget work; added approved-search coverage proving the tool reads and reports two actual pages and validates the query before discovery.
+12. **P36 model download redirects:** removed automatic HTTP redirects. The model installer now follows at most five redirects manually, revalidates every redirect as HTTPS with no embedded credentials and standard HTTPS port, rejects local/private IP literals and local hostnames, resolves each hop and rejects non-public DNS answers, and only accepts HTTP 200. The download rejects oversized declared lengths, actual/declared size mismatches, truncated/out-of-range files, wrong SHA-256 and invalid GGUF headers before publishing the model.
+13. Added unit coverage for HTTP downgrade, credentials, unsafe ports, localhost/private IP destinations, relative HTTPS redirects, wrong hash, truncated size, invalid GGUF header, content-length mismatch and insufficient storage.
+14. These changes are committed on the Phase 1 branch. CI run #161 was pending at the time of this audit update; no test pass is claimed until it completes. DNS validation is defense-in-depth; device/network integration and model install/inference still require target-device evidence.
