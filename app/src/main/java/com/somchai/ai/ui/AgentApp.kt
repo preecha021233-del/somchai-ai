@@ -153,16 +153,21 @@ fun AgentApp(runtime: CoreRuntime) {
                     if (plan != null) {
                         val task = runtime.tasks.create(plan)
                         val started = runtime.tasks.startStep(task.id, 0)
-                        runtime.logger.record("TASK_CREATED", "id=${task.id} type=${task.type} steps=${task.steps.size}")
-                        runtime.logger.record("TASK_STEP_STARTED", "id=${task.id} step=0")
                         messages = messages + "SOMCHAI: สร้างงานและบันทึกลงเครื่องแล้ว รหัส ${task.id.take(8)}\nขั้นตอนที่ 1: ${started.steps.first().title}\nสถานะ: กำลังติดตามงาน (ยังไม่ได้ดำเนินการภายนอก)"
                         pendingPlan = null
                     }
                 },
                 onFeedback = { answer, positive ->
-                    runCatching { runtime.memory.add("feedback=${if (positive) "positive" else "negative"}; answer=$answer", "response-feedback") }
-                        .onSuccess { Toast.makeText(appContext, if (positive) "ขอบคุณสำหรับคำติชม" else "รับทราบคำติชมแล้ว", Toast.LENGTH_SHORT).show() }
-                        .onFailure { runtime.logger.record("FEEDBACK_ERROR", it.message ?: "unknown") }
+                    // Feedback is an explicit signal, not consent to save the full answer as memory.
+                    runtime.logger.record(
+                        "RESPONSE_FEEDBACK",
+                        "sentiment=${if (positive) "positive" else "negative"} answerChars=${answer.length}"
+                    )
+                    Toast.makeText(
+                        appContext,
+                        if (positive) "ขอบคุณสำหรับคำติชม" else "รับทราบคำติชมแล้ว",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 },
                 onSend = {
                     val text = input.trim()
