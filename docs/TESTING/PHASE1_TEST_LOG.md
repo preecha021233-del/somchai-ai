@@ -193,3 +193,15 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Verified commit: `6d3093923317fce5439775fed3c955e5a277dc4c`.
 - `testDebugUnitTest`, `assembleDebug`, and ARM64 llama.cpp build all passed; debug APK artifact upload succeeded.
 - No Android device was attached to CI. Device-level acceptance gates remain NOT RUN; Phase 1 acceptance remains NOT ACCEPTED.
+
+
+## Round 12 — 2026-11-23 — Research test and Android instrumentation build repair
+
+- Branch: `phase-1/local-brain-runtime`
+- Verified commit: `d4a3625727fcd9caeb81efd30d8c52db8c87469e`
+- CI run #45092099946: SUCCESS — https://github.com/preecha021233-del/somchai-ai/actions/runs/45092099946
+- First defect: `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages` expected discovery titles (`Source A/B`) although the production report intentionally displays titles returned by the actual page reader. Corrected the assertions to validate the page-reader titles, source URLs and read evidence.
+- Second defect exposed by the full build: the instrumentation test imported unavailable `assertExists`. Replaced it with Compose's `assertIsDisplayed` API.
+- Verified: JVM unit-test Gradle task passed; ARM64 llama.cpp native build passed; debug APK assembled; Android instrumentation APK compiled and assembled; both artifacts uploaded.
+- Device instrumentation execution: NOT RUN (CI only built the test APK).
+- Phase 1 acceptance: NOT ACCEPTED; remaining device-level P01–P43 evidence is still required.
