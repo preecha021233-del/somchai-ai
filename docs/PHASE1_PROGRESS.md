@@ -188,3 +188,14 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Corrective commit: `6d3093923317fce5439775fed3c955e5a277dc4c`.
 - CI #139: PENDING at the time of this entry. Do not mark this batch passed until the workflow completes.
 - Phase 1 remains NOT ACCEPTED until CI and all Android device acceptance gates pass.
+
+
+## Corrective batch verification — 2026-11-23
+- CI workflow run #139: SUCCESS — [GitHub Actions](https://github.com/preecha021233-del/somchai-ai/actions/runs/45087102935).
+- Verified commit: `6d3093923317fce5439775fed3c955e5a277dc4c`.
+- `testDebugUnitTest`: PASS.
+- `assembleDebug`: PASS.
+- ARM64 llama.cpp native build: PASS.
+- Debug APK artifact uploaded by CI. It is not a release-signed APK and is not being treated as device acceptance evidence.
+- The compiler reports deprecation warnings for legacy llama.cpp decode/batch APIs and some Compose APIs; these did not fail the build and remain maintenance items.
+- Phase 1 remains NOT ACCEPTED: Android device inference/Thai quality/performance, real-source research acceptance, and install-over-existing/signing continuity still require device evidence.

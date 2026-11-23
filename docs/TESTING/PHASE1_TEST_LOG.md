@@ -183,3 +183,13 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - CI #138: FAILED on one new regression-test assertion (the test inspected the second evaluation prompt although the hostile input was in the first). Native C++ and Kotlin compilation completed; 121 tests ran, 1 failed.
 - The test now records all evaluation prompts and checks the first one. CI #139 is PENDING; result must be updated after completion.
 - Android device inference, Thai quality/performance, real web-source acceptance, and release/update-signature gates remain NOT RUN. Phase 1 acceptance: NOT ACCEPTED.
+
+
+## Round 11 — 2026-11-23 — Corrected full-system audit batch verified
+- CI #138 failure was isolated to a test capturing only the final prompt while checking content present in the first prompt.
+- Corrected the test to capture and inspect all evaluation prompts.
+- Added PluginManager lifecycle tests and a test-only CorePaths factory without changing the runtime storage location.
+- CI #139: SUCCESS — [workflow run](https://github.com/preecha021233-del/somchai-ai/actions/runs/45087102935).
+- Verified commit: `6d3093923317fce5439775fed3c955e5a277dc4c`.
+- `testDebugUnitTest`, `assembleDebug`, and ARM64 llama.cpp build all passed; debug APK artifact upload succeeded.
+- No Android device was attached to CI. Device-level acceptance gates remain NOT RUN; Phase 1 acceptance remains NOT ACCEPTED.
