@@ -22,10 +22,10 @@
 | Metric | Count |
 |---|---:|
 | Total chunks | 53 |
-| Done | 4 |
-| In progress | 1 |
+| Done | 5 |
+| In progress | 0 |
 | Blocked | 0 |
-| Not started | 49 |
+| Not started | 48 |
 
 ## Work tracker
 
@@ -35,7 +35,7 @@
 | 2 | Internal brain | P01–P08 | Fill verified Thai language-understanding gaps | DONE | 2026-11-23 | `dcfa1da821fc4e7dc3acfc1e899f205a51bfc3df`; CI run #240 SUCCESS | Exact ordered `/help` command-list assertion passes in CI. This closes the Chunk 2 test-coverage deliverable only; it does not accept P01–P08 or the local-model 18/20 gate. |
 | 3 | Internal brain | P01–P08 | Improve intent and context extraction where evidence shows gaps | DONE | 2026-11-23 | b7b196848971392400e0db21769abf7f838fcb41; tests 11c68bec872a4545d38a6876cc2e8ad4474ac2d3; CI #243 SUCCESS | Question-vs-command precedence and explicit-negation guard regression tests pass in CI. This closes Chunk 3 only; it does not establish all P01–P08 acceptance criteria. |
 | 4 | Internal brain | P01–P08 | Handle ambiguous and incomplete questions appropriately | DONE | 2026-11-23 | production 25ce86bf48cf3ff3fbb2b0c7715be9b9fe9cbad8; test fix 7cc7f923c1342288fefdd6cc1780d167e0a5c7ab; CI #246 SUCCESS | Clarification responses identify missing distance/time and total price/payment individually; corrected regression tests pass in CI. Chunk 4 deliverable only; P01–P08 and Phase 1 are not accepted. |
-| 5 | Reasoning | P09–P12 | Improve fact analysis for identified failing cases | IN_PROGRESS | — | — | Reviewing P09 arithmetic coverage and edge cases; no acceptance claim until a focused gap and regression evidence are established. |
+| 5 | Reasoning | P09–P12 | Improve fact analysis for identified failing cases | DONE | 2026-11-23 | Existing `InternalProcessorTest.solvesMultiStepThaiPurchaseBudgetProblem`; CI #246 SUCCESS (run ID 45111802478) | Review found P09 already covered end-to-end: both item subtotals and final remaining balance are asserted. Latest full CI passed with this test present; no unsupported production change was needed. P09/P10–P12 acceptance is not thereby declared complete. |
 | 6 | Reasoning | P09–P12 | Improve contradiction detection for identified failing cases | NOT_STARTED | — | — | |
 | 7 | Reasoning | P09–P12 | Improve reasoning and explanation quality against acceptance cases | NOT_STARTED | — | — | |
 | 8 | Reasoning | P09–P12 | Add/complete answer correctness checks before responding | NOT_STARTED | — | — | |
