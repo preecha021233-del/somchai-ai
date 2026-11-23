@@ -10,7 +10,8 @@ data class BrainRequest(
 data class BrainReply(
     val text: String,
     val engineId: String,
-    val usedFallback: Boolean
+    val usedFallback: Boolean,
+    val failureReason: String? = null
 )
 
 /** All language generation used by the app must pass through this local-first boundary. */
@@ -36,19 +37,39 @@ class LocalFirstBrain(
     override suspend fun respond(request: BrainRequest): BrainReply {
         require(request.prompt.isNotBlank()) { "Prompt cannot be blank" }
         require(request.prompt.length <= 6000) { "Prompt exceeds the local context input limit" }
-        if (runCatching { engine.isModelLoaded() }.getOrDefault(false)) {
-            val generated = runCatching { engine.generate(request).trim() }.getOrNull()
-            if (!generated.isNullOrBlank()) {
-                return BrainReply(generated, engine.engineId, usedFallback = false)
-            }
+        var failureReason: String? = null
+        val loaded = try {
+            engine.isModelLoaded()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            failureReason = "${e.javaClass.simpleName}: ${e.message.orEmpty()}".take(240)
+            false
         }
-        val safeFallback = runCatching { fallback(request).trim() }
-            .getOrNull()
-            .orEmpty()
-            .ifBlank {
-                "โมเดลภายในยังไม่พร้อมใช้งาน และระบบสำรองยังไม่มีคำตอบสำหรับคำขอนี้"
+        if (loaded) {
+            try {
+                val generated = engine.generate(request).trim()
+                if (generated.isNotBlank()) return BrainReply(generated, engine.engineId, usedFallback = false)
+                failureReason = "โมเดลส่งคำตอบว่างเปล่า"
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failureReason = "${e.javaClass.simpleName}: ${e.message.orEmpty()}".take(240)
             }
-        return BrainReply(safeFallback, "offline-fallback", usedFallback = true)
+        } else if (failureReason == null) {
+            failureReason = "ยังไม่ได้โหลดโมเดลภายใน"
+        }
+        val safeFallback = try {
+            fallback(request).trim()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            failureReason = (failureReason.orEmpty() + "; fallback " + e.javaClass.simpleName + ": " + e.message.orEmpty()).take(480)
+            ""
+        }.ifBlank {
+            "โมเดลภายในยังไม่พร้อมใช้งาน และระบบสำรองยังไม่มีคำตอบสำหรับคำขอนี้"
+        }
+        return BrainReply(safeFallback, "offline-fallback", usedFallback = true, failureReason = failureReason)
     }
 }
 
