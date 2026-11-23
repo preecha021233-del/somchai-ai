@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -154,17 +155,20 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
         }
 
         auto samplerParams = llama_sampler_chain_default_params();
-        llama_sampler * sampler = llama_sampler_chain_init(samplerParams);
-        llama_sampler_chain_add(sampler, llama_sampler_init_top_k(40));
-        llama_sampler_chain_add(sampler, llama_sampler_init_top_p(0.90f, 1));
-        llama_sampler_chain_add(sampler, llama_sampler_init_temp_ext(0.70f, 0.0f, 1.0f));
-        llama_sampler_chain_add(sampler, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+        llama_sampler * rawSampler = llama_sampler_chain_init(samplerParams);
+        if (!rawSampler) throw std::runtime_error("ไม่สามารถสร้าง sampler สำหรับโมเดลได้");
+        std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(
+            rawSampler, &llama_sampler_free);
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_k(40));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_p(0.90f, 1));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_temp_ext(0.70f, 0.0f, 1.0f));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
         std::string output;
         for (int i = 0; i < limit; ++i) {
-            const llama_token token = llama_sampler_sample(sampler, engine->context, -1);
+            const llama_token token = llama_sampler_sample(sampler.get(), engine->context, -1);
             if (llama_vocab_is_eog(engine->vocab, token)) break;
-            llama_sampler_accept(sampler, token);
+            llama_sampler_accept(sampler.get(), token);
 
             std::vector<char> piece(256);
             int32_t pieceLength = llama_token_to_piece(engine->vocab, token,
@@ -179,7 +183,6 @@ Java_com_somchai_ai_core_brain_NativeLlamaBindings_nativeGenerate(
             llama_batch next = llama_batch_get_one(const_cast<llama_token *>(&token), 1);
             if (llama_decode(engine->context, next) != 0) break;
         }
-        llama_sampler_free(sampler);
         if (output.empty()) {
             throwJava(env, "โมเดลไม่สร้างคำตอบ กรุณาลองใหม่");
             return nullptr;
