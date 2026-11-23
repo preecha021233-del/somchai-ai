@@ -49,7 +49,7 @@ class CoreRuntime(context: Context) {
     val brain = LocalFirstBrain(localInference) { request -> processor.process(request.prompt).answer }
     val plugins = PluginManager(paths, logger, permissions)
     val tools = BuiltinToolExecutor(
-        permissions, logger, resources,
+        permissions, logger, resources::checkStorageBudget,
         isWebSearchApproved = {
             plugins.activePlugins().any { it.id == "web-search" && it.operation == "web.search" }
         },
