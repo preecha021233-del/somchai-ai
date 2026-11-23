@@ -23,9 +23,9 @@
 |---|---:|
 | Total work items | 54 |
 | Done | 24 |
-| In progress | 0 |
+| In progress | 8 |
 | Blocked | 1 |
-| Not started | 29 |
+| Not started | 21 |
 
 ## Work tracker
 
@@ -55,14 +55,14 @@
 | 22 | Research | P22–P25 | Ensure summaries are grounded in retrieved sources | DONE | 2026-11-23 | `BuiltinToolExecutorTest.researchSummaryMustCiteEveryRequiredReadableSource`; `ResearchSummaryPromptTest.externalPageTextIsSanitizedAndDelimitedAsUntrustedData`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Local summary is generated only from pages actually read; requires valid [S1]/[S2] citations, sanitizes and delimits page text as untrusted, and rejects missing/invalid citations. |
 | 23 | Research | P22–P25 | Handle source reliability, insufficient evidence, and partial results | DONE | 2026-11-23 | `ResearchResultVerifierTest.discoveryOnlyIsNotReadEvidence`; `duplicateUrlCannotInflateCount`; `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; CI #279 SUCCESS (run ID 45119904510), head e659b84cafe500c6c18d46a40ea2664860e64790 | Reports NONE/DISCOVERY_ONLY/READ_SINGLE_SOURCE/READ_MULTI_SOURCE; clearly marks fewer than two readable pages PARTIAL, reports errors without logging query/URL contents, and does not equate snippets with read evidence. |
 | 24A | Research implementation | P22–P25 | Complete automated implementation-side P24 coverage: approved search, actual page-reader calls, two distinct sources, source reporting/citations, and partial-result handling | DONE | 2026-11-23 | `BuiltinToolExecutorTest.approvedSearchReadsAndReportsActualPages`; `ResearchResultVerifierTest`; CI #279 SUCCESS (run ID `45119904510`), head `e659b84cafe500c6c18d46a40ea2664860e64790` | Automated fake-provider coverage verifies the approved-search orchestration reads two distinct pages and reports the actual sources; insufficient readable pages remain PARTIAL. This closes implementation-side work only. Live app/device acceptance is tracked separately as 24B. |
-| 25 | Security | P26–P32 | Complete permission and owner-approval enforcement | NOT_STARTED | — | — | |
-| 26 | Security | P26–P32 | Complete plugin validation and integrity checks | NOT_STARTED | — | — | |
-| 27 | Security | P26–P32 | Close verified command and file-safety gaps | NOT_STARTED | — | — | |
-| 28 | Security | P26–P32 | Close verified network-security gaps | NOT_STARTED | — | — | |
-| 29 | Security | P26–P32 | Complete audit-log coverage for relevant lifecycle actions | NOT_STARTED | — | — | |
-| 30 | Security | P26–P32 | Complete backup and rollback behavior for supported operations | NOT_STARTED | — | — | |
-| 31 | Security | P26–P32 | Fix security findings and run targeted regression tests | NOT_STARTED | — | — | |
-| 32 | Security | P26–P32 | Record evidence for P26–P32 security acceptance cases | NOT_STARTED | — | — | |
+| 25 | Security | P26–P32 | Complete permission and owner-approval enforcement | IN_PROGRESS | — | — | PermissionManager and BuiltinToolExecutor approval boundary reviewed; targeted test evidence recorded; final group CI pending. |
+| 26 | Security | P26–P32 | Complete plugin validation and integrity checks | IN_PROGRESS | — | — | PluginValidator/PluginManager allowlist, hash-bound approval, smoke checks and lifecycle tests reviewed; final group CI pending. |
+| 27 | Security | P26–P32 | Close verified command and file-safety gaps | IN_PROGRESS | — | — | Path containment, manifest/file bounds and memory-store size/count limits reviewed; final security regression run pending. |
+| 28 | Security | P26–P32 | Close verified network-security gaps | IN_PROGRESS | — | — | WebPageReader HTTPS-only, DNS pinning, redirect revalidation, private/reserved IP rejection and bounded parser reviewed; final group CI pending. |
+| 29 | Security | P26–P32 | Complete audit-log coverage for relevant lifecycle actions | IN_PROGRESS | — | — | Added audit assertions for plugin lifecycle and memory backup/restore/import/export/mutations; new tests await CI. |
+| 30 | Security | P26–P32 | Complete backup and rollback behavior for supported operations | IN_PROGRESS | — | — | AES-GCM backup/restore and transactional rewrite/rollback implementation and tests reviewed; final group CI pending. |
+| 31 | Security | P26–P32 | Fix security findings and run targeted regression tests | IN_PROGRESS | — | — | Added missing audit-lifecycle regression coverage; run complete security regression suite and resolve any failures. |
+| 32 | Security | P26–P32 | Record evidence for P26–P32 security acceptance cases | IN_PROGRESS | — | — | Evidence map is being assembled from P26–P32 source/tests; cannot close until latest CI confirms. |
 | 33 | Brain routing | P33–P35 | Complete internal-brain routing behavior | NOT_STARTED | — | — | |
 | 34 | Brain routing | P33–P35 | Complete safe fallback behavior and user-facing status | NOT_STARTED | — | — | |
 | 35 | Brain routing | P33–P35 | Verify external AI is never used automatically as the primary brain | NOT_STARTED | — | — | |
