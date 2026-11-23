@@ -33,20 +33,20 @@ class OfflineReasoningEngineTest {
     }
     @Test fun questionAndNegatedStatementAreNotMisclassifiedAsCommands() {
         val question = engine.classifyExamples(
-            "จำแนกข้อความต่อไปนี้:\\n1. การบันทึกข้อมูลมีข้อดีอย่างไร"
+            "จำแนกข้อความต่อไปนี้:\n1. การบันทึกข้อมูลมีข้อดีอย่างไร"
         ) ?: error("question intent was not recognized")
         assertTrue(question.contains("ประเภท: คำถาม"))
 
         assertNull(
             engine.classifyExamples(
-                "จำแนกข้อความต่อไปนี้:\\n1. ฉันไม่ต้องการลบข้อมูล"
+                "จำแนกข้อความต่อไปนี้:\n1. ฉันไม่ต้องการลบข้อมูล"
             )
         )
     }
 
     @Test fun recognizesAdditionalThaiQuestionFormsBeforeActionKeywords() {
         val examples = engine.classifyExamples(
-            "จำแนกข้อความต่อไปนี้:\\n1. วิธีคำนวณภาษีทำอย่างไร\\n2. การสร้างบัญชีต้องใช้อะไร"
+            "จำแนกข้อความต่อไปนี้:\n1. วิธีคำนวณภาษีทำอย่างไร\n2. การสร้างบัญชีต้องใช้อะไร"
         ) ?: error("Thai question forms were not recognized")
         assertTrue(examples.contains("ประเภท: คำถาม"))
         assertTrue(examples.contains("วิธีคำนวณภาษีทำอย่างไร"))
