@@ -42,4 +42,17 @@ class WebPageReaderTest {
         assertThrows(IllegalArgumentException::class.java) { reader.validateUrl("https://router.local/") }
         assertThrows(IllegalArgumentException::class.java) { reader.validateUrl("https://service.internal/") }
     }
+    @Test fun rejectsReservedAndTransitionIpv6AddressRanges() {
+        listOf(
+            "https://[2001:2::1]/resource",
+            "https://[2002::1]/resource",
+            "https://[3fff::1]/resource"
+        ).forEach { address ->
+            assertThrows("Must reject $address", IllegalArgumentException::class.java) {
+                reader.validateUrl(address)
+            }
+        }
+        assertTrue(reader.validateUrl("https://[2606:4700:4700::1111]/resource").startsWith("https://"))
+    }
+
 }

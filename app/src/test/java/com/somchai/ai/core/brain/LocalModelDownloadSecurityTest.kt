@@ -96,4 +96,20 @@ class LocalModelDownloadSecurityTest {
             LocalModelStore.validateDownloadUrl(redirected)
         }
     }
+    @Test fun rejectsReservedAndTransitionIpv6ModelDestinations() {
+        listOf(
+            "https://[2001:2::1]/model.gguf",
+            "https://[2002::1]/model.gguf",
+            "https://[3fff::1]/model.gguf"
+        ).forEach { address ->
+            assertThrows("Must reject $address", IllegalArgumentException::class.java) {
+                LocalModelStore.validateDownloadUrl(address)
+            }
+        }
+        assertEquals(
+            "https://[2606:4700:4700::1111]/model.gguf",
+            LocalModelStore.validateDownloadUrl("https://[2606:4700:4700::1111]/model.gguf")
+        )
+    }
+
 }
