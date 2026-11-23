@@ -167,9 +167,9 @@ class LocalMemoryStore(
         require(restored.map { it.id }.distinct().size == restored.size) { "ไฟล์นำเข้ามีรหัสซ้ำ" }
         // rewrite() encrypts with the current installation key, so only a successfully
         // authenticated payload can replace the current data.
+        // rewrite() verifies the staged ciphertext and the committed file before returning.
+        // Do not perform a second post-commit read that could fail after rollback is retired.
         rewrite(restored)
-        val verified = readEntries()
-        check(verified == restored) { "ตรวจสอบข้อมูลหลังนำเข้าไม่สำเร็จ" }
         log("MEMORY_IMPORTED", "records=${restored.size}")
         restored.size
     }
