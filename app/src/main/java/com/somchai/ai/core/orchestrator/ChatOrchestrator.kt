@@ -38,10 +38,12 @@ class ChatOrchestrator(
             val prompt=text.substringAfter(' ', "").trim()
             if(prompt.isEmpty()) return ChatTurnResult("ใช้รูปแบบ: /model-test ตามด้วยคำถาม เพื่อทดสอบโมเดลภายในโดยตรง","model_test.help","policy",true)
             return try {
-                val reply=brain.respond(BrainRequest(prompt,history,approvedSkills,memoryContext))
+                val reply=brain.respond(BrainRequest(prompt))
                 safeAudit("LOCAL_MODEL_TEST","engine="+reply.engineId+" fallback="+reply.usedFallback+" reason="+(reply.failureReason ?: "none"))
                 if(reply.usedFallback) ChatTurnResult("ทดสอบโมเดลภายในไม่ผ่าน: "+(reply.failureReason ?: "ระบบใช้คำตอบสำรอง")+"\n\nคำตอบสำรอง: "+reply.text,"model_test.failed",reply.engineId,true)
                 else ChatTurnResult(reply.text,"model_test.passed",reply.engineId,false)
+            } catch(e:kotlinx.coroutines.CancellationException) {
+                throw e
             } catch(e:Exception) {
                 safeAudit("LOCAL_MODEL_TEST_ERROR",e.javaClass.simpleName+": "+e.message.orEmpty().take(200))
                 ChatTurnResult("ทดสอบโมเดลภายในไม่สำเร็จ: "+e.javaClass.simpleName+": "+e.message.orEmpty().take(200),"model_test.error","local-model",true)
