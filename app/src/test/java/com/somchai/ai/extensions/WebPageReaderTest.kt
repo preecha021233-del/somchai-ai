@@ -1,12 +1,26 @@
 package com.somchai.ai.extensions
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.util.zip.GZIPOutputStream
+import java.nio.charset.StandardCharsets
 
 class WebPageReaderTest {
     private val reader = WebPageReader()
+
+    @Test fun decodesGzipEncodedResearchResponses() {
+        val expected = "<html><title>ทดสอบ</title><p>เนื้อหาภาษาไทย</p></html>"
+        val compressed = ByteArrayOutputStream().also { output ->
+            GZIPOutputStream(output).use { it.write(expected.toByteArray(StandardCharsets.UTF_8)) }
+        }.toByteArray()
+        val decoded = reader.decodeContentEncoding(compressed, "gzip")
+        assertEquals(expected, String(decoded, StandardCharsets.UTF_8))
+        assertEquals(expected, String(reader.decodeContentEncoding(expected.toByteArray(), "identity"), StandardCharsets.UTF_8))
+    }
 
     @Test fun extractsVisiblePageTextAndDropsScriptsAndNavigation() {
         val text = HtmlTextExtractor.extract(
