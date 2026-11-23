@@ -89,6 +89,20 @@ class LocalMemoryStoreTest {
         assertEquals(listOf(original), destination.all(500))
     }
 
+    @Test fun authenticatedExportImportPreservesExactIdsCategoriesAndContents() {
+        val key = javax.crypto.spec.SecretKeySpec(ByteArray(32) { (it + 11).toByte() }, "AES")
+        val cipher = AesGcmMemoryCipher { key }
+        val source = LocalMemoryStore(temporaryFolder.newFolder("authenticated-export-source"), cipher)
+        val first = source.add("สอบวันที่ 30", "owner-note")
+        val second = source.add("โครงการ SOMCHAI", "experience")
+        val exported = source.exportEncrypted()
+
+        val destination = LocalMemoryStore(temporaryFolder.newFolder("authenticated-export-destination"), cipher)
+        destination.add("ข้อมูลเก่าที่ต้องถูกแทนที่เมื่อ import สำเร็จ")
+        assertEquals(2, destination.importEncrypted(exported))
+        assertEquals(listOf(second, first), destination.all(500))
+    }
+
     @Test fun rejectsTamperedImportWithoutReplacingExistingMemory() {
         val key = javax.crypto.spec.SecretKeySpec(ByteArray(32) { it.toByte() }, "AES")
         val authenticatedCipher = AesGcmMemoryCipher { key }
