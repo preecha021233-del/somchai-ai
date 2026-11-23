@@ -563,3 +563,18 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - CI GitHub Actions run #263 (run ID `45114439357`) — **SUCCESS** for head `1b83168cef7c507993ac2d305fde062a2b9b1eaf`. `testDebugUnitTest` completed successfully (`BUILD SUCCESSFUL`); ARM64 native runtime and Debug APK / Android instrumentation APK builds completed and both artifacts uploaded. [Run #263](https://github.com/preecha021233-del/somchai-ai/actions/runs/45114439357).
 - Debug APK artifact ID `14790644219` (ZIP size 21,825,990 bytes); Android instrumentation APK artifact ID `14791361316` (ZIP size 855,965 bytes). Instrumentation APK was built and uploaded, not executed on a physical device.
 - Chunks 9–12 are DONE as work-plan deliverables. The focused P13–P16 JVM planning/task tests and full JVM unit-test suite pass. This does not claim final P01–P16 acceptance: actual Android process-restart/device evidence is still required for P16, and P01–P08 local-model quality (18/20) remains BLOCKED pending target-device model evaluation. No final Phase 1 acceptance is claimed.
+
+
+## Phase 1 — Group 4 / Chunks 13–17: local memory (2026-11-23)
+
+- Reviewed P17–P21 and the local memory store, command processor, encryption, backup/restore, and Android instrumentation coverage.
+- P17: /remember returns the complete stable UUID; processor tests verify the ID can be used to recall the saved entry.
+- P18: exact UUID lookup takes precedence over matching prefixes and returns the selected stored entry.
+- P19: Thai content search ignores whitespace differences; regression test stores สอบวันที่ 30 and finds it with สอบวันที่30.
+- P20: instrumentation coverage creates a CoreRuntime, saves memory, recreates CoreRuntime against the same app-private directory and Android Keystore key, and recalls the entry. This test was compiled into the instrumentation APK but was not executed on a physical device or after an actual process kill; therefore the device-level close/reopen acceptance remains outstanding.
+- P21: deletion by exact ID is covered; ambiguous short IDs are rejected, and the full ID deletes only the matching record.
+- Additional lifecycle coverage: /edit updates content while preserving ID and creation timestamp; encrypted export/import preserves exact IDs, categories and contents; tampered imports are rejected without replacing current data; encrypted backup/restore and interrupted-write recovery are covered.
+- Latest code/test head: eab2c0554a9cf4671e444e39e2d04082cdee68cd (test assertion that editing preserves stable ID and timestamp).
+- CI GitHub Actions run #277 (run ID 45115580134) — SUCCESS for the above head. The android-local-brain job completed successfully: JVM unit tests, ARM64 native runtime build, Debug APK build, Android instrumentation APK build, and both artifact uploads all succeeded. https://github.com/preecha021233-del/somchai-ai/actions/runs/45115580134
+- Artifacts: Debug APK 14791229226 (ZIP SHA-256 fd45f9fc26f78cee9ef50b1454c9b4872f999a0e38ceb48ebe155b8eec7e959f); Android instrumentation APK 14791563072 (ZIP SHA-256 b4f5f6e6eaa129ddb3035ff13f4bf560b977b713dd8fd246dd36811bdf5ba67e).
+- Chunks 13–17 are DONE as work-plan deliverables. This does not claim all P17–P21 device-level acceptance has passed: P20 still needs actual owner-device close/reopen evidence. The instrumentation APK build is not equivalent to running the test on-device.
