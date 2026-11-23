@@ -660,3 +660,12 @@ Scope: compare P01–P08 with current implementation and tests; identify gaps on
 - CI #301, run ID `45133546874`, tested code head `5e4b72e3596897d3c49d894118b087cb8fe29a39`: https://github.com/preecha021233-del/somchai-ai/actions/runs/45133546874. JVM unit tests SUCCESS; ARM64 native runtime + Debug APK build SUCCESS; Debug APK upload SUCCESS; Android instrumentation-test APK build/upload SUCCESS.
 - Artifacts: `somchai-local-brain-debug` (ID `14798916836`, 22,388,927 bytes) and `somchai-android-test-apk` (ID `14798856913`, 857,594 bytes). The instrumentation APK was built/uploaded, not executed on a physical device.
 - This closes the identified cross-system task-command routing defect and validates implementation/build work. Owner-device checks remain blocked; Phase 1 is not declared accepted.
+
+
+## Gradle dependency mirror and full CI verification — run #322 (2026-11-23)
+
+- The previous workflow run #321 failed during dependency resolution because Maven Central returned HTTP 429; this was an external repository throttling failure, not a Kotlin compile/test failure.
+- Added the Google-hosted Maven Central mirror ahead of `mavenCentral()` in root `settings.gradle.kts`, retaining Google and Maven Central repositories.
+- Expanded `.github/workflows/phase1-local-brain.yml` path filters to trigger on root `settings.gradle.kts`, `build.gradle.kts`, and `gradle/**` changes, so root dependency configuration is covered by CI.
+- CI run #322 (run ID `45134483236`) passed all steps on exact head `38b513ab0fc98757a6f48fa66f95164e319c32f9`: JVM unit tests, ARM64 llama.cpp native build, Android Debug APK build/upload, and Android instrumentation-test APK build/upload. [Run #322](https://github.com/preecha021233-del/somchai-ai/actions/runs/45134483236).
+- Instrumentation APK was built/uploaded only; it was not executed on the owner's physical phone. Device acceptance items remain blocked and Phase 1 is not yet accepted.
