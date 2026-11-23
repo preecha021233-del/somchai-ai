@@ -43,7 +43,7 @@ class WebPageReader(
                 current = validateRedirect(uri, location)
                 continue
             }
-            check(response.status in 200..299) { "หน้าเว็บตอบกลับ HTTP \${response.status}" }
+            check(response.status in 200..299) { "หน้าเว็บตอบกลับ HTTP ${response.status}" }
             val contentType = response.headers["content-type"].orEmpty().lowercase()
             require(contentType.contains("text/html") || contentType.contains("application/xhtml+xml") ||
                 contentType.contains("text/plain")) { "ชนิดเนื้อหาไม่ใช่ HTML หรือข้อความที่อ่านได้" }
