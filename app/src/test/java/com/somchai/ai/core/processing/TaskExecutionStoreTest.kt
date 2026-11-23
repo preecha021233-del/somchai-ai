@@ -108,6 +108,11 @@ class TaskExecutionStoreTest {
         assertTrue(events.drop(1).all { it.second.contains("step=1") })
         assertTrue(events.last().second.contains("status=COMPLETED"))
         assertFalse(events.any { it.second.contains("งานตรวจสอบ") })
+
+        val cancellable = store.create(TaskPlanner().plan("งานยกเลิก"))
+        store.cancelStep(cancellable.id, 0)
+        assertEquals("TASK_STEP_CANCELLED", events.last().first)
+        assertTrue(events.last().second.contains("status=CANCELLED"))
     }
 
     @Test fun auditFailureDoesNotUndoPersistedTaskTransition() {
