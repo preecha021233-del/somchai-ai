@@ -28,7 +28,7 @@ class LlmConnector(
         val providerHost = java.net.URI(provider.baseUrl).host?.trim('[', ']')
             ?: throw IllegalArgumentException("Provider URL has no valid host")
         // OkHttp bypasses Dns for IP-literal URLs, so validate those literals explicitly.
-        if (providerHost.contains(':') || providerHost.matches(Regex("""\\d{1,3}(\\.\\d{1,3}){3}"""))) {
+        if (providerHost.contains(':') || providerHost.matches(Regex("""\d{1,3}(\.\d{1,3}){3}"""))) {
             resolvePublicProviderAddresses(providerHost, dnsResolver)
         }
         limiter.consumeRequest()
