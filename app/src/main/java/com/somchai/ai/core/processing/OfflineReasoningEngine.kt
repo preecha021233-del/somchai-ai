@@ -48,9 +48,9 @@ class OfflineReasoningEngine {
         }
         val sameIntegerReference = listOf("จำนวนเต็มเดียวกัน", "จำนวนเดียวกัน", "เลขเดียวกัน")
             .any(text::contains)
-        val evenNumbers = Regex("""(?:เลข\\s*)?(\\d+)\\s*(?:เป็น)?\\s*เลขคู่""")
+        val evenNumbers = Regex("""(?:เลข\s*)?(\d+)\s*(?:เป็น)?\s*เลขคู่""")
             .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
-        val oddNumbers = Regex("""(?:เลข\\s*)?(\\d+)\\s*(?:เป็น)?\\s*เลขคี่""")
+        val oddNumbers = Regex("""(?:เลข\s*)?(\d+)\s*(?:เป็น)?\s*เลขคี่""")
             .findAll(text).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
         if ((evenNumbers intersect oddNumbers).isNotEmpty() ||
             (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่"))) {
