@@ -228,3 +228,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - CI for the latest source commit is pending. No test pass, release APK readiness, device performance result, or Phase 1 acceptance is claimed until evidence is available.
 
 - The latest CI run must validate the complete combined batch; earlier runs were automatically cancelled as later source commits superseded them.
+
+
+## Range-test assertion correction — 2026-11-23
+- CI run #356 compiled the changed Kotlin sources and ran 234 JVM tests; one newly added range-parser test failed because the test incorrectly expected a syntactically valid range (`bytes 419-499/500`) to be rejected.
+- Corrected the expected result to the parsed range pair. The downloader separately checks that the returned range begins at the actual partial-file offset before appending.
+- Test correction commit: `63c9572ba310e221c846393e9cee3d6c5bbbb3f8`.
+- A new CI run for the corrected commit is pending. No pass is claimed yet.
