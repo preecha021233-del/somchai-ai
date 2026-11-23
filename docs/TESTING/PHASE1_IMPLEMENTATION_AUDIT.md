@@ -248,3 +248,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 
 - Test-source syntax correction committed as `04f276245abb0bcd8b8903d7e0d6d9665a604f14`; CI #215 queued. Acceptance remains pending.
+
+
+## CI #215 skill concurrency test correction
+
+- The stale-evaluation guard behaved as designed; the test's expected child exception cancelled its parent coroutine scope. Isolating the child with `supervisorScope` allows the test to assert the rejection without failing the enclosing test.
+- CI #215 did not reach native build; corrected test queued for rerun.

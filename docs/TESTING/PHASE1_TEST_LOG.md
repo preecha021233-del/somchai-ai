@@ -351,3 +351,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Fix commit: `04f276245abb0bcd8b8903d7e0d6d9665a604f14`.
 - Removed the literal trailing escape sequence from `OfflineReasoningEngineTest.kt`.
 - CI #214 was superseded/cancelled; fresh full workflow #215 is queued for the corrected head. Results remain pending.
+
+
+## CI #215 failure analysis — 2026-11-23
+
+- JVM unit tests reached 172 cases; one test failed: `staleConcurrentSkillEvaluationCannotOverwriteNewerResults`.
+- The production stale-write guard correctly threw when an old evaluation tried to overwrite newer results. The test used a regular `async` child, whose expected exception cancelled its parent `runBlocking` scope even though `await()` was caught.
+- The test is being corrected to isolate the expected child failure in `supervisorScope`; this is a test-harness correction, not a relaxation of the stale-write protection.

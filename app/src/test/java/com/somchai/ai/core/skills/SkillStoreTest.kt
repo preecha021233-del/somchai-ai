@@ -5,6 +5,7 @@ import com.somchai.ai.core.brain.OnDeviceInferenceEngine
 import com.somchai.ai.core.memory.PlaintextMemoryCipher
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -278,18 +279,20 @@ class SkillStoreTest {
                     return release.await()
                 }
             }
-            val staleEvaluation = async {
-                store.evaluate(skill.id, slowEngine)
-            }
-            entered.await()
-            val fresh = store.evaluate(skill.id, FakeEngine { "ok" })
-            assertTrue(fresh.all { it.passed })
-            release.complete("outdated result")
-            var rejected = false
-            try {
-                staleEvaluation.await()
-            } catch (_: IllegalArgumentException) {
-                rejected = true
+            val rejected = supervisorScope {
+                val staleEvaluation = async {
+                    store.evaluate(skill.id, slowEngine)
+                }
+                entered.await()
+                val fresh = store.evaluate(skill.id, FakeEngine { "ok" })
+                assertTrue(fresh.all { it.passed })
+                release.complete("outdated result")
+                try {
+                    staleEvaluation.await()
+                    false
+                } catch (_: IllegalArgumentException) {
+                    true
+                }
             }
             assertTrue(rejected)
             assertTrue(store.get(skill.id)!!.results.all { it.passed })
