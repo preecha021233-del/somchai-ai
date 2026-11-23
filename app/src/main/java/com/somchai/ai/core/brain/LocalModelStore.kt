@@ -36,6 +36,11 @@ class LocalModelStore(
         requireSufficientStorage(StatFs(directory.absolutePath).availableBytes)
 
         val partial = File(directory, "$MODEL_FILE_NAME.part")
+        if (isVerifiedModel(partial)) {
+            check(partial.renameTo(target)) { "บันทึกไฟล์โมเดลที่ดาวน์โหลดครบแล้วไม่สำเร็จ" }
+            onProgress(100)
+            return@withContext target
+        }
         val resumeFrom = partial.takeIf { it.isFile && it.length() > 0L && it.length() < MAX_MODEL_BYTES }?.length() ?: 0L
         if (resumeFrom == 0L) partial.delete()
         requireSufficientStorage(StatFs(directory.absolutePath).availableBytes + resumeFrom)
