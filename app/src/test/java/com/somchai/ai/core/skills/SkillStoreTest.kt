@@ -323,4 +323,54 @@ class SkillStoreTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test fun skillLifecycleAuditRecordsEventsWithoutProcedureOrTestPayload() = runBlocking {
+        val dir = createTempDir()
+        try {
+            val events = mutableListOf<Pair<String, String>>()
+            val store = SkillStore(dir, PlaintextMemoryCipher) { event, detail ->
+                events += event to detail
+            }
+            val secretProcedure = "private procedure content"
+            val secretInput = "private test input"
+            val skill = store.propose(
+                "งานส่วนตัว",
+                listOf("งานส่วนตัว"),
+                secretProcedure,
+                listOf(SkillTestCase(secretInput, "ok"), SkillTestCase("different input", "ok"))
+            )
+            store.evaluate(skill.id, FakeEngine { "ok" })
+            store.approve(skill.id)
+            store.delete(skill.id)
+
+            assertEquals(
+                listOf("SKILL_PROPOSED", "SKILL_EVALUATED", "SKILL_APPROVED", "SKILL_DELETED"),
+                events.map { it.first }
+            )
+            val auditText = events.joinToString(" ") { it.second }
+            assertFalse(auditText.contains(secretProcedure))
+            assertFalse(auditText.contains(secretInput))
+            assertTrue(auditText.contains(skill.id))
+        } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun auditLoggerFailureDoesNotUndoPersistedSkillTransitions() = runBlocking {
+        val dir = createTempDir()
+        try {
+            val store = SkillStore(dir, PlaintextMemoryCipher) { _, _ ->
+                throw IllegalStateException("simulated audit failure")
+            }
+            val skill = store.propose(
+                "บันทึกงาน",
+                listOf("บันทึกงาน"),
+                "ทำตามขั้นตอน",
+                listOf(SkillTestCase("first input", "ok"), SkillTestCase("second input", "ok"))
+            )
+            assertEquals(skill.id, store.all().single().id)
+            store.evaluate(skill.id, FakeEngine { "ok" })
+            assertTrue(store.approve(skill.id).approved)
+            assertTrue(store.delete(skill.id))
+            assertTrue(store.all().isEmpty())
+        } finally { dir.deleteRecursively() }
+    }
+
 }

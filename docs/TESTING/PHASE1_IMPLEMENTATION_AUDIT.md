@@ -214,3 +214,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 
 - Enforce the 1 MiB ciphertext bound before `readBytes()`, then independently bound decrypted payload bytes before parsing. Regression test rejects oversized store files.
 - CI pending.
+
+
+## Learned-skill audit lifecycle
+
+- SkillStore emits proposal/evaluation/approval/deletion audit events with IDs and counts only, not the procedure or test-input contents.
+- Audit callback exceptions are isolated after persistence; added lifecycle and failure-isolation regression tests.
+- CI pending.

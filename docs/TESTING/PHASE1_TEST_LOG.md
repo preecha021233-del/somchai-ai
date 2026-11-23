@@ -308,3 +308,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Skill storage now checks the encrypted file length before reading it into memory and checks the decrypted payload size before JSON parsing.
 - Added a regression test for an oversized encrypted skill file. This closes a pre-validation memory-allocation gap in the P43 persistence boundary.
 - CI pending for the consolidated branch.
+
+
+## Round 26 — 2026-11-23 — Learned-skill audit lifecycle guarantees
+
+- Connected regression coverage to the full skill lifecycle: proposal, evaluation, approval and deletion events are emitted without recording procedure or test-input payloads.
+- Audit callback failures are isolated so they cannot turn a persisted skill transition into a reported failure.
+- Added tests for event ordering, payload minimization and logger failure isolation. CI pending.

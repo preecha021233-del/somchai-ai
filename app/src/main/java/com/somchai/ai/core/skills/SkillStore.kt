@@ -73,7 +73,7 @@ class SkillStore(
             require(current.size < MAX_SKILLS) { "จำนวนทักษะถึงขีดจำกัดแล้ว" }
             rewrite(current + skill)
         }
-        log("SKILL_PROPOSED", "id=" + skill.id + " name=" + skill.name + " tests=" + skill.tests.size)
+        recordAudit("SKILL_PROPOSED", "id=" + skill.id + " name=" + skill.name + " tests=" + skill.tests.size)
         return skill
     }
 
@@ -135,7 +135,7 @@ class SkillStore(
             rewrite(updated)
         }
         val passed = evaluated.count { it.passed }
-        log("SKILL_EVALUATED", "id=" + id + " passed=" + passed + "/" + evaluated.size)
+        recordAudit("SKILL_EVALUATED", "id=" + id + " passed=" + passed + "/" + evaluated.size)
         return evaluated
     }
 
@@ -155,7 +155,7 @@ class SkillStore(
         val updated = current.toMutableList()
         updated[index] = approved
         rewrite(updated)
-        log("SKILL_APPROVED", "id=" + id + " name=" + skill.name)
+        recordAudit("SKILL_APPROVED", "id=" + id + " name=" + skill.name)
         approved
     }
 
@@ -178,8 +178,13 @@ class SkillStore(
         val current = readAll()
         if (current.none { it.id == id }) return@synchronized false
         rewrite(current.filterNot { it.id == id })
-        log("SKILL_DELETED", "id=" + id)
+        recordAudit("SKILL_DELETED", "id=" + id)
         true
+    }
+
+    private fun recordAudit(event: String, detail: String) {
+        // Persisted skill transitions must not be reported as failed if audit logging is unavailable.
+        runCatching { log(event, detail) }
     }
 
     private fun readAll(): List<LearnedSkill> {
