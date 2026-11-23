@@ -46,11 +46,19 @@ class OfflineReasoningEngine {
         if (weekdays.size > 1 && explicitConflictConnector && repeatedEventAnchor) {
             return "ข้อมูลขัดแย้งกันครับ: ระบุวันในสัปดาห์มากกว่าหนึ่งวันสำหรับเหตุการณ์เดียวกัน (${weekdays.joinToString(" และ ")}) กรุณาระบุวันที่หรือวันที่ถูกต้อง"
         }
-        if (text.contains("เลขคู่") && text.contains("เลขคี่")) {
+        val sameIntegerReference = listOf("จำนวนเต็มเดียวกัน", "จำนวนเดียวกัน", "เลขเดียวกัน")
+            .any(text::contains)
+        if (sameIntegerReference && text.contains("เลขคู่") && text.contains("เลขคี่")) {
             return "ข้อมูลขัดแย้งกันครับ: จำนวนเต็มเดียวกันไม่สามารถเป็นทั้งเลขคู่และเลขคี่ได้พร้อมกัน"
         }
         if (text.contains("ไม่เคย") && text.contains("แต่เคย")) {
-            return "ข้อความมีข้อมูลขัดแย้งกันระหว่าง 'ไม่เคย' กับ 'แต่เคย' ครับ กรุณาระบุว่าข้อใดถูกต้อง"
+            val neverTarget = text.substringAfter("ไม่เคย").substringBefore("แต่").trim()
+            val everTarget = text.substringAfter("แต่").substringAfter("เคย", "").trim()
+                .trimEnd('.', '!', '?', 'ๆ', ' ')
+            val normalizedNeverTarget = neverTarget.trimEnd('.', '!', '?', 'ๆ', ' ')
+            if (normalizedNeverTarget.isNotEmpty() && normalizedNeverTarget == everTarget) {
+                return "ข้อความมีข้อมูลขัดแย้งกัน: ระบุทั้ง 'ไม่เคย' และ 'เคย' กับเรื่องเดียวกัน กรุณาระบุว่าข้อใดถูกต้อง"
+            }
         }
         return null
     }
