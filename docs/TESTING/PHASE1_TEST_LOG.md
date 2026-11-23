@@ -408,3 +408,22 @@ The supplied gap-fill package was merged selectively. Existing protected researc
 - Instrumentation tests were compiled and packaged only; they were NOT executed on a physical Android device.
 - assembleRelease was not run because the workflow does not have the owner's local signing credentials. No signing key was changed or generated.
 - This CI result verifies JVM tests and build/package integration for the recorded commit. It does not prove on-device model inference, Thai answer quality, UI interaction, existing-install update compatibility, or final P01–P43 acceptance.
+
+
+## DNS Rebinding / TOCTOU remediation — 2026-11-23
+
+- Replaced the WebPageReader HTTP transport with direct TCP socket + layered TLS transport. The main read path no longer uses URL.openConnection / HttpsURLConnection.
+- For each URL hop, WebPageReader validates HTTPS-only scheme, rejects userinfo and non-443 ports, blocks localhost/.local/.internal/.lan, resolves the host once, rejects the complete DNS answer if any address is not public, then connects the raw socket using InetSocketAddress(pinnedIp, 443).
+- The TLS socket is layered over the already-connected raw socket. SNI and HTTPS endpoint identification use the original URL hostname; HTTP Host uses the URL authority. Certificate validation happens during TLS handshake before the HTTP request is sent.
+- Redirect following is manual. Every Location is resolved relative to the previous URI, then revalidated and separately resolved/pinned. No automatic redirect handler is used.
+- Preserved and extended IPv4/IPv6 filtering: loopback, unspecified, private/site-local, link-local, multicast, CGNAT, metadata 169.254.0.0/16, documentation, benchmarking, 6to4, protocol assignment and reserved ranges.
+- HTTP parser is bounded: connect/read timeouts, 32 KiB header limit, 1 MB body limit, chunked/content-length/close-delimited bodies, and HTML/XHTML/plain-text content types only. Requests send Accept-Encoding: identity and Connection: close.
+- Added/expanded WebPageReaderSecurityTest for private/local URL rejection, HTTPS-only, userinfo, non-443 port, private redirect rejection, mixed public/private DNS answer rejection, rebinding simulation proving TCP destination remains the validated InetAddress, SNI hostname and HTTPS endpoint-identification configuration, and special IPv4/IPv6 ranges.
+- Added docs/TESTING/OWNER_RELEASE_BUILD.md with local-only owner-keystore setup, version/package/certificate verification and safe adb install -r update steps. Added docs/TESTING/PHASE1_DEVICE_FINAL_CHECKLIST.md with A/B/C device acceptance tables. Added .gitignore rules for signing materials and local build files.
+- Security implementation changes only touch WebPageReader and its focused tests; no applicationId, signing config, Protected Core, orchestrator, provider-default or plugin-approval policy changes were intended.
+
+### CI evidence for this remediation
+
+- Earlier CI run #233 (run ID 45102529619), commit 3a18b57d087115052400cde7f28f32a59efc5150, failed at JVM compilation. The compiler reported that the custom SSLSocketFactory omitted an abstract overload and the HTML extractor contained an unsupported escape sequence. That implementation was subsequently replaced with direct pinned socket transport, removing the custom SSLSocketFactory and fixing the extractor.
+- Current remediation CI run #237 (run ID 45103440086) was triggered for commit e274cf6dbf9d0fb7690ed5267ce8187d4ca74a6e. Record final test/build outcome here after the run completes. Do not infer success from a running job.
+- Device TLS handshake, live DNS rebinding and actual Android behavior remain required even after CI passes.
