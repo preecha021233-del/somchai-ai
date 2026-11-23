@@ -116,6 +116,14 @@ class LocalMemoryStoreTest {
         assertEquals("secret local note", store.all().first().content)
     }
 
+    @Test fun exactMemoryIdLookupWinsOverAnyMatchingPrefix() {
+        val store = LocalMemoryStore(temporaryFolder.newFolder("exact-id"))
+        val entry = store.add("รายการที่ต้องเรียกคืนด้วยรหัส")
+        val exact = store.search(entry.id)
+        assertEquals(1, exact.size)
+        assertEquals(entry.id, exact.single().id)
+    }
+
     @Test fun searchesMemoryByDisplayedIdPrefix() {
         val store = LocalMemoryStore(temporaryFolder.newFolder("id-search"))
         val entry = store.add("เป้าหมายโครงการ SOMCHAI")
