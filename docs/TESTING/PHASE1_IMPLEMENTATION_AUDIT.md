@@ -82,3 +82,12 @@ This is an implementation audit, not an acceptance-test result. The P01–P43 th
 - Inspect any CI failures and repair the implementation, not the acceptance thresholds.
 - P36–P39 and the device-dependent portions of P01–P12, P17–P21, P22–P32 and P40–P43 remain blocked on target-device evidence.
 - Owner-signed release continuity and install-over-existing-data must be verified with the protected signing secrets and the owner's existing installation baseline.
+
+
+## Additional defects found and corrected — 2026-11-23
+
+4. P02 help text did not enumerate every command exposed by the chat UI. Added `/plugins`, explicit optional `/ai`, and `/skill delete`; expanded the regression test to assert every command family and the owner-controlled external-provider boundary.
+5. The Web Search route matched commands case-insensitively but removed the lowercase prefix case-sensitively. Changed query extraction to take the text after the first space, so `/SEARCH ...` and `/search ...` are handled consistently.
+6. `TaskCommandProcessor` used `error()` for an unknown task and non-numeric step, producing `IllegalStateException` rather than the argument-validation contract. Changed both to `IllegalArgumentException` and added command-adapter regression coverage.
+
+These changes are committed on the branch. Their CI result is pending; no test pass is claimed for these new commits.
