@@ -136,7 +136,7 @@ class BuiltinToolExecutorTest {
 
         val output = tool.search(secretQuery)
         assertTrue(output.contains(privateUrl))
-        val audit = paths.activityLog.readText()
+        val audit = java.io.File(paths.audit, "activity.jsonl").readText()
         assertFalse(audit.contains(secretQuery))
         assertFalse(audit.contains(privateUrl))
         assertFalse(audit.contains("987654"))
