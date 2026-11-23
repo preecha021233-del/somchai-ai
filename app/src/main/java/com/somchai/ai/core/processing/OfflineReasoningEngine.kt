@@ -61,6 +61,11 @@ class OfflineReasoningEngine {
     }
 
     fun solveArithmetic(input: String): String? {
+        if (input.length > MAX_ARITHMETIC_INPUT_CHARS) return null
+        val numericTokens = numberRegex.findAll(input).toList()
+        if (numericTokens.size > MAX_NUMERIC_TOKENS || numericTokens.any { match ->
+                match.value.count(Char::isDigit) > MAX_NUMBER_LITERAL_DIGITS
+            }) return null
         val asksForChange = listOf("เงินทอน", "ได้ทอน", "ทอนเท่าไร", "ทอนเท่าไหร่").any(input::contains)
         if (asksForChange && !input.contains("จ่าย") && !input.contains("ชำระ")) return null
         solveChangeProblem(input)?.let { return it }
@@ -165,10 +170,22 @@ class OfflineReasoningEngine {
         value.setScale(8, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
     private val numberRegex = Regex("""\d[\d,]*(?:\.\d+)?""")
 
+    companion object {
+        private const val MAX_ARITHMETIC_INPUT_CHARS = 4_000
+        private const val MAX_NUMERIC_TOKENS = 128
+        private const val MAX_NUMBER_LITERAL_DIGITS = 64
+        private const val MAX_EXPRESSION_CHARS = 512
+        private const val MAX_EXPRESSION_TOKENS = 256
+    }
+
     private class ExpressionParser(source: String) {
         private val normalizedSource = source.replace(",", "").filterNot { it.isWhitespace() }
         private val tokens = run {
+            require(normalizedSource.length <= MAX_EXPRESSION_CHARS) { "Expression is too long" }
             val matches = Regex("""\d+(?:\.\d+)?|[+\-×*/÷()]""").findAll(normalizedSource).toList()
+            require(matches.size <= MAX_EXPRESSION_TOKENS) { "Expression has too many operations" }
+            require(matches.filter { it.value.firstOrNull()?.isDigit() == true }
+                .all { it.value.length <= MAX_NUMBER_LITERAL_DIGITS }) { "Numeric literal is too long" }
             var consumed = 0
             matches.forEach { match ->
                 require(match.range.first == consumed) { "Invalid character in expression" }

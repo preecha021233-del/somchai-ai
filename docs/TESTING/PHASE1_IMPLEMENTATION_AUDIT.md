@@ -221,3 +221,9 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - SkillStore emits proposal/evaluation/approval/deletion audit events with IDs and counts only, not the procedure or test-input contents.
 - Audit callback exceptions are isolated after persistence; added lifecycle and failure-isolation regression tests.
 - CI pending.
+
+
+## Deterministic arithmetic resource bounds
+
+- Added explicit limits on arithmetic input size, numeric token count, numeric literal length, expression length and token count. Oversized expressions fail closed rather than consuming unbounded parsing/BigDecimal resources.
+- Regression tests added; CI pending.

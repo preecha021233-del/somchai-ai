@@ -30,4 +30,9 @@ class OfflineReasoningEngineTest {
 
     @Test fun rejectsIncompleteChangeQuestion() {
         assertNull(engine.solveArithmetic("ซื้อของ 3 ชิ้น ชิ้นละ 25 บาท ได้ทอนเท่าไร"))
-    }}
+    }
+    @Test fun rejectsOversizedNumericLiteralsAndExcessiveNumericTokens() {
+        assertNull(engine.solveArithmetic("9".repeat(65)))
+        assertNull(engine.solveArithmetic("1+".repeat(128) + "1"))
+    }
+}\n

@@ -315,3 +315,10 @@ Phase 1 implementation is being consolidated on `phase-1/local-brain-runtime`. R
 - Connected regression coverage to the full skill lifecycle: proposal, evaluation, approval and deletion events are emitted without recording procedure or test-input payloads.
 - Audit callback failures are isolated so they cannot turn a persisted skill transition into a reported failure.
 - Added tests for event ordering, payload minimization and logger failure isolation. CI pending.
+
+
+## Round 27 — 2026-11-23 — Bounded deterministic arithmetic
+
+- Arithmetic parsing now rejects inputs with more than 128 numeric tokens, numeric literals longer than 64 digits, expressions longer than 512 characters, or more than 256 expression tokens.
+- Added regression tests for excessive numeric literal length and token count to prevent pathological BigDecimal parsing on-device.
+- CI pending.
