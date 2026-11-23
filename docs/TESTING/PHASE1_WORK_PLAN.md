@@ -22,10 +22,10 @@
 | Metric | Count |
 |---|---:|
 | Total chunks | 53 |
-| Done | 6 |
+| Done | 8 |
 | In progress | 0 |
 | Blocked | 0 |
-| Not started | 47 |
+| Not started | 45 |
 
 ## Work tracker
 
@@ -37,8 +37,8 @@
 | 4 | Internal brain | P01–P08 | Handle ambiguous and incomplete questions appropriately | DONE | 2026-11-23 | production 25ce86bf48cf3ff3fbb2b0c7715be9b9fe9cbad8; test fix 7cc7f923c1342288fefdd6cc1780d167e0a5c7ab; CI #246 SUCCESS | Clarification responses identify missing distance/time and total price/payment individually; corrected regression tests pass in CI. Chunk 4 deliverable only; P01–P08 and Phase 1 are not accepted. |
 | 5 | Reasoning | P09–P12 | Improve fact analysis for identified failing cases | DONE | 2026-11-23 | Existing `InternalProcessorTest.solvesMultiStepThaiPurchaseBudgetProblem`; CI #246 SUCCESS (run ID 45111802478) | Review found P09 already covered end-to-end: both item subtotals and final remaining balance are asserted. Latest full CI passed with this test present; no unsupported production change was needed. P09/P10–P12 acceptance is not thereby declared complete. |
 | 6 | Reasoning | P09–P12 | Improve contradiction detection for identified failing cases | DONE | 2026-11-23 | production `efa5cc984bb407cd4024aaab35d5111b0d2f02e7`, parity regex fix `8bcb2b23f1b69bb0bd62fbfe0ad9843414c4033c`; tests `e4cedbad69fa064cfacfdf775598f148b9a72b70`, `f6875e59d869905fc812d669aa500178d7fc4985`; CI #252 SUCCESS (run ID `45112818101`) | Contradiction detection now checks matching weekday-event anchors, same explicit integer for parity, and matching target for never/ever claims. Regression matrix covers same/different integers, today/tomorrow, insufficient facts and different destinations. CI passed. Chunk 6 only; P09–P12 and Phase 1 are not accepted. |
-| 7 | Reasoning | P09–P12 | Improve reasoning and explanation quality against acceptance cases | NOT_STARTED | — | — | |
-| 8 | Reasoning | P09–P12 | Add/complete answer correctness checks before responding | NOT_STARTED | — | — | |
+| 7 | Reasoning | P09–P12 | Improve reasoning and explanation quality against acceptance cases | DONE | 2026-11-23 | commit `232e24bdb7d909fc2d9cc406c44c161614312f0f`; CI #259 SUCCESS (run ID `45113740793`) | Contradiction explanation identifies the exact conflicting integer; arithmetic/multi-step answers expose verifiable calculation lines. Regression tests pass. Chunk only; P09–P12 not accepted as a group. |
+| 8 | Reasoning | P09–P12 | Add/complete answer correctness checks before responding | DONE | 2026-11-23 | commit `232e24bdb7d909fc2d9cc406c44c161614312f0f`; CI #259 SUCCESS (run ID `45113740793`) | ResultEvaluator verifies arithmetic-intent equations and blocks incorrect or unverifiable results; regression tests cover correct multi-step/cash-change and incorrect/missing equations. Chunk only; P09–P12 not accepted as a group. |
 | 9 | Planning | P13–P16 | Improve multi-step planning for verified gaps | NOT_STARTED | — | — | |
 | 10 | Planning | P13–P16 | Improve task decomposition and prioritization | NOT_STARTED | — | — | |
 | 11 | Planning | P13–P16 | Complete task status tracking and failure handling | NOT_STARTED | — | — | |
