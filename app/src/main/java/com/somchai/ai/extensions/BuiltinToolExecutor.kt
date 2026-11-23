@@ -21,8 +21,13 @@ class BuiltinToolExecutor(
         require(query.isNotBlank() && query.length <= 300) { "Search query is invalid" }
 
         val report = ResearchCoordinator(discoveryProvider, pageReader, maxPages = 5).research(query)
-        report.sourceErrors.forEach { logger.record("RESEARCH_SOURCE_ERROR", it) }
-        report.pageErrors.forEach { logger.record("RESEARCH_PAGE_READ_ERROR", it.take(500)) }
+        // Audit logs must not retain search terms, full URLs, snippets, or provider error text.
+        if (report.sourceErrors.isNotEmpty()) {
+            logger.record("RESEARCH_SOURCE_ERRORS", "count=${report.sourceErrors.size}")
+        }
+        if (report.pageErrors.isNotEmpty()) {
+            logger.record("RESEARCH_PAGE_READ_ERRORS", "count=${report.pageErrors.size}")
+        }
 
         val result = buildString {
             append("ผลการค้นคว้า: ").append(report.query).append("\n")
@@ -77,7 +82,7 @@ class BuiltinToolExecutor(
 
         logger.record(
             "WEB_RESEARCH",
-            "query=${query.take(120)} discovered=${report.discovered.size} pagesRead=${report.pagesRead.size} complete=${report.meetsTwoSourceMinimum}"
+            "queryLength=${query.length} discovered=${report.discovered.size} pagesRead=${report.pagesRead.size} sourceErrors=${report.sourceErrors.size} pageErrors=${report.pageErrors.size} complete=${report.meetsTwoSourceMinimum}"
         )
         permissions.sanitizeExternalData(finalResult)
     }

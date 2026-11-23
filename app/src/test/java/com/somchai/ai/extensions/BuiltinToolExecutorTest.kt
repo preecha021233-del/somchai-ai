@@ -111,4 +111,38 @@ class BuiltinToolExecutorTest {
         }
         assertFalse(discovered)
     }
+    @Test fun researchAuditLogDoesNotStorePrivateQueryOrSourceUrls() = runBlocking {
+        val root = temporaryFolder.newFolder("private-audit")
+        val paths = CorePaths.forTesting(root)
+        paths.ensureDirectories()
+        val secretQuery = "private customer account 987654"
+        val privateUrl = "https://private.example/customer/987654"
+        val tool = BuiltinToolExecutor(
+            permissions = PermissionManager(),
+            logger = ActivityLogger(paths),
+            checkStorageBudget = {},
+            pageReader = object : ResearchPageReader {
+                override fun read(address: String): WebPageContent =
+                    throw IllegalStateException("failed to read $privateUrl")
+            },
+            discoveryProvider = FakeDiscovery(
+                ResearchDiscoveryResult(
+                    listOf(ResearchCandidate("private", "Private page", privateUrl)),
+                    listOf("provider failed for $privateUrl")
+                )
+            ),
+            isWebSearchApproved = { true }
+        )
+
+        val output = tool.search(secretQuery)
+        assertTrue(output.contains(privateUrl))
+        val audit = paths.activityLog.readText()
+        assertFalse(audit.contains(secretQuery))
+        assertFalse(audit.contains(privateUrl))
+        assertFalse(audit.contains("987654"))
+        assertTrue(audit.contains("queryLength=${secretQuery.length}"))
+        assertTrue(audit.contains("sourceErrors=1"))
+        assertTrue(audit.contains("pageErrors=1"))
+    }
+
 }
