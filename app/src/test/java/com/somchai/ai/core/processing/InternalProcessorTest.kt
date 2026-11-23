@@ -1,6 +1,10 @@
 package com.somchai.ai.core.processing
 
 import com.somchai.ai.core.memory.LocalMemoryStore
+import com.somchai.ai.core.memory.PlaintextMemoryCipher
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -140,5 +144,32 @@ class InternalProcessorTest {
         assertTrue(result.intent == "reasoning.arithmetic")
         assertTrue(result.answer.contains("25 บาท"))
     }
+
+
+    @Test fun forgetRejectsAmbiguousShortIdsAndHonorsExactFullId() {
+        val directory = temporaryFolder.newFolder("ambiguous-memory-ids")
+        val firstId = "12345678-0000-0000-0000-000000000001"
+        val secondId = "12345678-0000-0000-0000-000000000002"
+        val legacy = listOf(firstId to "รายการแรก", secondId to "รายการที่สอง").joinToString("\n") { (id, content) ->
+            JSONObject().put("schemaVersion", 1).put("id", id).put("category", "experience")
+                .put("content", content).put("createdAt", "2026-11-23T00:00:00Z").toString()
+        }
+        java.io.File(directory, "memory.jsonl").writeText(legacy)
+        val memory = LocalMemoryStore(directory, PlaintextMemoryCipher)
+        val subject = InternalProcessor(memory)
+
+        val ambiguous = subject.process("/forget 12345678")
+        assertEquals("memory.delete.ambiguous", ambiguous.intent)
+        assertTrue(ambiguous.answer.contains("ใช้รหัสเต็ม"))
+        assertEquals(2, memory.all().size)
+
+        val exact = subject.process("/forget $firstId")
+        assertEquals("memory.delete", exact.intent)
+        assertTrue(exact.answer.contains("ลบความจำ"))
+        assertEquals(1, memory.all().size)
+        assertFalse(memory.all().any { it.id == firstId })
+        assertTrue(memory.all().any { it.id == secondId })
+    }
+
 
 }
