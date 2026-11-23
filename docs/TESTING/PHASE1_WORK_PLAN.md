@@ -22,7 +22,7 @@
 | Metric | Count |
 |---|---:|
 | Total chunks | 53 |
-| Done | 2 |
+| Done | 3 |
 | In progress | 0 |
 | Blocked | 0 |
 | Not started | 50 |
