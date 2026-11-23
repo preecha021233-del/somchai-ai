@@ -200,6 +200,41 @@ class SkillStoreTest {
             first.approve(skill.id)
             val second = newStore(dir)
             assertTrue(second.all().single().approved)
+            assertTrue(second.relevantFor("").isEmpty())
         } finally { dir.deleteRecursively() }
     }
+
+    @Test fun recoversEncryptedSkillFileAfterInterruptedReplacement() {
+        val dir = createTempDir()
+        try {
+            val original = newStore(dir)
+            val skill = original.propose(
+                "กู้คืนทักษะ",
+                listOf("กู้คืน"),
+                "ตรวจสอบข้อมูลและสรุป",
+                listOf(SkillTestCase("กรณีหนึ่ง", "ผลหนึ่ง"), SkillTestCase("กรณีสอง", "ผลสอง"))
+            )
+            val live = File(dir, "skills.enc")
+            val rollback = File(dir, "skills.enc.rollback")
+            assertTrue(live.renameTo(rollback))
+
+            val recovered = newStore(dir)
+            assertEquals(skill, recovered.all().single())
+            assertFalse(rollback.exists())
+            assertFalse(File(dir, "skills.enc.tmp").exists())
+        } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun rejectsMalformedOrStructurallyInvalidPersistedSkillData() {
+        val dir = createTempDir()
+        try {
+            File(dir, "skills.enc").writeText(
+                """[{"id":"not-a-uuid","name":"bad","triggers":["bad"],"procedure":"step","tests":[{"input":"a","expected":"b"},{"input":"c","expected":"d"}],"results":[],"approved":false,"createdAt":"2026-11-23T00:00:00Z"}]"""
+            )
+            val store = newStore(dir)
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) { store.all() }
+        } finally { dir.deleteRecursively() }
+    }
+
+
 }
