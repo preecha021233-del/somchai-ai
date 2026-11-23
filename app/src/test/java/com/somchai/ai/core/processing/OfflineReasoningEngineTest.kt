@@ -53,6 +53,30 @@ class OfflineReasoningEngineTest {
         assertTrue(examples.contains("การสร้างบัญชีต้องใช้อะไร"))
     }
 
+    @Test fun identifiesExactlyWhichInputsAreMissingForSpeedCalculation() {
+        val missingBoth = engine.missingInformation("รถคันนี้มีความเร็วเท่าไร")
+            ?: error("missing speed inputs were not detected")
+        assertTrue(missingBoth.contains("ระยะทาง"))
+        assertTrue(missingBoth.contains("เวลาที่ใช้"))
+
+        val missingTime = engine.missingInformation("รถวิ่งระยะทาง 120 กิโลเมตร มีความเร็วเท่าไร")
+            ?: error("missing time was not detected")
+        assertTrue(missingTime.contains("เวลาที่ใช้"))
+        assertTrue(!missingTime.contains("ระยะทาง และ"))
+    }
+
+    @Test fun identifiesMissingCashChangeInputsIndividually() {
+        val missingBoth = engine.missingInformation("เงินทอนเท่าไร")
+            ?: error("missing cash-change inputs were not detected")
+        assertTrue(missingBoth.contains("ราคารวมของสินค้า"))
+        assertTrue(missingBoth.contains("จำนวนเงินที่จ่าย"))
+
+        val missingPayment = engine.missingInformation("สินค้าราคา 80 บาท เงินทอนเท่าไร")
+            ?: error("missing payment amount was not detected")
+        assertTrue(missingPayment.contains("จำนวนเงินที่จ่าย"))
+        assertTrue(!missingPayment.contains("ราคารวมของสินค้า"))
+    }
+
     @Test fun rejectsOversizedNumericLiteralsAndExcessiveNumericTokens() {
         assertNull(engine.solveArithmetic("9".repeat(65)))
         assertNull(engine.solveArithmetic("1+".repeat(128) + "1"))
