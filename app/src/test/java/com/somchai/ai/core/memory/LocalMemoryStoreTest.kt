@@ -118,6 +118,26 @@ class LocalMemoryStoreTest {
         assertEquals("ข้อมูลที่ต้องเก็บไว้", destination.all().first().content)
     }
 
+    @Test fun rejectsTamperedBackupWithoutChangingCurrentMemory() {
+        val key = javax.crypto.spec.SecretKeySpec(ByteArray(32) { (it + 21).toByte() }, "AES")
+        val cipher = AesGcmMemoryCipher { key }
+        val directory = temporaryFolder.newFolder("tampered-backup")
+        val store = LocalMemoryStore(directory, cipher)
+        val original = store.add("ข้อมูลที่ต้องคงอยู่")
+        assertTrue(store.backup())
+
+        val backup = java.io.File(directory, "memory-backup.enc")
+        val tampered = backup.readBytes().also {
+            it[it.lastIndex] = (it.last().toInt() xor 1).toByte()
+        }
+        backup.writeBytes(tampered)
+
+        org.junit.Assert.assertThrows(java.security.GeneralSecurityException::class.java) {
+            store.restoreBackup()
+        }
+        assertEquals(listOf(original), store.all(500))
+    }
+
     @Test fun encryptsMemoryAndBackupThroughInjectedCipher() {
         val directory = temporaryFolder.newFolder("encrypted")
         val store = LocalMemoryStore(directory, PrefixCipher())
