@@ -276,3 +276,10 @@ The code and tests are committed. CI has not yet been confirmed for these latest
 - Closed the previously documented DNS rebinding gap in `LocalModelStore`: OkHttp now uses a custom `Dns` implementation that validates all DNS answers and returns those exact addresses to the HTTP client's connection layer, instead of validating with one resolver call and allowing `HttpURLConnection` to resolve again.
 - TLS still authenticates the original hostname; redirects are manual and revalidated on every hop; the model response body is streamed to disk, then size, GGUF header and SHA-256 are checked before rename into the active model path.
 - Regression tests cover resolver call count/changed second answer, mixed public/private answers, and reserved IPv6 ranges. This is implementation evidence only; latest CI run #293 is pending and target-device verification is still required.
+
+
+## P26 external-provider DNS socket pinning — 2026-11-23
+
+- Closed the earlier external-provider DNS TOCTOU gap. The optional LLM connector now passes validated DNS results directly through OkHttp's custom Dns interface to its connection layer, rather than validating once and allowing HttpURLConnection to resolve again.
+- Redirects and automatic connection retries are disabled; TLS hostname verification remains enabled; response size remains capped at 1 MB. Added resolver-injection tests for changed/private/reserved DNS answers.
+- Latest-branch CI is pending. Owner-device provider integration remains a separate acceptance check.
