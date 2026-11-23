@@ -79,14 +79,14 @@ class LocalMemoryStoreTest {
     @Test fun exportsAndImportsAuthenticatedEncryptedMemory() {
         val sourceDir = temporaryFolder.newFolder("export-source")
         val source = LocalMemoryStore(sourceDir, PrefixCipher())
-        source.add("ข้อมูลสำรองที่เข้ารหัส", "owner-note")
+        val original = source.add("ข้อมูลสำรองที่เข้ารหัส", "owner-note")
         val exported = source.exportEncrypted()
         assertTrue(String(exported, 0, 4) == "ENC:")
 
         val destination = LocalMemoryStore(temporaryFolder.newFolder("export-destination"), PrefixCipher())
         destination.add("ข้อมูลเดิม")
         assertEquals(1, destination.importEncrypted(exported))
-        assertEquals("ข้อมูลสำรองที่เข้ารหัส", destination.all().first().content)
+        assertEquals(listOf(original), destination.all(500))
     }
 
     @Test fun rejectsTamperedImportWithoutReplacingExistingMemory() {
@@ -107,13 +107,13 @@ class LocalMemoryStoreTest {
     @Test fun encryptsMemoryAndBackupThroughInjectedCipher() {
         val directory = temporaryFolder.newFolder("encrypted")
         val store = LocalMemoryStore(directory, PrefixCipher())
-        store.add("secret local note")
+        val original = store.add("secret local note")
         val data = java.io.File(directory, "memory.enc").readBytes()
         assertTrue(String(data, 0, 4) == "ENC:")
         assertTrue(store.backup())
         store.clear()
         assertEquals(1, store.restoreBackup())
-        assertEquals("secret local note", store.all().first().content)
+        assertEquals(listOf(original), store.all(500))
     }
 
     @Test fun exactMemoryIdLookupWinsOverAnyMatchingPrefix() {
