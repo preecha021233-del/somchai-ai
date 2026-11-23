@@ -26,4 +26,13 @@ class ChatRoutePolicyTest {
         assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/plan สอบปลายภาค"))
         assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("จำไว้ว่า นัดหมายพรุ่งนี้"))
     }
+
+    @Test fun pluginStatusAliasesNeverRouteToWebSearchOrExternalAi() {
+        listOf("/plugins", "ตรวจสอบปลั๊กอิน", "รายการปลั๊กอิน").forEach {
+            assertEquals(ChatRoute.PLUGIN_STATUS, ChatRoutePolicy.classify(it))
+        }
+        assertEquals(ChatRoute.WEB_SEARCH, ChatRoutePolicy.classify("/search somchai"))
+        assertEquals(ChatRoute.EXPLICIT_EXTERNAL_AI, ChatRoutePolicy.classify("/ai somchai"))
+    }
+
 }
