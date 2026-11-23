@@ -122,6 +122,17 @@ class LocalModelDownloadSecurityTest {
         }
     }
 
+    @Test fun rejectsReservedIpv6DnsAnswersForModelDownloads() {
+        listOf("2001:2::1", "2002::1", "3fff::1").forEach { reserved ->
+            val store = LocalModelStore(File("build/test-models")) {
+                arrayOf(InetAddress.getByName(reserved))
+            }
+            assertThrows("Must reject $reserved", IllegalArgumentException::class.java) {
+                store.resolvePublicAddresses("model.example")
+            }
+        }
+    }
+
     @Test fun rejectsReservedAndTransitionIpv6ModelDestinations() {
         listOf(
             "https://[2001:2::1]/model.gguf",
