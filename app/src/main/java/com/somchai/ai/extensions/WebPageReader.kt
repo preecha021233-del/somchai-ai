@@ -250,6 +250,16 @@ class WebPageReader(
     }
 }
 
+internal fun configureTlsParameters(
+    parameters: javax.net.ssl.SSLParameters,
+    hostname: String
+): javax.net.ssl.SSLParameters {
+    val ipv4Literal = hostname.count { it == '.' } == 3 && hostname.all { it.isDigit() || it == '.' }
+    if (!hostname.contains(':') && !ipv4Literal) parameters.serverNames = listOf(SNIHostName(hostname))
+    parameters.endpointIdentificationAlgorithm = "HTTPS"
+    return parameters
+}
+
 internal fun connectPinnedSocket(
     socket: Socket,
     pinnedIp: InetAddress,
