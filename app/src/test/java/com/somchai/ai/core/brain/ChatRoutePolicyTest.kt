@@ -15,6 +15,8 @@ class ChatRoutePolicyTest {
         assertEquals(ChatRoute.EXPLICIT_EXTERNAL_AI, ChatRoutePolicy.classify("/AI explain this"))
         assertEquals(ChatRoute.LOCAL_BRAIN, ChatRoutePolicy.classify("ช่วยใช้ AI อธิบายเรื่องนี้"))
         assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/unknown command"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/taskevil run"))
+        assertEquals(ChatRoute.INTERNAL_PROCESSOR, ChatRoutePolicy.classify("/skillful prompt"))
     }
 
     @Test fun builtInCommandsCannotFallThroughToExternalProvider() {
